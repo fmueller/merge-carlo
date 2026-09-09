@@ -1,0 +1,40 @@
+# Implementation status
+
+What is built, what was verified, and what remains unverified. Update this file
+in the same commit as the change it describes.
+
+Last updated: 2026-09-09.
+
+## Milestones
+
+| Milestone | Scope | Status |
+| --- | --- | --- |
+| M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | In progress |
+| M1 | Deterministic core: domain contracts, calendars, one queue, constant service | Not started |
+| M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | Not started |
+| M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Not started |
+| M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
+| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
+| M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
+
+## Verified
+
+- `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, and
+  `uv run pytest` pass on the package skeleton.
+- `uv run merge-carlo --version` prints the package version.
+- The commit policy guard suites pass: `scripts/check-commit-msg-test.sh`,
+  `scripts/check-push-messages-test.sh`, `scripts/check-author-test.sh`.
+
+## Not implemented
+
+Every pipeline command — `demo`, `collect`, `inspect`, `calibrate`, `validate`,
+`simulate`, and `report` — is unimplemented. The CLI currently exposes only
+`--version` and `--help`. The README documents the intended contract, not
+present behavior.
+
+## Unverified
+
+- **Live GitHub integration has never been run.** No authorized dataset has been
+  collected, and no real-data validation has been performed. Nothing in this
+  repository should be read as a claim that live collection was tested.
+- No performance benchmark has been recorded.
