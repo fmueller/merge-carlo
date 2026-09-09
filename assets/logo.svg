@@ -1,33 +1,29 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-labelledby="t">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="4 8 59 48" width="59" height="48" role="img" aria-labelledby="t">
   <title id="t">merge-carlo</title>
   <!--
-    Light is the default, carried by presentation attributes so renderers that
-    do not implement CSS still draw the mark correctly. The dark palette is
-    applied by class, which outranks a presentation attribute in the cascade.
+    Drawn in the accent alone, with no theme switch. A heading mark has to hold
+    on whatever ground it lands on, and prefers-color-scheme follows the
+    operating system rather than a site theme, so an adaptive file paints the
+    wrong palette for anyone running GitHub dark on a light desktop. This violet
+    clears contrast on both grounds, so the question never arises. The viewBox
+    is cropped to the ink so the mark sits on the text baseline correctly.
   -->
-  <style>
-    @media (prefers-color-scheme: dark) {
-      .branch { stroke: #F1EEF9; }
-      .sample { fill: #F1EEF9; }
-      .node   { fill: #9E8BFF; }
-    }
-  </style>
-  <path class="branch" d="M6 14 C16 14 18 32 27 32" fill="none" stroke="#14161C" stroke-width="4.2" stroke-linecap="round"/>
-  <path class="branch" d="M6 50 C16 50 18 32 27 32" fill="none" stroke="#14161C" stroke-width="4.2" stroke-linecap="round"/>
-  <g class="sample" fill="#14161C">
-    <circle cx="40" cy="24" r="2.3" opacity=".85"/>
-    <circle cx="40" cy="32" r="2.3" opacity=".85"/>
-    <circle cx="40" cy="40" r="2.3" opacity=".85"/>
-    <circle cx="50" cy="17" r="2.3" opacity=".6"/>
-    <circle cx="50" cy="25" r="2.3" opacity=".6"/>
-    <circle cx="50" cy="32" r="2.3" opacity=".6"/>
-    <circle cx="50" cy="39" r="2.3" opacity=".6"/>
-    <circle cx="50" cy="47" r="2.3" opacity=".6"/>
-    <circle cx="60" cy="11" r="2.3" opacity=".32"/>
-    <circle cx="60" cy="21" r="2.3" opacity=".32"/>
-    <circle cx="60" cy="32" r="2.3" opacity=".32"/>
-    <circle cx="60" cy="43" r="2.3" opacity=".32"/>
-    <circle cx="60" cy="53" r="2.3" opacity=".32"/>
+  <path d="M6 14 C16 14 18 32 27 32" fill="none" stroke="#7A5AF8" stroke-width="4.2" stroke-linecap="round"/>
+  <path d="M6 50 C16 50 18 32 27 32" fill="none" stroke="#7A5AF8" stroke-width="4.2" stroke-linecap="round"/>
+  <g fill="#7A5AF8">
+    <circle cx="40" cy="24" r="2.3" opacity=".95"/>
+    <circle cx="40" cy="32" r="2.3" opacity=".95"/>
+    <circle cx="40" cy="40" r="2.3" opacity=".95"/>
+    <circle cx="50" cy="17" r="2.3" opacity=".75"/>
+    <circle cx="50" cy="25" r="2.3" opacity=".75"/>
+    <circle cx="50" cy="32" r="2.3" opacity=".75"/>
+    <circle cx="50" cy="39" r="2.3" opacity=".75"/>
+    <circle cx="50" cy="47" r="2.3" opacity=".75"/>
+    <circle cx="60" cy="11" r="2.3" opacity=".5"/>
+    <circle cx="60" cy="21" r="2.3" opacity=".5"/>
+    <circle cx="60" cy="32" r="2.3" opacity=".5"/>
+    <circle cx="60" cy="43" r="2.3" opacity=".5"/>
+    <circle cx="60" cy="53" r="2.3" opacity=".5"/>
   </g>
-  <circle class="node" cx="27" cy="32" r="5.6" fill="#5B3DEF"/>
+  <circle cx="27" cy="32" r="5.6" fill="#7A5AF8"/>
 </svg>

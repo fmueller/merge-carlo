@@ -34,7 +34,7 @@ without either needing the other present.
 
 | File | Contents |
 | --- | --- |
-| `assets/logo.svg` | Merge Fan, theme-adaptive. The README and docs mark. |
+| `assets/logo.svg` | Merge Fan in accent violet. The README and docs mark. |
 | `assets/favicon.svg` | Merge Die, theme-adaptive. The browser tab mark. |
 | `assets/icon-tile.svg` | Merge Die on a full-bleed ink tile. Source for the avatar. |
 | `assets/icon-512.png` | 512×512 render of the tile, for square icon slots. |
@@ -43,9 +43,9 @@ without either needing the other present.
 
 ## Light and dark
 
-`logo.svg` and `favicon.svg` carry their own palette switch. The light palette
-sits in presentation attributes and the dark palette overrides it by class,
-because a class selector outranks a presentation attribute:
+The favicon carries its own palette switch. The light palette sits in
+presentation attributes and the dark palette overrides it by class, because a
+class selector outranks a presentation attribute:
 
 ```svg
 <style>
@@ -63,10 +63,18 @@ declaration and leaves the shape unpainted, so a `fill: none` element disappears
 entirely. Presentation attributes mean the worst case is a mark in the light
 palette rather than no mark at all.
 
-The media query is evaluated by the viewer's browser even when the file is
-embedded as an `<img>`, which is how GitHub renders repository images. One file
-therefore serves both themes, and no `<picture>` element with paired sources is
-needed.
+The fan mark takes the opposite approach: one file, accent violet, no switch at
+all. `prefers-color-scheme` reports the operating system's preference, and a
+site theme is a separate setting — someone reading GitHub in dark mode on a
+light desktop gets the light palette painted onto a dark page, where an ink mark
+vanishes. A `<picture>` element with paired sources does not help, because it
+reads the same signal. Violet clears contrast on both grounds, so the mark never
+has to know which one it landed on.
+
+That trade only works for the fan. The die is a hairline outline whose whole
+read depends on the stroke, so it keeps the switch and accepts the mismatch
+case; a browser tab follows the browser's own theme, which is the signal
+`prefers-color-scheme` actually reports.
 
 The two PNGs are single-theme on purpose. Both sit on their own ink ground, so
 they do not depend on what is behind them: an icon and a link card are
@@ -79,7 +87,8 @@ composited against surfaces this repository does not control.
 | ink | `#14161C` | — | Strokes, pips, PNG ground |
 | paper | `#F6F4FA` | — | Light ground |
 | foreground | `#14161C` | `#F1EEF9` | The mark itself |
-| accent | `#5B3DEF` | `#9E8BFF` | The merge node, one per mark |
+| accent | `#5B3DEF` | `#9E8BFF` | The merge node in the die |
+| accent, dual | `#7A5AF8` | `#7A5AF8` | The whole fan mark, on either ground |
 
 Violet was chosen because it collides with nothing in the surrounding interface.
 It is not the green or red of a CI status, not the orange of a failing check,

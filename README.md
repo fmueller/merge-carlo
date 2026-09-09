@@ -1,5 +1,5 @@
 <h1>
-  <img src="assets/logo.svg" alt="" width="44" align="middle">
+  <img src="assets/logo.svg" alt="" width="52" align="middle">
   merge-carlo
 </h1>
 
