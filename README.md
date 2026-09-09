@@ -1,6 +1,7 @@
-<img src="assets/logo.svg" alt="" width="76" align="right">
-
-# merge-carlo
+<h1>
+  <img src="assets/logo.svg" alt="" width="44" align="middle">
+  merge-carlo
+</h1>
 
 [![Build](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml)
 [![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/fmueller/merge-carlo/blob/main/pyproject.toml)
