@@ -1,5 +1,9 @@
 # merge-carlo
 
+[![Build](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/fmueller/merge-carlo/blob/main/pyproject.toml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+
 An offline-first scenario explorer for human and AI software-development
 workflows. merge-carlo asks one question:
 
