@@ -1,11 +1,11 @@
 ---
 id: T-001-repository-bootstrap
 title: Bootstrap the repository toolchain, CI, and commit policy
-status: in_progress
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#goals
 dependencies: []
-updated_at: "2026-09-09T19:05:35Z"
+updated_at: "2026-09-09T19:07:25Z"
 ---
 
 # T-001-repository-bootstrap Bootstrap the repository toolchain, CI, and commit policy
@@ -33,3 +33,6 @@ implemented here.
 - Confirm the `Build` workflow is green on the default branch.
 
 ## Implementation Notes
+
+- 2026-09-09T19:07:25Z: Repository bootstrapped: packaging, pinned toolchain, CI, commit policy hooks, documents, spec, and milestone backlog.
+- 2026-09-09T19:07:25Z: verification pass

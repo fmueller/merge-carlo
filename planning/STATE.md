@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-09T19:05:35Z"
+updated_at: "2026-09-09T19:07:25Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
-current_task: T-001-repository-bootstrap
-current_task_title: Bootstrap the repository toolchain, CI, and commit policy
-status_summary: in_progress
+current_task: ""
+current_task_title: ""
+status_summary: idle
 blockers: []
-next_action: Continue task T-001-repository-bootstrap
-last_verification_result: Not yet run
+next_action: Select the next eligible task
+last_verification_result: pass for T-001-repository-bootstrap at 2026-09-09T19:07:25Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -22,12 +22,11 @@ continuation_notes:
 
 ## Current Focus
 
-- Task: `T-001-repository-bootstrap`
-- Title: Bootstrap the repository toolchain, CI, and commit policy
+- Task: none
 
 ## Status
 
-- in_progress
+- idle
 
 ## Blockers
 
@@ -35,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- Not yet run
+- pass for T-001-repository-bootstrap at 2026-09-09T19:07:25Z
 
 ## Next Action
 
-- Continue task T-001-repository-bootstrap
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -52,7 +51,7 @@ continuation_notes:
 ## Task Counts
 
 - todo: 28
-- in_progress: 1
-- completed: 0
+- in_progress: 0
+- completed: 1
 - blocked: 0
 - cancelled: 0
