@@ -117,6 +117,10 @@ taskrail coverage               # spec coverage, orphans, drift
   implementation and verification surface. Never split by file, layer,
   discipline, phase, or estimate.
 - Run `git status` after every state-writing command.
+- The packaged tracked-work skills are installed at `.claude/skills/` and
+  `.agents/skills/`. The two trees are byte-identical mirrors: reinstall with
+  `taskrail init --with-skills --force` rather than editing one copy, and never
+  let them drift apart.
 
 ## Changes and commits
 
