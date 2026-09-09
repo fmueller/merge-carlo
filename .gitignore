@@ -215,6 +215,7 @@ __marimo__/
 # be committed. Taskrail verification artifacts are local evidence, not history.
 /out/
 /data/
+mutants/
 /models/
 *.sqlite
 *.sqlite-journal

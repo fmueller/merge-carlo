@@ -16,6 +16,23 @@ run = [
   "lefthook install",
 ]
 
+# Mutation testing runs the suite once per mutant, so the per-change loop is
+# scoped to the modules a diff touched and the full gate runs weekly in CI.
+[tasks."test:mutate"]
+description = "Run mutation tests for source modules changed since BASE (default main)"
+run = "bash scripts/mutate-diff.sh"
+
+[tasks."test:mutate:gate"]
+description = "Run the full mutation gate and enforce the per-module efficacy floor"
+run = [
+  "uv run mutmut run",
+  "uv run mutmut results --all true | bash scripts/check-mutation-floor.sh",
+]
+
+[tasks."test:mutation-floor"]
+description = "Test the per-module mutation efficacy guard"
+run = "bash scripts/check-mutation-floor-test.sh"
+
 [tasks.check]
 description = "Run the full local gate mirroring the CI checks"
 run = [
@@ -26,4 +43,5 @@ run = [
   "bash scripts/check-commit-msg-test.sh",
   "bash scripts/check-push-messages-test.sh",
   "bash scripts/check-author-test.sh",
+  "bash scripts/check-mutation-floor-test.sh",
 ]

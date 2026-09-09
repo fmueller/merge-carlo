@@ -48,6 +48,8 @@ jobs:
         run: bash scripts/check-push-messages-test.sh
       - name: Check author identity policy
         run: bash scripts/check-author-test.sh
+      - name: Check the mutation efficacy guard
+        run: bash scripts/check-mutation-floor-test.sh
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})

@@ -39,6 +39,9 @@ pre-commit:
     author-checker:
       glob: "{lefthook.yml,scripts/check-author.sh,scripts/check-author-test.sh}"
       run: bash scripts/check-author-test.sh
+    mutation-floor-checker:
+      glob: "{lefthook.yml,scripts/check-mutation-floor.sh,scripts/check-mutation-floor-test.sh}"
+      run: bash scripts/check-mutation-floor-test.sh
 
 commit-msg:
   commands:

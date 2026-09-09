@@ -64,6 +64,11 @@ The `Build` workflow runs lint, formatting, and type checks, then the commit
 policy guard suites, then the test suite on Python 3.12, 3.13, and 3.14. The
 hooks are local and opt-in, so CI is the backstop for the commit policy.
 
+The `Mutation tests` workflow runs the full mutation gate weekly and on manual
+dispatch, never on a pull request: mutmut re-runs the suite once per mutant. For
+a logic-heavy change, run `mise run test:mutate` locally instead — it mutates
+only the modules your change touched.
+
 ## Tracked work
 
 Work is tracked with the `taskrail` CLI. Every change should map to a task whose

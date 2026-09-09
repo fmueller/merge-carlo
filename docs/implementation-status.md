@@ -26,6 +26,12 @@ Last updated: 2026-09-09.
   `scripts/check-push-messages-test.sh`, `scripts/check-author-test.sh`. The
   negative cases were exercised directly: an agent session trailer, a
   co-authorship line, and an agent author identity are each rejected.
+- Mutation testing is wired: `mise run test:mutate` (differential),
+  `mise run test:mutate:gate` (full), and a weekly workflow. On the CLI skeleton
+  the gate reports `merge_carlo.cli` at 2/3 killed, below the ten-mutant minimum,
+  so it is labeled insufficient evidence rather than given a verdict. The one
+  survivor is an equivalent mutant: `typer.Exit(code=0)` and
+  `typer.Exit(code=None)` both exit zero, so no test can distinguish them.
 - The `Build` workflow is green on `main`: lint and type checks, the commit
   policy guards, and the test suite on Python 3.12, 3.13, and 3.14.
 

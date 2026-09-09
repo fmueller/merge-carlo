@@ -1,0 +1,74 @@
+name: Mutation tests
+
+# mutmut re-runs the unit suite once per mutant, so the full gate runs weekly and
+# on demand rather than on every pull request. Use `mise run test:mutate` for a
+# differential local run against the modules a change touched.
+on:
+  schedule:
+    - cron: '0 3 * * 1'
+  workflow_dispatch:
+
+concurrency:
+  group: mutation-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  mutation-tests:
+    name: Mutation Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: '.python-version'
+      - name: Install dependencies
+        run: uv sync --locked --dev
+
+      # A surviving mutant must not lose the report. The floor is enforced in a
+      # later step from the statuses this run records, never by a second run.
+      - name: Run mutation tests
+        id: mutation
+        continue-on-error: true
+        run: uv run mutmut run
+
+      - name: Collect results
+        run: |
+          uv run mutmut results --all true > mutation-results.txt
+          uv run mutmut export-cicd-stats
+
+      - name: Summarize
+        run: |
+          {
+            printf '## Mutation testing\n\n'
+            if [ -f mutants/mutmut-cicd-stats.json ]; then
+              printf '| Outcome | Count |\n| --- | --- |\n'
+              jq -r 'to_entries[] | "| \(.key) | \(.value) |"' mutants/mutmut-cicd-stats.json
+            else
+              printf 'No stats file was produced. See the job log.\n'
+            fi
+            printf '\n### Per-module efficacy\n\n```\n'
+            bash scripts/check-mutation-floor.sh < mutation-results.txt || true
+            printf '```\n'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload results
+        uses: actions/upload-artifact@v6
+        with:
+          name: mutation-results
+          path: |
+            mutation-results.txt
+            mutants/mutmut-cicd-stats.json
+          if-no-files-found: warn
+
+      - name: Enforce the per-module efficacy floor
+        run: bash scripts/check-mutation-floor.sh < mutation-results.txt

@@ -57,6 +57,12 @@ Guidance for coding agents working in the merge-carlo repository.
 - Lint: `uv run ruff check` (`--fix` to autofix). Format: `uv run ruff format`.
 - Type check: `uv run mypy` (reads its file set from `pyproject.toml`; no path argument).
 - Tests: `uv run pytest`; a single file with `uv run pytest tests/unit/cli_test.py`.
+- Differential mutation tests: `mise run test:mutate` (override with `BASE=<ref>`).
+  It mutates only the source modules a change touched, so the per-change loop
+  stays cheap.
+- Full mutation gate: `mise run test:mutate:gate`; run it deliberately, while CI
+  runs it weekly and on manual dispatch. It mutates every module and costs
+  roughly the test suite once per mutant.
 - Run the CLI: `uv run merge-carlo --help`.
 
 Always run ruff, mypy, and pytest at the end of a task and fix what they report.
@@ -89,6 +95,14 @@ Always run ruff, mypy, and pytest at the end of a task and fix what they report.
   a fixed seed.
 - Assert that bodies, patches, tokens, and email addresses never appear in
   stored projections or logs.
+- Use differential mutation testing for logic-heavy changes; do not put the full
+  gate on routine pull-request CI.
+- The mutation efficacy floor is per module, not a repository total, so a weakly
+  tested module is not hidden behind a well tested one. A module with fewer than
+  ten mutants gets no verdict: a percentage over three mutants describes the
+  sample, not the tests. Do not chase the number by writing mutation-shaped
+  tests, and do not silence an equivalent mutant that the tests genuinely cannot
+  distinguish; record it instead.
 
 ## Taskrail lifecycle
 
