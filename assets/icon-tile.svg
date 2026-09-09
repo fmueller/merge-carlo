@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512" role="img" aria-labelledby="t">
+  <title id="t">merge-carlo</title>
+  <rect width="512" height="512" fill="#14161C"/>
+  <g transform="translate(96 96) scale(5)" fill="none">
+    <rect x="7" y="7" width="50" height="50" rx="14" stroke="#F1EEF9" stroke-width="4.6"/>
+    <path d="M22 22 C30 22 33 32 41 32" stroke="#F1EEF9" stroke-width="3.4" stroke-linecap="round" opacity=".5"/>
+    <path d="M22 42 C30 42 33 32 41 32" stroke="#F1EEF9" stroke-width="3.4" stroke-linecap="round" opacity=".5"/>
+    <circle cx="22" cy="22" r="4.3" fill="#F1EEF9"/>
+    <circle cx="22" cy="42" r="4.3" fill="#F1EEF9"/>
+    <circle cx="41" cy="32" r="5.2" fill="#9E8BFF"/>
+  </g>
+</svg>

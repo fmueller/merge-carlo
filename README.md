@@ -1,3 +1,5 @@
+<img src="assets/logo.svg" alt="" width="76" align="right">
+
 # merge-carlo
 
 [![Build](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml)
@@ -99,6 +101,7 @@ read [`AGENTS.md`](AGENTS.md) first.
 - [`specs/v0.1.0.md`](specs/v0.1.0.md) — the normative v0.1.0 scope boundary.
 - [`docs/limitations.md`](docs/limitations.md) — what the model cannot establish.
 - [`docs/implementation-status.md`](docs/implementation-status.md) — what is built and what is unverified.
+- [`docs/brand.md`](docs/brand.md) — the two marks, where each one is used, and the palette.
 - `specs/` — versioned specs; `planning/` — tracked work.
 
 ## License

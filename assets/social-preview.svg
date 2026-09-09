@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640" role="img" aria-labelledby="t">
+  <title id="t">merge-carlo — offline-first simulation of pull-request review workflows</title>
+  <rect width="1280" height="640" fill="#14161C"/>
+
+  <g transform="translate(96 150) scale(5)">
+    <path d="M6 14 C16 14 18 32 27 32" fill="none" stroke="#F1EEF9" stroke-width="4.2" stroke-linecap="round"/>
+    <path d="M6 50 C16 50 18 32 27 32" fill="none" stroke="#F1EEF9" stroke-width="4.2" stroke-linecap="round"/>
+    <g fill="#F1EEF9">
+      <circle cx="40" cy="24" r="2.3" opacity=".85"/>
+      <circle cx="40" cy="32" r="2.3" opacity=".85"/>
+      <circle cx="40" cy="40" r="2.3" opacity=".85"/>
+      <circle cx="50" cy="17" r="2.3" opacity=".6"/>
+      <circle cx="50" cy="25" r="2.3" opacity=".6"/>
+      <circle cx="50" cy="32" r="2.3" opacity=".6"/>
+      <circle cx="50" cy="39" r="2.3" opacity=".6"/>
+      <circle cx="50" cy="47" r="2.3" opacity=".6"/>
+      <circle cx="60" cy="11" r="2.3" opacity=".32"/>
+      <circle cx="60" cy="21" r="2.3" opacity=".32"/>
+      <circle cx="60" cy="32" r="2.3" opacity=".32"/>
+      <circle cx="60" cy="43" r="2.3" opacity=".32"/>
+      <circle cx="60" cy="53" r="2.3" opacity=".32"/>
+    </g>
+    <circle cx="27" cy="32" r="5.6" fill="#9E8BFF"/>
+  </g>
+
+  <g font-family="Inter, DejaVu Sans, sans-serif" transform="translate(0 -22)">
+    <text x="480" y="232" fill="#9E8BFF" font-size="22" font-weight="600" letter-spacing="3.4">OFFLINE-FIRST &#183; READ-ONLY &#183; NO LLM CALLS</text>
+    <text x="480" y="326" fill="#F1EEF9" font-size="92" font-weight="700" letter-spacing="-2">merge-carlo</text>
+    <text x="480" y="386" fill="#A9A4BE" font-size="32" font-weight="400">Discrete-event Monte Carlo simulation of</text>
+    <text x="480" y="430" fill="#A9A4BE" font-size="32" font-weight="400">pull-request review workflows.</text>
+    <text x="480" y="508" fill="#6E6A84" font-size="24" font-weight="400">github.com/fmueller/merge-carlo</text>
+  </g>
+</svg>
