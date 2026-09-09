@@ -41,6 +41,41 @@ without either needing the other present.
 | `assets/social-preview.svg` | 1280×640 link card. Source; needs Inter installed. |
 | `assets/social-preview.png` | Rendered card, uploaded under Settings → Social preview. |
 
+### Where each file is wired up
+
+| File | Status |
+| --- | --- |
+| `assets/logo.svg` | In use, in the README heading. |
+| `assets/social-preview.png` | In use, once uploaded under Settings → General → Social preview. GitHub offers no API for it, so the upload is manual and has to be repeated whenever the card changes. |
+| `assets/favicon.svg` | Not wired up. Nothing consumes it yet. |
+| `assets/icon-tile.svg`, `assets/icon-512.png` | Not wired up. Nothing consumes them yet. |
+
+github.com serves its own favicon on every page. A repository has no favicon
+setting and no icon field of any kind, and a personal repository shows the
+owner's avatar rather than one of its own, so neither the die nor the tile can
+be attached to this project on GitHub itself. They are drawn and ready for the
+surfaces that do take an icon, and unused until one of those exists:
+
+- A documentation site, which is the real target for the die. Whoever owns the
+  `<head>` links it, preferring the SVG and keeping the PNG as the fallback for
+  anything that refuses an SVG favicon:
+
+  ```html
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/assets/icon-512.png" sizes="512x512">
+  ```
+
+  This is also the one surface where the die's palette switch earns its keep,
+  since a browser tab follows the browser's own theme.
+- An organisation account, if the project ever moves under one, which takes
+  `icon-512.png` as its avatar.
+- A package listing or any other tool asking for a square icon.
+
+Do not delete the unused files to tidy up. They are the small half of the
+two-tier system, and the README mark cannot stand in for them: the fan is
+documented as illegible below 32 pixels, which is the entire reason the die
+exists.
+
 ## Light and dark
 
 The favicon carries its own palette switch. The light palette sits in
