@@ -9,7 +9,7 @@ Last updated: 2026-09-09.
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
-| M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | In progress |
+| M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Deterministic core: domain contracts, calendars, one queue, constant service | Not started |
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | Not started |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Not started |
@@ -23,7 +23,11 @@ Last updated: 2026-09-09.
   `uv run pytest` pass on the package skeleton.
 - `uv run merge-carlo --version` prints the package version.
 - The commit policy guard suites pass: `scripts/check-commit-msg-test.sh`,
-  `scripts/check-push-messages-test.sh`, `scripts/check-author-test.sh`.
+  `scripts/check-push-messages-test.sh`, `scripts/check-author-test.sh`. The
+  negative cases were exercised directly: an agent session trailer, a
+  co-authorship line, and an agent author identity are each rejected.
+- The `Build` workflow is green on `main`: lint and type checks, the commit
+  policy guards, and the test suite on Python 3.12, 3.13, and 3.14.
 
 ## Not implemented
 
