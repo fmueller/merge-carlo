@@ -1,6 +1,6 @@
 """Command-line entry point.
 
-The v0.1.0 command contract is documented in `docs/design.md`. Only `--version`
+The v0.1.0 command contract is documented in `specs/v0.1.0.md`. Only `--version`
 is implemented so far; the pipeline commands land with their milestones rather
 than as success-shaped stubs.
 """
