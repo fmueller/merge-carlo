@@ -19,6 +19,7 @@ cd "$repo"
 git config user.email fixture@example.com
 git config user.name Fixture
 git config commit.gpgsign false
+git config core.hooksPath "$tmp_dir/no-hooks"
 
 commit() {
   printf '%s\n' "$2" >>file.txt

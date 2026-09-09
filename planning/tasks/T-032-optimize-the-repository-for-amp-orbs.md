@@ -5,7 +5,7 @@ status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies: []
-updated_at: "2026-09-09T21:11:11Z"
+updated_at: "2026-09-09T21:15:44Z"
 ---
 
 # T-032-optimize-the-repository-for-amp-orbs Optimize the repository for Amp orbs
@@ -39,9 +39,9 @@ authentication repair work.
 - Forged and non-executable mise recovery tests proved setup never falls back
   to an unverified executable. A shell-metacharacter checkout path proved the
   persisted profile fragment does not evaluate path contents.
-- `GIT_CONFIG_GLOBAL=/dev/null mise run check`, `taskrail validate`, and
-  `git diff --check` passed. The clean global Git configuration isolates the
-  repository gate from this orb user's unrelated attribution-injecting hook.
+- `mise run check`, `taskrail validate`, and `git diff --check` passed. Commit
+  history fixtures isolate their hook path so user-global hooks cannot alter
+  their test messages.
 
 ## Implementation Notes
 
@@ -50,3 +50,4 @@ authentication repair work.
 - Network stages have bounded deadlines below Amp's setup timeout.
 - 2026-09-09T21:11:03Z: implemented and independently reviewed
 - 2026-09-09T21:11:11Z: verification pass
+- 2026-09-09T21:15:44Z: verification pass
