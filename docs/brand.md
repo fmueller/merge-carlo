@@ -22,8 +22,8 @@ A die whose pips form a merge graph rather than a face: two on the left, one on
 the right, joined by faint connectors. It reads as a die immediately and as a
 merge on the second look.
 
-Use it for the favicon, the GitHub avatar, and anywhere the mark drops below 32
-pixels. The connectors drop out under that size by design; three pips in a
+Use it for the favicon, for any square icon slot — an organisation avatar, a
+package listing, a docs site — and anywhere the mark drops below 32 pixels. The connectors drop out under that size by design; three pips in a
 rounded square still read as a die.
 
 The two share a vocabulary — one accent node as the merge point, dots as
@@ -37,7 +37,7 @@ without either needing the other present.
 | `assets/logo.svg` | Merge Fan, theme-adaptive. The README and docs mark. |
 | `assets/favicon.svg` | Merge Die, theme-adaptive. The browser tab mark. |
 | `assets/icon-tile.svg` | Merge Die on a full-bleed ink tile. Source for the avatar. |
-| `assets/icon-512.png` | 512×512 render of the tile, for the GitHub avatar. |
+| `assets/icon-512.png` | 512×512 render of the tile, for square icon slots. |
 | `assets/social-preview.svg` | 1280×640 link card. Source; needs Inter installed. |
 | `assets/social-preview.png` | Rendered card, uploaded under Settings → Social preview. |
 
@@ -69,8 +69,8 @@ therefore serves both themes, and no `<picture>` element with paired sources is
 needed.
 
 The two PNGs are single-theme on purpose. Both sit on their own ink ground, so
-they do not depend on what is behind them: an avatar and a link card are
-composited by GitHub against surfaces this repository does not control.
+they do not depend on what is behind them: an icon and a link card are
+composited against surfaces this repository does not control.
 
 ## Palette
 
