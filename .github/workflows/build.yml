@@ -1,0 +1,74 @@
+name: Build
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lint-and-typecheck:
+    name: Linting and Type Checking
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version-file: '.python-version'
+      - name: Install dependencies
+        run: uv sync --locked --dev
+      - name: Run ruff checks
+        run: uv run ruff check
+      - name: Check formatting
+        run: uv run ruff format --check
+      - name: Run mypy for type checking
+        run: uv run mypy
+
+  # The commit hooks are local and opt-in, so their own suites run here to keep
+  # the message and authorship policy enforced even from a checkout without them.
+  guards:
+    name: Commit Policy Guards
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Check commit message policy
+        run: bash scripts/check-commit-msg-test.sh
+      - name: Check push message policy
+        run: bash scripts/check-push-messages-test.sh
+      - name: Check author identity policy
+        run: bash scripts/check-author-test.sh
+
+  unit-tests:
+    name: Unit Tests (Python ${{ matrix.python-version }})
+    needs: lint-and-typecheck
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.12", "3.13", "3.14"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v7
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          enable-cache: true
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: uv sync --locked --dev
+      - name: Run unit tests
+        run: uv run pytest -v
