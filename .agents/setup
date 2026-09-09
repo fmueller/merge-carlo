@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly MISE_VERSION="2026.9.3"
+readonly MISE_BIN="$HOME/.local/bin/mise"
+readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+run_step() {
+  local label="$1"
+  shift
+  local started_at="$SECONDS"
+
+  printf '==> %s\n' "$label"
+  "$@"
+  printf '<== %s (%ss)\n' "$label" "$((SECONDS - started_at))"
+}
+
+mise_is_verified() {
+  local expected_checksum="$1"
+  local installed_checksum=""
+
+  [[ -x "$MISE_BIN" ]] || return 1
+  installed_checksum="$(sha256sum "$MISE_BIN" 2>/dev/null | awk '{print $1}' || true)"
+  [[ "$installed_checksum" == "$expected_checksum" ]]
+}
+
+install_mise() {
+  local architecture archive_checksum binary_checksum
+  case "$(uname -m)" in
+    x86_64)
+      architecture="x64"
+      archive_checksum="0c96da1f079ec8da037c01520501255dc52865a70aa03077f43b45193f5e3447"
+      binary_checksum="981bd9179cc089114a87b491fce2c4007ab05b5445dee7ad08e87e5dffcc154d"
+      ;;
+    aarch64 | arm64)
+      architecture="arm64"
+      archive_checksum="e2ada2c811e61e3c5ca17a9278ba1dfcc872621af397053d6cdceeeb9b533516"
+      binary_checksum="d8fa3d3fa2a21979c54c548967325a9db72f2a157996e8c536f62947b25592b7"
+      ;;
+    *)
+      printf 'Unsupported orb architecture: %s\n' "$(uname -m)" >&2
+      return 1
+      ;;
+  esac
+
+  if mise_is_verified "$binary_checksum"; then
+    printf 'mise %s is already installed and verified\n' "$MISE_VERSION"
+    return
+  fi
+
+  local archive extract_dir staged_bin
+  install -d "$HOME/.local/bin"
+  archive="$(mktemp)"
+  extract_dir="$(mktemp -d)"
+  staged_bin="$(mktemp "$HOME/.local/bin/.mise.XXXXXX")"
+  trap "rm -f '$archive' '$staged_bin'; rm -rf '$extract_dir'" EXIT
+
+  curl --fail --silent --show-error --location \
+    --connect-timeout 10 --max-time 120 --retry 3 --retry-all-errors --retry-delay 2 --retry-max-time 180 \
+    --speed-limit 1024 --speed-time 30 \
+    "https://github.com/jdx/mise/releases/download/v${MISE_VERSION}/mise-v${MISE_VERSION}-linux-${architecture}.tar.xz" \
+    --output "$archive"
+  printf '%s  %s\n' "$archive_checksum" "$archive" | sha256sum --check --status
+  tar -xJf "$archive" -C "$extract_dir" mise/bin/mise
+  install -m755 "$extract_dir/mise/bin/mise" "$staged_bin"
+  printf '%s  %s\n' "$binary_checksum" "$staged_bin" | sha256sum --check --status
+  mv -- "$staged_bin" "$MISE_BIN"
+  rm -f "$archive"
+  rm -rf "$extract_dir"
+  trap - EXIT
+}
+
+configure_login_shell() {
+  local marker="# merge-carlo mise activation"
+  local profile="$HOME/.bash_profile"
+  local repo_root_q mise_bin_q
+  if grep -Fqx "$marker" "$profile" 2>/dev/null; then
+    return
+  fi
+  printf -v repo_root_q '%q' "$REPO_ROOT"
+  printf -v mise_bin_q '%q' "$MISE_BIN"
+
+  cat >> "$profile" <<EOF
+
+$marker
+if [[ "\${PWD}" == $repo_root_q && -x $mise_bin_q ]]; then
+  eval "\$($mise_bin_q activate bash)"
+fi
+EOF
+}
+
+install_git_hooks() {
+  local hooks_dir
+  hooks_dir="$(git rev-parse --path-format=absolute --git-common-dir)/hooks"
+  git config --local core.hooksPath "$hooks_dir"
+  "$MISE_BIN" exec -- lefthook install --force
+}
+
+main() {
+  run_step "Installing mise" install_mise
+  export PATH="$HOME/.local/bin:$PATH"
+  run_step "Configuring the login shell" configure_login_shell
+  run_step "Installing the locked toolchain" \
+    env MISE_HTTP_DOWNLOAD_TIMEOUT=60s timeout --foreground 300 "$MISE_BIN" install --locked --yes
+  run_step "Syncing locked development dependencies" \
+    env UV_HTTP_TIMEOUT=60 timeout --foreground 300 "$MISE_BIN" exec -- uv sync --locked --dev
+  run_step "Installing commit hooks" install_git_hooks
+}
+
+if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
+  main "$@"
+fi

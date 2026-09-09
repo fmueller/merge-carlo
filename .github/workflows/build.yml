@@ -50,6 +50,8 @@ jobs:
         run: bash scripts/check-author-test.sh
       - name: Check the mutation efficacy guard
         run: bash scripts/check-mutation-floor-test.sh
+      - name: Check the orb setup contract
+        run: bash scripts/check-orb-setup-test.sh
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})

@@ -15,5 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A command-line entry point exposing `--version` and `--help`.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
+- Amp orb lifecycle scripts that prepare the pinned toolchain and locked
+  development dependencies on fresh remote machines.
 
 [Unreleased]: https://github.com/fmueller/merge-carlo/compare/main...HEAD

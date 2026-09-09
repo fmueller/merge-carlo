@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# merge-carlo has no services, tunnels, or authentication to repair on wake.
+printf 'merge-carlo requires no resume-time setup\n'

@@ -5,15 +5,17 @@
 # git hooks. The hooks are opt-in, so a fresh clone has none until setup runs.
 
 [tools]
+"github:tessariq/taskrail" = "0.4.0"
 lefthook = "2.1.10"
 uv = "0.9.17"
 
 [tasks.setup]
 description = "Install the toolchain, sync dependencies, and install git hooks"
 run = [
-  "mise install",
+  "mise install --locked",
   "uv sync --locked --dev",
-  "lefthook install",
+  "git config --local core.hooksPath \"$(git rev-parse --path-format=absolute --git-common-dir)/hooks\"",
+  "lefthook install --force",
 ]
 
 # Mutation testing runs the suite once per mutant, so the per-change loop is
@@ -44,4 +46,5 @@ run = [
   "bash scripts/check-push-messages-test.sh",
   "bash scripts/check-author-test.sh",
   "bash scripts/check-mutation-floor-test.sh",
+  "bash scripts/check-orb-setup-test.sh",
 ]
