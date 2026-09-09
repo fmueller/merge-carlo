@@ -1,12 +1,12 @@
 ---
 id: T-002-domain-contracts
 title: Define the simulated pull request domain contracts
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#deterministic-simulation-core
 dependencies:
     - T-001-repository-bootstrap
-updated_at: "2026-09-09T19:02:58Z"
+updated_at: "2026-09-09T22:07:13Z"
 ---
 
 # T-002-domain-contracts Define the simulated pull request domain contracts
@@ -34,3 +34,5 @@ terminal guards, without any stochastic behavior.
 - Property tests assert that terminal states are absorbing.
 
 ## Implementation Notes
+
+- 2026-09-09T22:07:07Z: verification pass

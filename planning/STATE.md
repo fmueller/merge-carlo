@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-09T21:15:44Z"
+updated_at: "2026-09-09T22:07:13Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: Select the next eligible task
-last_verification_result: pass for T-032-optimize-the-repository-for-amp-orbs at 2026-09-09T21:15:44Z
+last_verification_result: pass for T-002-domain-contracts at 2026-09-09T22:07:07Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-032-optimize-the-repository-for-amp-orbs at 2026-09-09T21:15:44Z
+- pass for T-002-domain-contracts at 2026-09-09T22:07:07Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 29
+- todo: 28
 - in_progress: 0
-- completed: 3
+- completed: 4
 - blocked: 0
 - cancelled: 0

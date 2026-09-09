@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   configuration, continuous integration, commit policy hooks, and the v0.1.0
   spec with its milestone backlog.
 - A command-line entry point exposing `--version` and `--help`.
+- Typed, immutable pull-request lifecycle contracts with guarded transitions,
+  revision invalidation, terminal outcomes, and review accounting.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked
