@@ -96,10 +96,18 @@ origin stays unknown unless declared in a local attribution configuration; see
 [cohort collection](docs/cohort-collection.md). Live integration has not been
 tested.
 
-The remaining real-data commands are planned, **not yet available**:
+Inspect the projected dataset without the private workspace key. The command
+writes `inspection.json` and `report.md` with endpoint status, counts, date
+coverage, missingness, censoring, attribution, fit exclusions, and extraction
+limitations:
 
 ```bash
 uv run merge-carlo inspect   --dataset data/repository.sqlite --out out/inspection
+```
+
+The remaining real-data commands are planned, **not yet available**:
+
+```bash
 uv run merge-carlo calibrate --dataset data/repository.sqlite --train-until 2026-07-01 \
                              --assumptions configs/team-assumptions.yaml --out models/repository
 uv run merge-carlo validate  --dataset data/repository.sqlite --model models/repository/model.json \

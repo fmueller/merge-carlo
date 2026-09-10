@@ -1,12 +1,12 @@
 ---
 id: T-021-dataset-inspection
 title: Report dataset coverage and quality from inspect
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#read-only-github-ingestion
 dependencies:
     - T-019-readiness-and-origin
-updated_at: "2026-09-09T19:03:11Z"
+updated_at: "2026-09-10T19:55:03Z"
 ---
 
 # T-021-dataset-inspection Report dataset coverage and quality from inspect
@@ -30,3 +30,5 @@ limitations, in Markdown and machine-readable form.
 - A test asserting no identifying free text reaches the report.
 
 ## Implementation Notes
+
+- 2026-09-10T19:54:50Z: verification pass

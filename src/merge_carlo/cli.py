@@ -12,6 +12,7 @@ from merge_carlo.attribution import AttributionConfig
 from merge_carlo.cohort import SourceError, collect_cohort
 from merge_carlo.demo import demo_experiment
 from merge_carlo.github import GitHubTransport, TransportLimits
+from merge_carlo.inspection import InspectionError, write_inspection
 from merge_carlo.store import ProjectedStore, WorkspaceKey
 
 app = typer.Typer(
@@ -133,3 +134,17 @@ def collect(
     typer.echo("Collection incomplete; resume to reconcile." if incomplete else "Collection complete.")
     if incomplete:
         raise typer.Exit(code=3)
+
+
+@app.command()
+def inspect(
+    dataset: Annotated[Path, typer.Option(help="Projected SQLite dataset from collect.")],
+    out: Annotated[Path, typer.Option(help="Empty or absent directory for inspection reports.")],
+) -> None:
+    """Report dataset coverage and quality without the private workspace key."""
+    try:
+        write_inspection(dataset, out)
+    except (InspectionError, OSError):
+        typer.echo("Cannot inspect: invalid or inaccessible dataset/output.", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(f"Dataset inspection: {out / 'report.md'}")

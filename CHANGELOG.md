@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Offline `inspect` reports in Markdown and canonical JSON with endpoint
+  completeness, record and date coverage, missingness, censoring, readiness and
+  origin unknown fractions, fit exclusions, and extraction limitations.
 - Conservative readiness resolution and declared work-origin attribution during
   collection, with explicit proxy policy, provenance, lifecycle fit exclusions,
   and local YAML actor mappings that never infer AI use from account kind.
