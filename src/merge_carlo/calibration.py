@@ -2,7 +2,6 @@
 
 import hashlib
 import json
-import math
 import platform
 import shutil
 import tempfile
@@ -31,26 +30,20 @@ class _InputModel(BaseModel):
 
 class ConstantDuration(_InputModel):
     kind: Literal["constant"]
-    seconds: float = Field(gt=0, allow_inf_nan=False)
+    seconds: float = Field(strict=True, gt=0, allow_inf_nan=False)
 
 
 class LognormalDuration(_InputModel):
     """Median parameterization; sigma is the log-space standard deviation."""
 
     kind: Literal["lognormal"]
-    median_seconds: float = Field(gt=0, allow_inf_nan=False)
-    sigma: float = Field(ge=0, allow_inf_nan=False)
+    median_seconds: float = Field(strict=True, gt=0, allow_inf_nan=False)
+    sigma: float = Field(strict=True, ge=0, allow_inf_nan=False)
 
 
 class EmpiricalDuration(_InputModel):
     kind: Literal["empirical"]
-    seconds: tuple[float, ...] = Field(min_length=1)
-
-    @model_validator(mode="after")
-    def finite_positive(self) -> Self:
-        if any(not math.isfinite(value) or value <= 0 for value in self.seconds):
-            raise ValueError("empirical durations must be finite and positive")
-        return self
+    seconds: tuple[Annotated[float, Field(strict=True, gt=0, allow_inf_nan=False)], ...] = Field(min_length=1)
 
 
 type DurationDistribution = Annotated[

@@ -10,6 +10,7 @@ from merge_carlo import __version__
 from merge_carlo.artifacts import Evidence, write_experiment
 from merge_carlo.attribution import AttributionConfig
 from merge_carlo.cohort import SourceError, collect_cohort
+from merge_carlo.configuration import export_schemas
 from merge_carlo.demo import demo_experiment
 from merge_carlo.github import GitHubTransport, TransportLimits
 from merge_carlo.inspection import InspectionError, write_inspection
@@ -37,6 +38,19 @@ def main(
     ] = False,
 ) -> None:
     """merge-carlo simulates pull-request review workflows offline."""
+
+
+@app.command()
+def schema(
+    out: Annotated[Path, typer.Option(help="Empty or absent directory for versioned JSON Schemas.")],
+) -> None:
+    """Export the assumption and scenario configuration JSON Schemas."""
+    try:
+        export_schemas(out)
+    except (OSError, ValueError):
+        typer.echo("Cannot export schemas: invalid or inaccessible output.", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(f"Configuration schemas: {out}")
 
 
 @app.command()

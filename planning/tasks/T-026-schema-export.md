@@ -1,12 +1,12 @@
 ---
 id: T-026-schema-export
 title: Export the configuration JSON Schemas from the CLI
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-023-model-builder
-updated_at: "2026-09-09T19:03:12Z"
+updated_at: "2026-09-10T22:58:23Z"
 ---
 
 # T-026-schema-export Export the configuration JSON Schemas from the CLI
@@ -31,3 +31,5 @@ documented multiplier composition for effort sensitivity.
 - Round-trip tests validating the shipped example configurations against the exported schemas.
 
 ## Implementation Notes
+
+- 2026-09-10T22:58:06Z: verification pass

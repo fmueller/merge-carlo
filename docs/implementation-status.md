@@ -15,10 +15,16 @@ Last updated: 2026-09-10.
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
 | M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Complete |
-| M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
+| M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | In progress: configuration schemas |
 
 ## Verified
 
+- `merge-carlo schema --out out/schemas` atomically exports deterministic,
+  version-1 assumption and scenario JSON Schemas. The contracts reject unknown
+  keys and unsafe or oversized YAML, constrain probabilities and duration
+  distributions, and document multiplier composition and whole-second active
+  service rounding. The shipped YAML examples validate against the exported
+  Draft 2020-12 schemas. See [configuration](configuration.md).
 - Held-out validation now compares the mechanistic FIFO baseline with an
   elapsed-delay resampling benchmark under the same arrivals, mature cohorts,
   horizons, and local-week accounting. The descriptive reference has no capacity
@@ -125,8 +131,8 @@ Last updated: 2026-09-10.
 
 The real-data pipeline commands `calibrate`, `simulate`, and `report` remain
 unimplemented. `validate` consumes prepared offline held-out replay evidence;
-the CLI also exposes `collect`, `inspect`, `demo`, `--version` and `--help`. The
-README distinguishes working and planned commands.
+the CLI also exposes `schema`, `collect`, `inspect`, `demo`, `--version` and
+`--help`. The README distinguishes working and planned commands.
 
 ## Unverified
 

@@ -1,0 +1,15 @@
+schema_version: 1
+scenarios:
+  - name: additive-ai
+    demand:
+      kind: additive_ai
+      fraction: 0.25
+  - name: extended-duty
+    calendars:
+      - name: review-duty
+        timezone: Europe/Berlin
+        windows:
+          - name: weekday-morning
+            weekday: 0
+            start: "09:00:00"
+            end: "12:00:00"

@@ -35,6 +35,30 @@ def test_bare_invocation_reports_invalid_input(runner: CliRunner) -> None:
 
 
 @pytest.mark.unit
+def test_schema_command_exports_configuration_contracts(runner: CliRunner, tmp_path: Path) -> None:
+    out = tmp_path / "schemas"
+
+    result = runner.invoke(app, ["schema", "--out", str(out)])
+
+    assert result.exit_code == 0, result.output
+    assert result.stdout.strip() == f"Configuration schemas: {out}"
+    assert sorted(path.name for path in out.iterdir()) == ["assumptions.schema.json", "scenarios.schema.json"]
+
+
+@pytest.mark.unit
+def test_schema_command_preserves_invalid_input_error_semantics(runner: CliRunner, tmp_path: Path) -> None:
+    out = tmp_path / "schemas"
+    out.mkdir()
+    (out / "existing").write_text("keep", encoding="utf-8")
+
+    result = runner.invoke(app, ["schema", "--out", str(out)])
+
+    assert result.exit_code == 2
+    assert result.stderr.strip() == "Cannot export schemas: invalid or inaccessible output."
+    assert (out / "existing").read_text(encoding="utf-8") == "keep"
+
+
+@pytest.mark.unit
 def test_validate_strict_exits_four_only_for_failed_criteria(
     runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Deterministic assumption and scenario JSON Schema export through the
+  `schema` CLI, with strict bounded YAML contracts, safe loading, explicit
+  active-service rounding and effort-multiplier composition, and validated
+  example configurations.
 - An elapsed-delay resampling benchmark in held-out validation, compared beside
   the mechanistic baseline with shared cohort and horizon accounting, preserved
   non-completion categories, and explicit descriptive-only interpretation.

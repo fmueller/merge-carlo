@@ -80,6 +80,17 @@ These are illustrative inputs, not measured behavior or a policy recommendation.
 The two synthetic weeks are exploratory; active review service is an assumed
 constant. Replacement changes origin only and does not imply different effort.
 
+Export the versioned assumption and scenario contracts before authoring a
+configuration. The output directory must be empty or absent:
+
+```bash
+uv run merge-carlo schema --out out/schemas
+```
+
+Data-only examples are in [`examples/`](examples/), and the validation,
+duration-rounding, and multiplier rules are documented in
+[`docs/configuration.md`](docs/configuration.md).
+
 Read-only [cohort collection](docs/cohort-collection.md) reads one explicitly
 selected, authorized repository. `GITHUB_TOKEN` comes from the environment;
 never put a token in a command, configuration file, or report.

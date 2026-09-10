@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T22:33:57Z"
+updated_at: "2026-09-10T22:58:23Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-026-schema-export: Export the configuration JSON Schemas from the CLI'
-last_verification_result: pass for T-025-delay-benchmark at 2026-09-10T22:33:44Z
+next_action: 'Start task T-028-release-documentation: Complete the release documentation and evidence status'
+last_verification_result: pass for T-026-schema-export at 2026-09-10T22:58:06Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-025-delay-benchmark at 2026-09-10T22:33:44Z
+- pass for T-026-schema-export at 2026-09-10T22:58:06Z
 
 ## Next Action
 
-- Start task T-026-schema-export: Export the configuration JSON Schemas from the CLI
+- Start task T-028-release-documentation: Complete the release documentation and evidence status
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 12
+- todo: 11
 - in_progress: 0
-- completed: 29
+- completed: 30
 - blocked: 0
 - cancelled: 0

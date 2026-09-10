@@ -1,0 +1,14 @@
+schema_version: 1
+assumptions:
+  - name: base
+    active_service:
+      kind: lognormal
+      median_seconds: 900
+      sigma: 0.4
+    effort_multiplier: 1.0
+  - name: higher-effort
+    active_service:
+      kind: lognormal
+      median_seconds: 900
+      sigma: 0.4
+    effort_multiplier: 1.25
