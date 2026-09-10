@@ -10,8 +10,13 @@ configuration/result artifacts remain separate tracked work.
   0, Sunday is 6), and naive local start/end times. An end earlier than the
   start belongs to the following local date. Equal endpoints are rejected;
   represent continuous availability with adjoining windows instead.
-- `LocalAbsence` holds naive, dated local start/end datetimes in the calendar's
-  timezone. A full-day absence ends at midnight of the following day.
+- `LocalAbsence` holds dated start/end datetimes. Naive boundaries use the
+  calendar's timezone; an explicit offset determines that boundary's UTC
+  instant instead. Boundaries may mix these forms; ordering is checked after
+  UTC conversion. A full-day absence ends at midnight of the following day.
+  Offsets must use `datetime.timezone` (as ISO offset parsing produces).
+  Named-zone and custom `tzinfo` boundaries are rejected; use naive local
+  datetimes or supply an explicit fixed offset instead.
 - All intervals are half-open: start is included, end is excluded. Materialized
   intervals are UTC, sorted, clipped to the requested span, and disjoint.
   Overlapping or adjacent duty windows are unioned before absences are
@@ -19,8 +24,9 @@ configuration/result artifacts remain separate tracked work.
   windows. Empty calendars or fully absent reviewers yield an empty tuple;
   no zero-capacity resource is created.
 - Ambiguous fall-back and nonexistent spring-forward local boundaries raise
-  `ValueError` naming the boundary and timezone. An explicit `fold` does not
-  override this rejection policy. Dated absences are checked when constructing
+  `ValueError` naming the boundary and timezone. A naive `fold` does not
+  override this rejection policy; offset-aware absences specify an instant.
+  Dated absences are checked when constructing
   the calendar; recurring windows are checked for dates overlapping the span
   during materialization. Materialize all calendars before starting a run.
   Valid boundaries on either side of a DST transition are allowed: elapsed
@@ -60,3 +66,23 @@ assert bounds.observation.seconds == 687600  # eight local days minus one hour
 These are declared duty seconds, not inferred service effort. No holidays are
 added automatically. This primitive does not schedule reviews or persist a
 result artifact.
+
+## Capacity scenarios
+
+`simulation.capacity.materialize_reviewers(calendars, reviewer_calendars,
+span=..., overrides=..., absences=...)` returns reviewers ready for `run_fifo`.
+`calendars` maps calendar names to `DutyCalendar` values; `reviewer_calendars`
+maps reviewer IDs to calendar names. Optional `overrides` replaces each named
+calendar completely, including timezone, windows and calendar-level absences.
+Optional `absences` maps reviewer IDs to additional absence tuples, applied
+after replacement in the resolved calendar's timezone. Shared calendars do
+not cause one reviewer's additional absence to affect another reviewer.
+
+Unknown references raise `ValueError`. Inputs stay unchanged and output is
+sorted by reviewer ID. An empty replacement calendar or a full-span absence
+removes duty while retaining reviewer identity; the engine still runs to the
+horizon. A no-op replacement produces identical duty and results with the same
+proposals and keyed draws. This API neither generates nor transforms arrivals.
+All capacity changes are declared assumptions, not measured staffing effects.
+CLI scenario configuration and persisted result contracts remain downstream
+v0.1.0 work.

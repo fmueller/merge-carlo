@@ -6,6 +6,7 @@ materialize before starting a simulation so boundary errors fail before a run.
 
 from dataclasses import dataclass
 from datetime import UTC, datetime, time, timedelta
+from datetime import timezone as FixedOffset
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 
@@ -74,16 +75,24 @@ class WeeklyWindow:
 
 @dataclass(frozen=True, slots=True)
 class LocalAbsence:
-    """Dated half-open absence in the duty calendar's local timezone."""
+    """Half-open absence: naive boundaries use the calendar zone, aware ones their offset."""
 
     start: datetime
     end: datetime
 
     def __post_init__(self) -> None:
-        if self.start.tzinfo is not None or self.end.tzinfo is not None:
-            raise ValueError("absence boundaries must be naive")
-        if self.end <= self.start:
+        for boundary in (self.start, self.end):
+            if boundary.tzinfo is not None and not isinstance(boundary.tzinfo, FixedOffset):
+                raise ValueError("absence boundaries must be naive or carry an explicit fixed offset")
+        if self.start.tzinfo is None and self.end.tzinfo is None and self.end <= self.start:
             raise ValueError("absence end must be after start")
+
+    def materialize(self, timezone: str) -> UTCInterval:
+        """Resolve each boundary, then validate elapsed ordering in UTC."""
+        zone = _zone(timezone)
+        start = self.start.astimezone(UTC) if self.start.tzinfo is not None else _local_to_utc(self.start, zone)
+        end = self.end.astimezone(UTC) if self.end.tzinfo is not None else _local_to_utc(self.end, zone)
+        return UTCInterval(start, end)
 
 
 @dataclass(frozen=True, slots=True)
@@ -125,12 +134,11 @@ class DutyCalendar:
     absences: tuple[LocalAbsence, ...] = ()
 
     def __post_init__(self) -> None:
-        zone = _zone(self.timezone)
+        _zone(self.timezone)
         if len({window.name for window in self.windows}) != len(self.windows):
             raise ValueError("weekly window names must be unique within a calendar")
         for absence in self.absences:
-            _local_to_utc(absence.start, zone)
-            _local_to_utc(absence.end, zone)
+            absence.materialize(self.timezone)
 
     def materialize(self, span: UTCInterval) -> tuple[UTCInterval, ...]:
         """Return sorted, disjoint duty clipped to span after subtracting absences.
@@ -172,8 +180,8 @@ class DutyCalendar:
             else:
                 merged.append(interval)
         for absence in self.absences:
-            absent_start = _local_to_utc(absence.start, zone)
-            absent_end = _local_to_utc(absence.end, zone)
+            absent = absence.materialize(self.timezone)
+            absent_start, absent_end = absent.start, absent.end
             remaining: list[UTCInterval] = []
             for interval in merged:
                 if absent_end <= interval.start or absent_start >= interval.end:

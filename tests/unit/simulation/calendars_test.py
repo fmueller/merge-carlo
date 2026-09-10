@@ -1,4 +1,5 @@
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, datetime, time, timedelta, tzinfo
+from zoneinfo import ZoneInfo
 
 import pytest
 from hypothesis import given
@@ -155,8 +156,6 @@ def test_invalid_contracts_fail_clearly() -> None:
         DutyCalendar("UTC", (WeeklyWindow("same", 0, time(9), time(17)),) * 2)
     with pytest.raises(ValueError, match="after"):
         LocalAbsence(datetime(2026, 1, 2), datetime(2026, 1, 1))
-    with pytest.raises(ValueError, match="naive"):
-        LocalAbsence(utc("2026-01-01"), utc("2026-01-02"))
     with pytest.raises(ValueError, match="UTC"):
         UTCInterval(datetime(2026, 1, 1), datetime(2026, 1, 2))
     with pytest.raises(ValueError, match="after"):
@@ -183,3 +182,60 @@ def test_absence_subtraction_conserves_available_seconds(start_hour: int, length
     assert sum(interval.seconds for interval in intervals) == (8 - removed_hours) * 3600
     assert all(a.end < b.start for a, b in zip(intervals, intervals[1:], strict=False))
     assert intervals == calendar.materialize(span)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("start", "end", "expected"),
+    [
+        ("2026-10-25T02:30+02:00", "2026-10-25T02:15+01:00", [(0, 30), (1, 15)]),
+        ("2026-10-25T01:30", "2026-10-25T02:15+01:00", [(-1, 30), (1, 15)]),
+    ],
+)
+def test_absence_offsets_resolve_fold_and_mixed_local_boundaries(
+    start: str, end: str, expected: list[tuple[int, int]]
+) -> None:
+    calendar = DutyCalendar(
+        "Europe/Berlin",
+        (WeeklyWindow("Sunday", 6, time(1), time(4)),),
+        (LocalAbsence(datetime.fromisoformat(start), datetime.fromisoformat(end)),),
+    )
+    midnight = utc("2026-10-25")
+    left, right = (midnight + timedelta(hours=h, minutes=m) for h, m in expected)
+    assert calendar.materialize(UTCInterval(midnight - timedelta(hours=2), midnight + timedelta(hours=4))) == (
+        UTCInterval(midnight - timedelta(hours=1), left),
+        UTCInterval(right, midnight + timedelta(hours=3)),
+    )
+
+
+@pytest.mark.unit
+def test_absence_order_is_checked_after_timezone_resolution() -> None:
+    with pytest.raises(ValueError, match="after"):
+        DutyCalendar(
+            "Europe/Berlin",
+            (),
+            (LocalAbsence(datetime.fromisoformat("2026-06-01T09:00+00:00"), datetime(2026, 6, 1, 10)),),
+        )
+
+
+class OffsetlessZone(tzinfo):
+    def utcoffset(self, dt: datetime | None) -> None:
+        return None
+
+    def dst(self, dt: datetime | None) -> None:
+        return None
+
+    def tzname(self, dt: datetime | None) -> None:
+        return None
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("zone", [ZoneInfo("Europe/Berlin"), OffsetlessZone()])
+@pytest.mark.parametrize("aware_start", [True, False])
+def test_absence_rejects_non_explicit_offsets(zone: tzinfo, aware_start: bool) -> None:
+    start = datetime(2026, 10, 25, 2, 30)
+    end = datetime(2026, 10, 25, 4)
+    with pytest.raises(ValueError, match="fixed offset"):
+        LocalAbsence(
+            start.replace(tzinfo=zone) if aware_start else start, end if aware_start else end.replace(tzinfo=zone)
+        )

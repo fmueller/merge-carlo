@@ -193,7 +193,11 @@ faithful forecast initialized from a team's exact partially completed reviews.
 Duty windows are declared availability, not measured active review effort.
 The calendar primitive materializes weekly windows and explicit dated absences;
 it does not infer working hours or automatically apply regional holidays.
-Ambiguous and nonexistent local boundaries are rejected before simulation.
+Capacity scenarios replace named calendars completely and append individual
+reviewer absences without changing arrivals. These are declared assumptions;
+more capacity is not a claim of productivity gain. Naive ambiguous and
+nonexistent local boundaries are rejected before simulation; offset-aware
+absence boundaries explicitly select UTC instants.
 UTC intervals depend on the installed IANA timezone database. See
 [calendar semantics](calendars.md) for the exact boundary and warm-up rules.
 
