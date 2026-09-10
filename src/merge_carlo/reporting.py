@@ -225,4 +225,9 @@ def render_report(results: Path) -> str:
         "Reproducibility is limited to the locked reference environment, not arbitrary library versions or hardware. "
         "Metadata may remain identifiable; share only authorized data.",
     ]
+    if {row.assumption for row in summary.rows} == {"base"}:
+        sections = [
+            section + "\n\nOnly the base assumption set was run. Full sensitivity has not been run."
+            for section in sections
+        ]
     return "\n\n".join(sections) + "\n"

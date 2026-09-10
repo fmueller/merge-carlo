@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T17:04:18Z"
+updated_at: "2026-09-10T17:27:54Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-015-offline-demo: Ship the one-command offline synthetic demo'
-last_verification_result: pass for T-014-experiment-artifacts at 2026-09-10T17:04:17Z
+next_action: 'Start task T-016-github-transport: Provide a read-only rate-limited GitHub transport'
+last_verification_result: pass for T-015-offline-demo at 2026-09-10T17:27:54Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-014-experiment-artifacts at 2026-09-10T17:04:17Z
+- pass for T-015-offline-demo at 2026-09-10T17:27:54Z
 
 ## Next Action
 
-- Start task T-015-offline-demo: Ship the one-command offline synthetic demo
+- Start task T-016-github-transport: Provide a read-only rate-limited GitHub transport
 
 ## Relevant Artifacts
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 22
 - in_progress: 0
-- completed: 18
+- completed: 19
 - blocked: 0
 - cancelled: 0

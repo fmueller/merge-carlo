@@ -26,8 +26,8 @@ language models, and no part of merge-carlo calls one.
 ## Status
 
 Pre-alpha. The repository is set up and the v0.1.0 scope is frozen in
-[`specs/v0.1.0.md`](specs/v0.1.0.md), but **the pipeline is not implemented
-yet** — only `--version` and `--help` work today. Track progress in
+[`specs/v0.1.0.md`](specs/v0.1.0.md). **The offline synthetic demo works;
+the real-data pipeline is not implemented yet.** Track progress in
 [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 
@@ -60,7 +60,27 @@ The offline demo needs no credentials and makes no network calls:
 uv run merge-carlo demo --out out/demo --seed 42 --replications 200
 ```
 
-The real-data pipeline reads one explicitly selected repository. `GH_TOKEN`
+After dependencies are installed, use `uv run --offline --no-sync` (or
+`.venv/bin/merge-carlo`) to prevent the package manager from accessing the
+network too. The output directory must be empty or absent; use another directory
+to rerun. The same seed and locked environment reproduce identical artifacts.
+
+Open `out/demo/report.md`. Every major section is labeled **SYNTHETIC** and
+states that only the base assumption set was run, not full sensitivity. The
+versioned `resolved-scenarios.json` includes the synthetic dataset under
+`experiment.templates`, example assumptions under `experiment.assumptions`,
+and scenario overrides under `experiment.scenarios` (baseline is implicit).
+The suite demonstrates additive AI demand, AI replacement, extended review duty,
+a dated reviewer absence, and hypothetical review bypass. Model card, manifest,
+summary JSON/CSV, replication rows and paired deltas accompany the report;
+`traces.jsonl` is empty because full diagnostics are opt-in.
+
+These are illustrative inputs, not measured behavior or a policy recommendation.
+The two synthetic weeks are exploratory; active review service is an assumed
+constant. Replacement changes origin only and does not imply different effort.
+
+The following real-data commands are planned, **not yet available**.
+The real-data pipeline will read one explicitly selected repository. `GH_TOKEN`
 comes from the environment or a secret manager; never put a token in a command,
 configuration file, or report.
 

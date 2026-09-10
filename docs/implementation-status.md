@@ -12,13 +12,19 @@ Last updated: 2026-09-10.
 | M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
-| M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | In progress: paired Python runner and merge-count diagnostics |
+| M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
 | M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- `merge-carlo demo --out out/demo --seed 42 --replications 200` runs the
+  synthetic scenario suite with only the base assumption set. Integration tests
+  forbid HTTP-client/socket construction and compare repeated artifacts byte for
+  byte. Every report section labels synthetic evidence and incomplete sensitivity.
+  Example week records, assumptions, and overrides are embedded in the resolved
+  experiment artifact; no real-data extraction or calibration is implied.
 - `artifacts.write_experiment` publishes versioned experiment bundles with
   streamed paired rows and sampled diagnostics. `reporting.render_report` reads
   saved summary artifacts only. Tests cover paired merge deltas, run-level
@@ -74,10 +80,9 @@ Last updated: 2026-09-10.
 
 ## Not implemented
 
-Every pipeline command — `demo`, `collect`, `inspect`, `calibrate`, `validate`,
-`simulate`, and `report` — is unimplemented. The CLI currently exposes only
-`--version` and `--help`. The README documents the intended contract, not
-present behavior.
+The real-data pipeline commands — `collect`, `inspect`, `calibrate`, `validate`,
+`simulate`, and `report` — remain unimplemented. The CLI exposes `demo`,
+`--version` and `--help`. The README distinguishes working and planned commands.
 
 ## Unverified
 

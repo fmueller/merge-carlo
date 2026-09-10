@@ -317,6 +317,16 @@ conditional on the model, horizon, chosen backlog threshold, calendars, and
 service assumptions. There is no universal saturation point and no proven phase
 transition.
 
+## Offline demo
+
+The demo uses two invented weekly datasets and one base assumption set, with
+constant assumed active service. Full sensitivity has not been run; the demo
+cannot establish robustness across assumptions. Its baseline, additive demand,
+replacement, duty extension, reviewer absence and hypothetical bypass scenarios
+illustrate the model, not measured team behavior. Replacement changes origin
+without an assumed effort difference. The example inputs live inside
+`resolved-scenarios.json`, not a collected SQLite dataset or fitted model.
+
 ## Privacy
 
 This tool handles potentially sensitive employee and repository metadata even

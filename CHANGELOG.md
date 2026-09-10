@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- One-command offline synthetic demo with reproducible example inputs, the
+  scenario suite, model/results artifacts and a report that labels every major
+  section synthetic and states that only the base assumption set was run.
 - Versioned experiment artifact bundles and artifact-only deterministic Markdown
   reports through the Python API, with run-level summaries, paired merge deltas,
   Wilson uncertainty intervals, escaped exports and staged publication.
