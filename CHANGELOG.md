@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Machine-readable JSON Lines console output through global `--json`, preserving
+  stable process exit codes across success, invalid input, source/access failure,
+  incomplete collection, and strict validation failure.
+- A conservative v0.1.0 implementation and evidence ledger that distinguishes
+  implemented, verified, limited, unsupported, unverified, and remaining work
+  without claiming live GitHub validation or release readiness.
 - Deterministic assumption and scenario JSON Schema export through the
   `schema` CLI, with strict bounded YAML contracts, safe loading, explicit
   active-service rounding and effort-multiplier composition, and validated

@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T22:58:23Z"
+updated_at: "2026-09-10T23:33:30Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-028-release-documentation: Complete the release documentation and evidence status'
-last_verification_result: pass for T-026-schema-export at 2026-09-10T22:58:06Z
+next_action: 'Start task T-027-performance-benchmark: Record a reproducible performance benchmark'
+last_verification_result: pass for T-028-release-documentation at 2026-09-10T23:33:23Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-026-schema-export at 2026-09-10T22:58:06Z
+- pass for T-028-release-documentation at 2026-09-10T23:33:23Z
 
 ## Next Action
 
-- Start task T-028-release-documentation: Complete the release documentation and evidence status
+- Start task T-027-performance-benchmark: Record a reproducible performance benchmark
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 11
+- todo: 10
 - in_progress: 0
-- completed: 30
+- completed: 31
 - blocked: 0
 - cancelled: 0

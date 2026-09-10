@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 import httpx
@@ -16,6 +17,11 @@ def test_version_option_prints_the_package_version(runner: CliRunner) -> None:
     assert result.exit_code == 0
     assert result.stdout.strip() == __version__
 
+    for args in (["--json", "--version"], ["--version", "--json"]):
+        machine = runner.invoke(app, args)
+        assert machine.exit_code == 0
+        assert json.loads(machine.stdout) == {"exit_code": 0, "message": __version__, "status": "ok"}
+
 
 @pytest.mark.unit
 def test_help_describes_the_tool(runner: CliRunner) -> None:
@@ -23,6 +29,7 @@ def test_help_describes_the_tool(runner: CliRunner) -> None:
 
     assert result.exit_code == 0
     assert "review capacity" in result.stdout
+    assert "--json" in result.stdout
 
 
 @pytest.mark.unit
@@ -59,6 +66,48 @@ def test_schema_command_preserves_invalid_input_error_semantics(runner: CliRunne
 
 
 @pytest.mark.unit
+def test_json_console_mode_reports_success_and_invalid_input(runner: CliRunner, tmp_path: Path) -> None:
+    out = tmp_path / "schemas"
+
+    success = runner.invoke(app, ["--json", "schema", "--out", str(out)])
+    failure = runner.invoke(app, ["--json", "schema", "--out", str(out)])
+
+    assert success.exit_code == 0
+    assert json.loads(success.stdout) == {
+        "exit_code": 0,
+        "message": f"Configuration schemas: {out}",
+        "status": "ok",
+    }
+    assert failure.exit_code == 2
+    assert failure.stderr == ""
+    assert json.loads(failure.stdout) == {
+        "exit_code": 2,
+        "message": "Cannot export schemas: invalid or inaccessible output.",
+        "status": "error",
+    }
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize(
+    ("args", "message"),
+    [
+        (["schema"], "Missing option '--out'"),
+        (["demo", "--out", "out", "--replications", "0"], "Invalid value for '--replications'"),
+        (["unknown"], "No such command 'unknown'"),
+    ],
+)
+def test_json_console_mode_structures_parser_errors(runner: CliRunner, args: list[str], message: str) -> None:
+    result = runner.invoke(app, ["--json", *args])
+
+    assert result.exit_code == 2
+    assert result.stderr == ""
+    record = json.loads(result.stdout)
+    assert record["exit_code"] == 2
+    assert record["status"] == "error"
+    assert message in record["message"]
+
+
+@pytest.mark.unit
 def test_validate_strict_exits_four_only_for_failed_criteria(
     runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -79,6 +128,54 @@ def test_validate_strict_exits_four_only_for_failed_criteria(
     assert exploratory.exit_code == 0
     assert "failed with warnings" in exploratory.stdout
     assert strict.exit_code == 4
+    assert f"Validation fail: {tmp_path / 'strict' / 'report.md'}" in strict.stdout
+    assert strict.stderr == ""
+
+    machine = runner.invoke(
+        app,
+        ["--json", "validate", "--input", str(source), "--out", str(tmp_path / "machine"), "--strict"],
+    )
+    assert machine.exit_code == 4
+    assert json.loads(machine.stdout) == {
+        "exit_code": 4,
+        "message": f"Validation fail: {tmp_path / 'machine' / 'report.md'}",
+        "status": "error",
+    }
+
+
+@pytest.mark.unit
+def test_incomplete_collection_status_remains_on_human_stdout(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/repos/example/repo":
+            return httpx.Response(200, json={"id": 91})
+        headers = {"Link": '<?page=2>; rel="next"'} if request.url.path.endswith("/pulls") else {}
+        return httpx.Response(200, json=[], headers=headers)
+
+    monkeypatch.setattr(httpx, "HTTPTransport", lambda **kwargs: httpx.MockTransport(respond))
+    result = runner.invoke(
+        app,
+        [
+            "collect",
+            "--repo",
+            "example/repo",
+            "--start",
+            "2026-01-01T00:00:00Z",
+            "--end",
+            "2026-02-01T00:00:00Z",
+            "--out",
+            str(tmp_path / "out"),
+            "--workspace",
+            str(tmp_path / "private"),
+            "--max-pages",
+            "1",
+        ],
+    )
+
+    assert result.exit_code == 3
+    assert result.stdout.strip() == "Collection incomplete; resume to reconcile."
+    assert result.stderr == ""
 
 
 @pytest.mark.unit

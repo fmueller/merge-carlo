@@ -8,8 +8,9 @@ must be readable alongside it.
 
 The [cohort collector](cohort-collection.md) exposes `collect --resume` using the
 [read-only transport](github-transport.md) and
-[projected SQLite store](projected-store.md). Calibration and inspection remain
-downstream work; frozen-cutoff features are available through the Python API.
+[projected SQLite store](projected-store.md). Inspection is available through the
+CLI; frozen-cutoff features and calibration are available through Python APIs,
+but a real-data calibration CLI is not implemented.
 Enumeration is not a point-in-time GitHub transaction; later
 snapshots cannot establish earlier draft, size or review state. The conservative
 historical reader excludes such snapshots. Optional CI is not requested.
@@ -19,6 +20,16 @@ transport result for the extraction writer. Raw responses must not be
 stored as datasets. Conditional `304` results require a caller-held prior
 representation. Collection limits and failures are explicit, not evidence of
 complete history. Tests use synthetic responses, not live repository data.
+
+## Release evidence status
+
+Live GitHub integration has not been run. No authorized dataset was collected
+for v0.1.0 release evidence, so live collection, real-team calibration, and
+real-data validation remain unverified. Fixture-backed tests establish local
+behavior, including explicit partial collection, but cannot establish GitHub API
+compatibility or dataset fitness on a real repository. The performance benchmark
+and final release mutation gate are also remaining tracked work; no release
+readiness, runtime, memory, or scalability claim follows from their absence.
 
 ## What the model is
 

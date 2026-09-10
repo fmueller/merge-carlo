@@ -1,7 +1,8 @@
 # Implementation status
 
-What is built, what was verified, and what remains unverified. Update this file
-in the same commit as the change it describes.
+This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
+is limited or unsupported, and what remains. “Implemented” does not imply that a
+model is validated for a real workflow or that the release is ready to publish.
 
 Last updated: 2026-09-10.
 
@@ -9,134 +10,91 @@ Last updated: 2026-09-10.
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
-| M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
-| M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
-| M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
-| M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
-| M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
-| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Complete |
-| M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | In progress: configuration schemas |
+| M0 | Packaging, pinned toolchain, CI, commit policy, spec and backlog | Complete |
+| M1 | Domain contracts, duty calendars and deterministic FIFO engine | Complete |
+| M2 | Keyed randomness, revisions, abandonment, demand/capacity scenarios and bypass | Complete |
+| M3 | Replication runner, metrics, artifacts, report and synthetic demo | Limited: truncation reporting and real-data CLI remain |
+| M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment remains |
+| M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
+| M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | In progress |
 
-## Verified
+## Implemented command surface
 
-- `merge-carlo schema --out out/schemas` atomically exports deterministic,
-  version-1 assumption and scenario JSON Schemas. The contracts reject unknown
-  keys and unsafe or oversized YAML, constrain probabilities and duration
-  distributions, and document multiplier composition and whole-second active
-  service rounding. The shipped YAML examples validate against the exported
-  Draft 2020-12 schemas. See [configuration](configuration.md).
-- Held-out validation now compares the mechanistic FIFO baseline with an
-  elapsed-delay resampling benchmark under the same arrivals, mature cohorts,
-  horizons, and local-week accounting. The descriptive reference has no capacity
-  queue, preserves merged, closed-without-merge, and non-completed categories,
-  and reports when it describes a baseline metric better; it is explicitly not
-  an intervention model.
-- `merge-carlo validate --input replay-evidence.json --out out/validation`
-  validates a frozen chronological split from offline observed outcomes and
-  exact-timestamp replay replications. The versioned input rejects unknown keys;
-  outputs retain exact estimates, cohort sizes and variability for both mature
-  horizon shares, completion-conditioned first-review median, weekly merge
-  counts, and initialization discrepancy. Small cohorts produce
-  `insufficient_evidence`; exploratory failures write warnings while `--strict`
-  exits 4. Reports explicitly withhold causal, intervention, productivity,
-  auto-approval-safety, and material-discrepancy backlog claims. See
-  [held-out validation](validation.md).
-- `calibration.calibrate_model` combines frozen features with required
-  provenance-tagged active-effort assumptions for every work-origin cohort.
-  It preserves elapsed review and merge observations as descriptive evidence,
-  records configurable evidence thresholds and readiness policy, emits
-  `exploratory_only` for weak support, and renders unavailable v0.1.0 quantities
-  as null with reasons. `write_calibration` atomically publishes the model,
-  calibration record, and model card. See [calibration](calibration.md).
-- `features.build_features` produces complete local-week arrival templates,
-  declared-human substantive-review and first-decision observations,
-  horizon-qualified requested-change prevalence and mature outcomes,
-  completion-conditioned merge durations, descriptive size snapshots, and
-  SHA-attributed CI observations. Synthetic hand calculations and leakage tests
-  cover pending/comment/author review exclusions, post-cutoff snapshots and
-  events, incomplete collections, and CI mismatches. See the
-  [feature builder](feature-builder.md).
-- Collection resolves strict or explicit created-at-proxy readiness and local
-  operator-declared work origin into per-PR derived features. Unknown readiness
-  is excluded from ready-based fitting; reopened, repeated ready/draft, and
-  incomplete lifecycles remain in totals with exclusion reasons. Actor kind
-  never implies work origin, conflicts resolve by recorded provenance, and
-  unknown remains a first-class export value. No AI detector or generated-code
-  ratio exists. See [collection](cohort-collection.md).
-- `collect --resume` reconciles all-state/open PRs and paginated reviews and
-  lifecycle events into the projected store. Synthetic fixtures cover old open
-  PRs, closed-without-merge outcomes, duplicate conflicts, half-open bounds,
-  partial children, interruption and resume identity checks. Later snapshots
-  are excluded from historical cutoffs. See [collection](cohort-collection.md).
-- `merge-carlo demo --out out/demo --seed 42 --replications 200` runs the
-  synthetic scenario suite with only the base assumption set. Integration tests
-  forbid HTTP-client/socket construction and compare repeated artifacts byte for
-  byte. Every report section labels synthetic evidence and incomplete sensitivity.
-  Example week records, assumptions, and overrides are embedded in the resolved
-  experiment artifact; no real-data extraction or calibration is implied.
-- `artifacts.write_experiment` publishes versioned experiment bundles with
-  streamed paired rows and sampled diagnostics. `reporting.render_report` reads
-  saved summary artifacts only. Tests cover paired merge deltas, run-level
-  summaries, Wilson intervals, escaping, deterministic report text and failed
-  publication rollback. See [artifact API](artifacts.md); CLI wiring is pending.
-- The sequential Python replication runner pairs each scenario with its baseline
-  under the same assumption and replication keys. Tests cover continuous warm-up,
-  reproducibility, scenario ordering/addition, capacity/demand/bypass forwarding,
-  truncation exclusion, separate assumption summaries, opt-in sampled diagnostics,
-  and live memory independent of replication count. Measurement metrics and
-  persisted experiment/report artifacts are now available through Python; see
-  [runner limitations](limitations.md#uncertainty).
-- `simulation.arrivals.generate_proposals` resamples caller-certified complete
-  local weeks with replacement, retaining readiness/author/origin bundles.
-  Tests cover stable proposal IDs and latent keys, timezone week boundaries,
-  DST mapping/rejection, half-open clipping, and the `exploratory_only` label
-  below eight distinct training weeks (including empty weeks). Results contain
-  fresh FIFO-compatible proposals with readiness seconds from the UTC span's
-  start; dataset extraction and stochastic engine integration remain pending.
-  Scoped mutation testing exceeds the v0.1.0 80% floor; decorated dataclass
-  validators remain outside mutmut discovery (existing T-033).
-- Purpose-keyed streams pass call-order, consumption-isolation, key-boundary,
-  numeric canonicalization, and cross-process hash-seed checks. Use
-  `simulation.randomness.random_stream(42, 0, "pr-17", 1, "effort")` to get a
-  fresh NumPy `Generator(PCG64(SeedSequence(...)))`. Root seed and replication
-  are non-negative integers; ordered key components are strings or integers,
-  with integers converted to decimal strings. The identity is a compact ASCII
-  JSON array of strings, hashed with SHA-256 and interpreted as one big-endian
-  integer for SeedSequence. Repeating the call restarts the sequence; retain
-  the generator for successive draws. Common latent keys must omit scenario
-  identifiers, letting scenarios transform the same draws. This is a Python
-  primitive only; stochastic engine integration remains
-  tracked work. See [limitations](limitations.md#random-streams).
-- Duty calendars pass spring-forward and fall-back UTC fixtures, absence
-  subtraction and conservation tests, overnight clipping, and local-day run
-  bound checks. See [calendar semantics](calendars.md) for boundary rules and
-  the Python API; scheduler integration is still pending.
-- `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, and
-  `uv run pytest` pass on the package skeleton.
-- `uv run merge-carlo --version` prints the package version.
-- The commit policy guard suites pass: `scripts/check-commit-msg-test.sh`,
-  `scripts/check-push-messages-test.sh`, `scripts/check-author-test.sh`. The
-  negative cases were exercised directly: an agent session trailer, a
-  co-authorship line, and an agent author identity are each rejected.
-- Mutation testing is wired: `mise run test:mutate` (differential),
-  `mise run test:mutate:gate` (full), and a weekly workflow. On the CLI skeleton
-  the gate reports `merge_carlo.cli` at 2/3 killed, below the ten-mutant minimum,
-  so it is labeled insufficient evidence rather than given a verdict. The one
-  survivor is an equivalent mutant: `typer.Exit(code=0)` and
-  `typer.Exit(code=None)` both exit zero, so no test can distinguish them.
-- The `Build` workflow is green on `main`: lint and type checks, the commit
-  policy guards, and the test suite on Python 3.12, 3.13, and 3.14.
+`merge-carlo` exposes `schema`, `demo`, `collect`, `inspect`, and `validate`, plus
+`--help`, `--version`, and global `--json` console output. Every implemented
+command has option help. Human errors are concise and machine mode emits one
+JSON object per operational result or error with `status`, `exit_code`, and
+`message`; help remains human-readable.
 
-## Not implemented
+Stable process exit codes are:
 
-The real-data pipeline commands `calibrate`, `simulate`, and `report` remain
-unimplemented. `validate` consumes prepared offline held-out replay evidence;
-the CLI also exposes `schema`, `collect`, `inspect`, `demo`, `--version` and
-`--help`. The README distinguishes working and planned commands.
+- `0`: success, including an exploratory validation report with warnings;
+- `2`: invalid or inaccessible input/output;
+- `3`: source/access failure or explicitly incomplete collection; and
+- `4`: a failed validation gate when `validate --strict` was requested.
 
-## Unverified
+## Verification evidence
 
-- **Live GitHub integration has never been run.** No authorized dataset has been
-  collected, and no real-data validation has been performed. Nothing in this
-  repository should be read as a claim that live collection was tested.
-- No performance benchmark has been recorded.
+The release-documentation change was checked from `origin/main` at
+`16da175d7c9a6d2dc6b14956ad5b74274ebfd445`. The final evidence is recorded by
+command rather than summarized as an unsupported readiness claim:
+
+| Command | Result | Evidence covered |
+| --- | --- | --- |
+| `uv run pytest tests/unit/cli_test.py tests/unit/documentation_test.py -q` | Pass: 21 | Help, JSON console records, exit codes and documentation contract |
+| `uv run pytest tests/unit/cli_test.py tests/unit/cohort_test.py tests/unit/inspection_test.py tests/integration/demo_test.py -q` | Pass: 54 | Fixture-backed command pipeline, resume and partial-data behavior |
+| `uv run ruff check` and `uv run ruff format --check` | Pass | Lint and formatting |
+| `uv run mypy` | Pass: 53 source files | Strict type checking |
+| `uv run pytest` | Pass: 620 | Full automated suite |
+| `mise run test:mutate` | Pass: `merge_carlo.cli` 74/90 (82.2%) | Differential v0.1.0 mutation policy for changed executable source |
+| `mise run check` | Pass | CI-equivalent local gate |
+
+The tests use synthetic inputs and saved or mocked HTTP responses. They verify
+the offline demo is deterministic and does not construct network clients;
+collection tests exercise reconciliation, interrupted/partial collections,
+credential-safe errors and inspection of projected data. Generated experiment
+reports carry their evidence status and model limitations, preserve null
+unsupported safety fields, and are rendered from saved artifacts without
+rerunning simulation. Comparison-wide truncation counts and gating are not
+complete until T-037 lands.
+
+## Limited or unverified
+
+- **Live GitHub integration has not been run.** No authorized dataset was
+  collected for this release work, so collection against GitHub, real-team
+  calibration, and real-data validation remain unverified.
+- The performance benchmark is not yet recorded (T-027). No universal runtime,
+  throughput, memory, or scalability claim is supported.
+- Held-out validation is historical and descriptive. It does not validate
+  interventions, and small or incomplete evidence produces
+  `insufficient_evidence`, not a pass.
+- Reproducibility covers semantic artifacts in the locked reference environment,
+  not arbitrary Python, NumPy, timezone-database, library, or hardware versions.
+- Pseudonymized repository metadata can remain identifiable and must only be
+  collected and shared with authorization.
+
+## Unsupported in v0.1.0
+
+- Productivity gain, business value, individual performance, safe
+  auto-approval, causal intervention effects, exact future backlog, and a
+  universal congestion threshold are not model outputs.
+- `defect_escape_rate`, `security_risk_change`, and `policy_safety` remain
+  `null` with reason `unsupported_in_v0_1`.
+- Elapsed review delay is not active review effort. Active service remains an
+  operator assumption and is never sampled from elapsed latency.
+- The workflow model is CI-before-review with one required review and one FIFO
+  queue; it is not GitHub branch-protection, CODEOWNERS, merge-queue, or
+  multi-repository capacity emulation.
+
+See [limitations](limitations.md) and the limitations section in every generated
+experiment report for the complete qualifications.
+
+## Remaining v0.1.0 work
+
+The open tracked tasks after this documentation task are T-020 optional CI
+enrichment, T-027 performance evidence, T-029 trusted release publishing, T-030
+release mutation validation, T-033 dataclass mutation discovery, T-036 Taskrail
+reopening support, T-037 comparison truncation propagation, T-039 persisted
+experiment CLI wiring, T-040 artifact-validator mutation discovery, and T-041
+decorated CLI command mutation discovery. Their presence means v0.1.0 should not
+be described as fully complete or published.

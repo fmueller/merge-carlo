@@ -88,4 +88,6 @@ same observation time hash independently of page order. Resume at a later time
 can legitimately change the content hash even if the API fields do not change.
 
 All verification uses synthetic HTTP fixtures. Live GitHub collection has not
-been tested; calibration and the inspection CLI are pending.
+been tested. Inspection is available through the CLI and calibration through a
+Python API; the persisted real-data calibration/simulation/report CLI path is
+still pending.

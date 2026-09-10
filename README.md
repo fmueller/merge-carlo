@@ -25,12 +25,18 @@ language models, and no part of merge-carlo calls one.
 
 ## Status
 
-Pre-alpha. The repository is set up and the v0.1.0 scope is frozen in
-[`specs/v0.1.0.md`](specs/v0.1.0.md). **The offline synthetic demo works;
-read-only cohort collection and Python model calibration work, but the real-data
-calibration CLI is not implemented yet.** Track progress in
-[`docs/implementation-status.md`](docs/implementation-status.md) and
+Pre-alpha. The v0.1.0 scope is frozen in
+[`specs/v0.1.0.md`](specs/v0.1.0.md). The offline synthetic demo, read-only
+cohort collection, inspection, Python model calibration, held-out descriptive
+validation, and schema export are implemented. The persisted real-data
+`calibrate`, `simulate`, and `report` command path, performance evidence, final
+mutation gate, and release publishing remain tracked work. Track exact progress
+in [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
+
+**Live GitHub integration has not been run.** No authorized dataset was
+collected for the release evidence, so the fixture-backed collection tests are
+not evidence that a real repository was tested.
 
 ## What it does not do
 
@@ -142,6 +148,18 @@ uv run merge-carlo report    --results out/experiment --validation out/validatio
 
 Exit codes: `0` success, `2` invalid input, `3` source or access failure,
 `4` a requested validation gate failed.
+
+Add global `--json` before a command for machine-readable console output:
+
+```bash
+uv run merge-carlo --json schema --out out/schemas
+```
+
+Each operational result or error is one JSON object containing `status`,
+`exit_code`, and `message`. Errors move from stderr to stdout in this mode so a
+consumer has one JSON Lines stream. Help remains human-readable text. This
+changes console encoding only; process exit codes and artifact contents are
+unchanged.
 
 Dates define half-open UTC windows: `--until 2026-09-01` excludes September 1,
 2026 and later events.
