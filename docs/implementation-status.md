@@ -12,13 +12,20 @@ Last updated: 2026-09-10.
 | M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
-| M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Not started |
+| M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | In progress: paired Python runner and merge-count diagnostics |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
 | M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- The sequential Python replication runner pairs each scenario with its baseline
+  under the same assumption and replication keys. Tests cover continuous warm-up,
+  reproducibility, scenario ordering/addition, capacity/demand/bypass forwarding,
+  truncation exclusion, separate assumption summaries, opt-in sampled diagnostics,
+  and live memory independent of replication count. Full metrics and persisted
+  experiment/report artifacts remain T-013 and T-014; see
+  [runner limitations](limitations.md#uncertainty).
 - `simulation.arrivals.generate_proposals` resamples caller-certified complete
   local weeks with replacement, retaining readiness/author/origin bundles.
   Tests cover stable proposal IDs and latent keys, timezone week boundaries,

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Sequential paired Monte Carlo execution across named assumption sets, with
+  streamed rows, continuous warm-up, separate count summaries, truncation
+  gating, and opt-in sampled engine diagnostics through the Python API.
 - Repository setup: packaging, pinned toolchain, lint, type, and test
   configuration, continuous integration, commit policy hooks, and the v0.1.0
   spec with its milestone backlog.

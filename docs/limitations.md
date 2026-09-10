@@ -111,6 +111,30 @@ that finished.
 
 ## Uncertainty
 
+`simulation.runner.run_experiment(Experiment(...))` returns a one-shot iterator
+of paired rows. Each row identifies assumption set, replication, and scenario,
+with its matching baseline and measurement-window merge delta. Named assumption
+sets declare assumed constant effort, revision loops, abandonment and coordination;
+scenario fields declare demand transforms, calendars, absences and bypass.
+Baseline is implicit. Immutable tuple inputs and stable IDs preserve common
+random draws; draws are generated on demand rather than stored in a global RNG.
+Warm-up and measurement run continuously from empty over the materialized UTC
+bounds, and merges are counted in the half-open measurement window, including
+carry-in work. Warm-up is not a steady-state guarantee.
+
+Consume the stream to exhaustion before using its `summaries`, keyed separately
+by `(assumption, scenario)`. These are valid-run merge totals and truncation
+counts, not pooled latency distributions. A truncated side makes the paired
+delta `None`; no valid runs gives a `None` total. `comparison_incomplete` remains
+true for partial consumption or any truncation. There is no policy-ranking API.
+Baseline-only experiments emit self-pairs. Default rows contain no PR-level
+diagnostics; `trace_replications=(0,)` opts into baseline/scenario FIFO results
+for replication zero, including final PR states and event-boundary accounting.
+These diagnostics are not a full per-transition event log. The runner retains
+only bounded current-run state and count summaries, unless the consumer chooses
+to accumulate rows. Full metrics (T-013), event-trace/artifact persistence and
+reports (T-014), and the CLI remain separate v0.1.0 work.
+
 Three kinds of uncertainty stay separate: random workflow variation under fixed
 parameters, Monte Carlo estimation error from a finite replication count, and
 assumption uncertainty across named assumption sets. Hand-picked low, base, and

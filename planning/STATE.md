@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T15:27:23Z"
+updated_at: "2026-09-10T15:54:49Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-012-replication-runner: Run paired Monte Carlo replications across assumption sets'
-last_verification_result: pass for T-011-review-bypass at 2026-09-10T15:27:23Z
+next_action: 'Start task T-013-metric-dictionary: Compute the measurement window metric dictionary'
+last_verification_result: pass for T-012-replication-runner at 2026-09-10T15:54:49Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-011-review-bypass at 2026-09-10T15:27:23Z
+- pass for T-012-replication-runner at 2026-09-10T15:54:49Z
 
 ## Next Action
 
-- Start task T-012-replication-runner: Run paired Monte Carlo replications across assumption sets
+- Start task T-013-metric-dictionary: Compute the measurement window metric dictionary
 
 ## Relevant Artifacts
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 22
 - in_progress: 0
-- completed: 15
+- completed: 16
 - blocked: 0
 - cancelled: 0
