@@ -4,6 +4,16 @@ merge-carlo produces conditional simulated outcomes. This file records what it
 cannot establish. Keep it current as milestones land; every generated report
 must be readable alongside it.
 
+## GitHub ingestion
+
+The [read-only transport](github-transport.md) is available through Python only.
+It does not yet implement cohort collection, extraction manifests, projected
+SQLite storage, or an ingestion CLI. API-version metadata accompanies every
+transport result for the later extraction writer. Raw responses must not be
+stored as datasets. Conditional `304` results require a caller-held prior
+representation. Collection limits and failures are explicit, not evidence of
+complete history. Tests use synthetic responses, not live repository data.
+
 ## What the model is
 
 The simulated system begins when a pull request is **ready for review** and ends

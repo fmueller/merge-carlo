@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T17:27:54Z"
+updated_at: "2026-09-10T18:02:37Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-016-github-transport: Provide a read-only rate-limited GitHub transport'
-last_verification_result: pass for T-015-offline-demo at 2026-09-10T17:27:54Z
+next_action: 'Start task T-017-projected-store: Persist projected observations in a migrated SQLite store'
+last_verification_result: pass for T-016-github-transport at 2026-09-10T18:02:37Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-015-offline-demo at 2026-09-10T17:27:54Z
+- pass for T-016-github-transport at 2026-09-10T18:02:37Z
 
 ## Next Action
 
-- Start task T-016-github-transport: Provide a read-only rate-limited GitHub transport
+- Start task T-017-projected-store: Persist projected observations in a migrated SQLite store
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 22
+- todo: 21
 - in_progress: 0
-- completed: 19
+- completed: 20
 - blocked: 0
 - cancelled: 0
