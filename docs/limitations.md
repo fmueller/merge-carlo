@@ -85,6 +85,15 @@ Warm-up starts from empty. A warm-up length is a configuration choice, not a
 guarantee of steady state, especially under overload. v0.1.0 does not claim a
 faithful forecast initialized from a team's exact partially completed reviews.
 
+## Duty calendars
+
+Duty windows are declared availability, not measured active review effort.
+The calendar primitive materializes weekly windows and explicit dated absences;
+it does not infer working hours or automatically apply regional holidays.
+Ambiguous and nonexistent local boundaries are rejected before simulation.
+UTC intervals depend on the installed IANA timezone database. See
+[calendar semantics](calendars.md) for the exact boundary and warm-up rules.
+
 ## Congestion
 
 A load sweep is a set of explicit scenarios. Any threshold crossing is

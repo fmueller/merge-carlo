@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-09T22:07:13Z"
+updated_at: "2026-09-10T11:43:44Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: Select the next eligible task
-last_verification_result: pass for T-002-domain-contracts at 2026-09-09T22:07:07Z
+next_action: 'Start task T-004-fifo-review-engine: Run a FIFO review queue with constant service to a horizon'
+last_verification_result: pass for T-003-duty-calendars at 2026-09-10T11:43:44Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-002-domain-contracts at 2026-09-09T22:07:07Z
+- pass for T-003-duty-calendars at 2026-09-10T11:43:44Z
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-004-fifo-review-engine: Run a FIFO review queue with constant service to a horizon
 
 ## Relevant Artifacts
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 28
 - in_progress: 0
-- completed: 4
+- completed: 5
 - blocked: 0
 - cancelled: 0

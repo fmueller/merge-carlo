@@ -3,14 +3,14 @@
 What is built, what was verified, and what remains unverified. Update this file
 in the same commit as the change it describes.
 
-Last updated: 2026-09-09.
+Last updated: 2026-09-10.
 
 ## Milestones
 
 | Milestone | Scope | Status |
 | --- | --- | --- |
 | M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
-| M1 | Deterministic core: domain contracts, calendars, one queue, constant service | Not started |
+| M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | Not started |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Not started |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
@@ -19,6 +19,10 @@ Last updated: 2026-09-09.
 
 ## Verified
 
+- Duty calendars pass spring-forward and fall-back UTC fixtures, absence
+  subtraction and conservation tests, overnight clipping, and local-day run
+  bound checks. See [calendar semantics](calendars.md) for boundary rules and
+  the Python API; scheduler integration is still pending.
 - `uv run ruff check`, `uv run ruff format --check`, `uv run mypy`, and
   `uv run pytest` pass on the package skeleton.
 - `uv run merge-carlo --version` prints the package version.

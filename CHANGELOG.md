@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A command-line entry point exposing `--version` and `--help`.
 - Typed, immutable pull-request lifecycle contracts with guarded transitions,
   revision invalidation, terminal outcomes, and review accounting.
+- Timezone-aware duty calendar primitives with weekly windows, dated absences,
+  explicit DST boundary rejection, and local-day horizon and warm-up bounds.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked
