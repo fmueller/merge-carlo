@@ -29,6 +29,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Whole-week arrival resampling with bundled author/origin marks, stable
   proposal identities, timezone mapping, and an `exploratory_only` flag for
   fewer than eight complete training weeks.
+- Typed additive and replacement AI arrival overrides, stable shared proposals
+  across load sweeps, and realized cohort counts on proposal schedules.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked

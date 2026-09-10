@@ -123,6 +123,23 @@ Latent service draws remain the downstream caller's responsibility using these
 IDs and the keyed stream factory; no observed delay becomes effort.
 This is a Python API, not a persisted model or CLI calibration command.
 
+`generate_proposals(..., scenario=AdditiveAI(fraction))` adds assumed AI
+demand: for each full sampled week, the count is floor(fraction × baseline
+count + U), with one stable uniform draw per week and replication. Added
+offset/author bundles are sampled from pooled training arrivals through a
+separate keyed stream, with origin explicitly set to AI. Larger load fractions
+reuse the same added-proposal prefix; partial weeks are clipped only afterward.
+This pooled template choice is an assumption, not observed AI arrival behavior.
+`ReplacementAI(fraction)` instead reassigns known-human origins below a stable
+per-proposal threshold. It preserves IDs, authors, timestamps and latent keys;
+unknown, existing AI and non-AI automation origins are unchanged. Origin is the
+service-cohort selector, not a claim about an author's identity. The current
+engine still uses a shared constant service duration for all cohorts.
+The returned `ProposalSchedule.cohort_mix` exposes realized counts for every
+origin after clipping, including zeros, rather than equating the replacement
+probability with the resulting AI share. CLI result serialization and
+cohort-specific effort distributions remain downstream v0.1.0 work.
+
 Purpose-keyed streams provide deterministic pseudorandom draws, not a proof of
 statistical independence or cryptographic randomness. Reproducibility assumes
 the same key encoding, PCG64, NumPy environment, and sampling calls; arbitrary

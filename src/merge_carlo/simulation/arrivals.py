@@ -1,11 +1,34 @@
 """Resample complete local weeks without separating arrival attribute bundles."""
 
-from dataclasses import dataclass
+import math
+from dataclasses import dataclass, replace
 from datetime import date, datetime, time, timedelta
 
 from merge_carlo.simulation.calendars import UTCInterval, _local_to_utc, _zone
 from merge_carlo.simulation.domain import PullRequest, WorkOrigin
 from merge_carlo.simulation.randomness import random_stream
+
+
+@dataclass(frozen=True, slots=True)
+class AdditiveAI:
+    """Assumed additional demand as a fraction of each full baseline week."""
+
+    fraction: float
+
+    def __post_init__(self) -> None:
+        if not math.isfinite(self.fraction) or self.fraction < 0:
+            raise ValueError("additive fraction must be finite and nonnegative")
+
+
+@dataclass(frozen=True, slots=True)
+class ReplacementAI:
+    """Assumed probability of reassigning each known-human proposal to AI."""
+
+    fraction: float
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.fraction <= 1:
+            raise ValueError("replacement fraction must be between zero and one")
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +67,14 @@ class ProposalSchedule:
     proposals: tuple[PullRequest, ...]
     limitations: tuple[str, ...]
 
+    @property
+    def cohort_mix(self) -> dict[WorkOrigin, int]:
+        """Realized counts after clipping, including zero-count service cohorts.
+
+        Origin selects the service cohort; no individual effort is inferred.
+        """
+        return {origin: sum(p.origin is origin for p in self.proposals) for origin in WorkOrigin}
+
 
 def generate_proposals(
     templates: tuple[WeekTemplate, ...],
@@ -52,6 +83,7 @@ def generate_proposals(
     timezone: str,
     root_seed: int,
     replication: int,
+    scenario: AdditiveAI | ReplacementAI | None = None,
 ) -> ProposalSchedule:
     """Sample each intersecting local week, then clip to the half-open UTC span.
 
@@ -60,12 +92,19 @@ def generate_proposals(
     horizon length. IDs identify target week and source tuple position; use
     them with random_stream for subsequent shared latent draws. DST gaps and
     folds in sampled weeks are rejected by the calendar's strict mapping.
+
+    Additions use floor(fraction * full_week_count + U), with one keyed U
+    per week. A separately keyed stream samples bundled offsets/authors from
+    the pooled training arrivals. Added IDs use draw position, so larger loads
+    extend the same prefix. Transform before clipping, never rescale a partial
+    week. Replacement keeps IDs (and therefore downstream latent draw keys).
     """
     if not templates:
         raise ValueError("at least one complete training week is required")
     if len({template.week_start for template in templates}) != len(templates):
         raise ValueError("training weeks must be unique")
     ordered = sorted(templates, key=lambda template: template.week_start)
+    pool = tuple(arrival for template in ordered for arrival in template.arrivals)
     zone = _zone(timezone)
     local_start = span.start.astimezone(zone).date()
     monday = local_start - timedelta(days=local_start.weekday())
@@ -75,12 +114,26 @@ def generate_proposals(
         key = monday.isoformat()
         stream = random_stream(root_seed, replication, "arrival-week", key)
         template = ordered[int(stream.integers(len(ordered)))]
-        for index, arrival in enumerate(template.arrivals):
+        arrivals = [(f"baseline:{key}:{index}", arrival) for index, arrival in enumerate(template.arrivals)]
+        if isinstance(scenario, AdditiveAI):
+            uniform = random_stream(root_seed, replication, "ai-additive-count", key).random()
+            count = math.floor(scenario.fraction * len(template.arrivals) + uniform)
+            added_stream = random_stream(root_seed, replication, "ai-additive-template", key)
+            for index in range(count):
+                arrival = pool[int(added_stream.integers(len(pool)))]
+                arrivals.append((f"ai-additive:{key}:{index}", replace(arrival, origin=WorkOrigin.AI)))
+        for pr_id, arrival in arrivals:
+            if (
+                isinstance(scenario, ReplacementAI)
+                and arrival.origin is WorkOrigin.HUMAN
+                and random_stream(root_seed, replication, pr_id, "ai-replacement").random() < scenario.fraction
+            ):
+                arrival = replace(arrival, origin=WorkOrigin.AI)
             ready = _local_to_utc(datetime.combine(monday, time()) + arrival.offset, zone)
             if span.start <= ready < span.end:
                 proposals.append(
                     PullRequest(
-                        f"baseline:{key}:{index}",
+                        pr_id,
                         arrival.author_id,
                         arrival.origin,
                         (ready - span.start).total_seconds(),
