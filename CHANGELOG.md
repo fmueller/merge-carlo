@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Versioned experiment artifact bundles and artifact-only deterministic Markdown
+  reports through the Python API, with run-level summaries, paired merge deltas,
+  Wilson uncertainty intervals, escaped exports and staged publication.
 - Measurement-window metric dictionaries for operational and new-ready work,
   with queue integrals, completed-review latency quantiles, mature-cohort shares,
   clipped utilization, explicit undefined reasons, and run-level summaries.

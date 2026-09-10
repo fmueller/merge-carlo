@@ -132,9 +132,10 @@ diagnostics; `trace_replications=(0,)` opts into baseline/scenario FIFO results
 for replication zero, including final PR states and event-boundary accounting.
 These diagnostics are not a full per-transition event log. The runner retains
 only bounded current-run state and count summaries, unless the consumer chooses
-to accumulate rows. Measurement dictionaries are now included on each valid
-row; event-trace/artifact persistence and reports (T-014), and the CLI remain
-separate v0.1.0 work.
+to accumulate rows. Measurement dictionaries are included on each valid row.
+The [artifact API](artifacts.md) streams rows and sampled diagnostics, retains
+only scalar values for exact summary quantiles, and renders saved summaries
+without simulation or network access. CLI wiring remains v0.1.0 work.
 
 ### Measurement dictionary
 
@@ -188,7 +189,9 @@ run medians or run p95s separately, never pooled PR delays, and keep assumption
 sets, scenarios and population levels separate. An all-undefined selection gives
 `no_defined_replications`. Exact quantiles retain these scalar values in the
 consumer; the runner does not accumulate them or PR diagnostics. Persisted
-reports and binomial uncertainty intervals remain T-014, not this primitive.
+reports use these summaries and add 95% Wilson intervals for run-level backlog
+exceedance and paired runs with more merges. Zero observed events do not imply
+certainty. Paired artifact deltas currently cover all-work merges.
 
 Three kinds of uncertainty stay separate: random workflow variation under fixed
 parameters, Monte Carlo estimation error from a finite replication count, and

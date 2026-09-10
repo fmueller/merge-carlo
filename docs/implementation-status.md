@@ -19,12 +19,17 @@ Last updated: 2026-09-10.
 
 ## Verified
 
+- `artifacts.write_experiment` publishes versioned experiment bundles with
+  streamed paired rows and sampled diagnostics. `reporting.render_report` reads
+  saved summary artifacts only. Tests cover paired merge deltas, run-level
+  summaries, Wilson intervals, escaping, deterministic report text and failed
+  publication rollback. See [artifact API](artifacts.md); CLI wiring is pending.
 - The sequential Python replication runner pairs each scenario with its baseline
   under the same assumption and replication keys. Tests cover continuous warm-up,
   reproducibility, scenario ordering/addition, capacity/demand/bypass forwarding,
   truncation exclusion, separate assumption summaries, opt-in sampled diagnostics,
-  and live memory independent of replication count. Full metrics and persisted
-  experiment/report artifacts remain T-013 and T-014; see
+  and live memory independent of replication count. Measurement metrics and
+  persisted experiment/report artifacts are now available through Python; see
   [runner limitations](limitations.md#uncertainty).
 - `simulation.arrivals.generate_proposals` resamples caller-certified complete
   local weeks with replacement, retaining readiness/author/origin bundles.
