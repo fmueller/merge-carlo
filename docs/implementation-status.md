@@ -11,7 +11,7 @@ Last updated: 2026-09-10.
 | --- | --- | --- |
 | M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
-| M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | Not started |
+| M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Not started |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
 | M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
@@ -19,6 +19,18 @@ Last updated: 2026-09-10.
 
 ## Verified
 
+- Purpose-keyed streams pass call-order, consumption-isolation, key-boundary,
+  numeric canonicalization, and cross-process hash-seed checks. Use
+  `simulation.randomness.random_stream(42, 0, "pr-17", 1, "effort")` to get a
+  fresh NumPy `Generator(PCG64(SeedSequence(...)))`. Root seed and replication
+  are non-negative integers; ordered key components are strings or integers,
+  with integers converted to decimal strings. The identity is a compact ASCII
+  JSON array of strings, hashed with SHA-256 and interpreted as one big-endian
+  integer for SeedSequence. Repeating the call restarts the sequence; retain
+  the generator for successive draws. Common latent keys must omit scenario
+  identifiers, letting scenarios transform the same draws. This is a Python
+  primitive only; arrival generation and stochastic engine integration remain
+  tracked work. See [limitations](limitations.md#random-streams).
 - Duty calendars pass spring-forward and fall-back UTC fixtures, absence
   subtraction and conservation tests, overnight clipping, and local-day run
   bound checks. See [calendar semantics](calendars.md) for boundary rules and

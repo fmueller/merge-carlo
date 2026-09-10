@@ -84,6 +84,16 @@ high assumption sets are not a probability distribution and not a posterior.
 More replications reduce numerical sampling error; they do not make an
 unsupported assumption more valid.
 
+## Random streams
+
+Purpose-keyed streams provide deterministic pseudorandom draws, not a proof of
+statistical independence or cryptographic randomness. Reproducibility assumes
+the same key encoding, PCG64, NumPy environment, and sampling calls; arbitrary
+NumPy upgrades are not a promise of identical distribution samples. Callers
+must use stable proposal/revision/purpose identities and omit scenario IDs for
+shared latent variables. The factory cannot infer the semantic role of a string.
+It is not yet connected to the deterministic FIFO engine.
+
 ## Review bypass
 
 The simulated bypass scenario reduces modeled human-review demand and increases

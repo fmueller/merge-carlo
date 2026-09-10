@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T13:00:24Z"
+updated_at: "2026-09-10T13:05:23Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-005-keyed-random-streams: Provide purpose-keyed reproducible random streams'
-last_verification_result: pass for T-034-differential-mutation-scope at 2026-09-10T13:00:24Z
+next_action: 'Start task T-006-week-template-arrivals: Generate proposals from resampled empirical week templates'
+last_verification_result: pass for T-005-keyed-random-streams at 2026-09-10T13:05:23Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-034-differential-mutation-scope at 2026-09-10T13:00:24Z
+- pass for T-005-keyed-random-streams at 2026-09-10T13:05:23Z
 
 ## Next Action
 
-- Start task T-005-keyed-random-streams: Provide purpose-keyed reproducible random streams
+- Start task T-006-week-template-arrivals: Generate proposals from resampled empirical week templates
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 28
+- todo: 27
 - in_progress: 0
-- completed: 8
+- completed: 9
 - blocked: 0
 - cancelled: 0
