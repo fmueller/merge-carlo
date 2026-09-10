@@ -62,6 +62,19 @@ below_floor+="    merge_carlo.engine.x__run__mutmut_8: survived"$'\n'
 below_floor+="    merge_carlo.engine.x__run__mutmut_9: survived"$'\n'
 below_floor+="    merge_carlo.engine.x__run__mutmut_10: survived"
 
+# Mangled class methods use mutmut's Unicode separator. Mix them with top-level
+# mutants so the fixture catches reports that silently drop either form.
+mangled_methods=""
+for i in 1 2 3 4; do
+  mangled_methods+="    merge_carlo.runner.xǁExperimentRunǁ_iterate__mutmut_$i: killed"$'\n'
+done
+mangled_methods+="    merge_carlo.runner.xǁExperimentRunǁ_iterate__mutmut_5: timeout"$'\n'
+mangled_methods+="    merge_carlo.runner.xǁExperimentRunǁ_iterate__mutmut_6: survived"$'\n'
+mangled_methods+="    merge_carlo.runner.xǁExperimentRunǁ_iterate__mutmut_7: survived"$'\n'
+for i in 8 9 10; do
+  mangled_methods+="    merge_carlo.runner.x__run_replications__mutmut_$i: killed"$'\n'
+done
+
 # A weak module hidden behind a strong one; the repository total would pass.
 strong="${at_floor//survived/killed}"
 mixed="${strong//merge_carlo.engine/merge_carlo.metrics}"$'\n'"$below_floor"
@@ -73,6 +86,10 @@ assert_reports raw-score-at-floor "$at_floor" "80.0%"
 assert_reports rejected-floor-visible "$below_floor" "BELOW FLOOR 80%"
 assert_rejects explicit-stricter-floor "$at_floor" "BELOW FLOOR 90%" --floor 90
 assert_accepts below-floor-with-lower-floor "$below_floor" --floor 70
+assert_accepts mangled-methods-full "$mangled_methods"
+assert_reports mangled-methods-full-count "$mangled_methods" "8/10"
+assert_accepts mangled-methods-scoped "$mangled_methods" --module merge_carlo.runner
+assert_reports mangled-methods-scoped-count "$mangled_methods" "8/10" --module merge_carlo.runner
 
 # Synthetic reproduction of the reported T-005 counts; no survivor is excluded.
 reported_counts=""
@@ -121,6 +138,10 @@ assert_rejects missing-second-selected "$strong" "missing results: merge_carlo.a
 assert_rejects incomplete-selected "${at_floor/survived/not checked}" "unexecuted mutants" --module merge_carlo.engine
 assert_rejects small-incomplete-selected "merge_carlo.engine.x__run__mutmut_1: not checked" "unexecuted mutants" --module merge_carlo.engine
 assert_rejects full-retains-unrelated "$at_floor"$'\n'"$unrelated" "below the mutation efficacy floor"
+class_unexecuted="${mangled_methods/survived/not checked}"
+assert_reports mangled-methods-unexecuted-count "$class_unexecuted" "8/10"
+assert_rejects mangled-methods-unexecuted-scoped "$class_unexecuted" "unexecuted mutants (1)" --module merge_carlo.runner
+assert_accepts mangled-methods-selected-ignores-unrelated "$mangled_methods"$'\n'"$unrelated" --module merge_carlo.runner
 
 # Bad arguments are refused rather than silently defaulted.
 if printf '%s\n' "$at_floor" | bash "$checker" --floor ninety >/dev/null 2>&1; then

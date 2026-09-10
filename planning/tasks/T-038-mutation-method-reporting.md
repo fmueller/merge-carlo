@@ -1,11 +1,11 @@
 ---
 id: T-038-mutation-method-reporting
 title: Count mangled class methods in mutation efficacy reports
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies: []
-updated_at: "2026-09-10T15:48:51Z"
+updated_at: "2026-09-10T22:04:01Z"
 ---
 
 # T-038-mutation-method-reporting Count mangled class methods in mutation efficacy reports
@@ -39,3 +39,4 @@ by the report parser. Do not restructure production code to accommodate tooling.
 
 Filed during T-012, not implemented in that task. Initial reproduction:
 `BASE=11072f440ea1350327ab23e65ef16a05cd97619d mise run test:mutate`.
+- 2026-09-10T22:03:55Z: verification pass

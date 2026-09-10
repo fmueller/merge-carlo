@@ -75,7 +75,7 @@ printf '%s\n' "$results" | awk -v floor="$floor" -v min_mutants="$min_mutants" -
       total[names[i]] = 0
     }
   }
-  match($0, /^[[:space:]]*[A-Za-z_][A-Za-z0-9_.]*__mutmut_[0-9]+:[[:space:]]*[a-z_ ]+$/) {
+  match($0, /^[[:space:]]*[A-Za-z_][A-Za-z0-9_.ǁ]*__mutmut_[0-9]+:[[:space:]]*[a-z_ ]+$/) {
     split($0, parts, ":")
     name = parts[1]
     status = parts[2]

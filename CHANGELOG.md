@@ -87,6 +87,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Count mutmut's Unicode-mangled class methods alongside top-level mutants in
+  full and differential per-module mutation efficacy reports.
 - Scope differential mutation verdicts to changed modules, rejecting missing
   selected execution without counting unrelated cached results. Full-gate
   per-module checks and raw mutation counts remain unchanged.
