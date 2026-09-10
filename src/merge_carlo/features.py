@@ -66,6 +66,8 @@ class CIObservation:
 
 @dataclass(frozen=True, slots=True)
 class FeatureSet:
+    dataset_content_hash: str
+    readiness_policy: Literal["strict", "created_at_proxy"]
     training_cutoff: datetime
     timezone: str
     outcome_horizon: timedelta
@@ -181,6 +183,8 @@ def _size(pull: dict[str, object], cutoff: datetime) -> SizeSnapshot | None:
 def build_features(
     data: dict[str, object],
     *,
+    dataset_content_hash: str,
+    readiness_policy: Literal["strict", "created_at_proxy"],
     cutoff: datetime,
     timezone: str,
     outcome_horizon: timedelta,
@@ -194,6 +198,10 @@ def build_features(
     """
     if cutoff.tzinfo is None or cutoff.utcoffset() is None:
         raise ValueError("cutoff must be timezone aware")
+    if len(dataset_content_hash) != 64 or any(
+        character not in "0123456789abcdef" for character in dataset_content_hash
+    ):
+        raise ValueError("invalid dataset content hash")
     cutoff = cutoff.astimezone(UTC)
     if outcome_horizon <= timedelta(0):
         raise ValueError("outcome horizon must be positive")
@@ -213,6 +221,9 @@ def build_features(
 
     pulls = {cast(int, row["id"]): row for row in _rows(data, "pull_requests")}
     features = {cast(int, row["pr_id"]): row for row in _rows(data, "derived_features")}
+    readiness_policies = {row.get("readiness_policy") for row in features.values()}
+    if readiness_policies and readiness_policies != {readiness_policy}:
+        raise ValueError("projected features do not match the declared readiness policy")
     events_by_pr: dict[int, list[dict[str, object]]] = {}
     for row in _rows(data, "lifecycle_events"):
         created_at = _timestamp(row.get("created_at"))
@@ -354,6 +365,8 @@ def build_features(
         )
 
     return FeatureSet(
+        dataset_content_hash=dataset_content_hash,
+        readiness_policy=readiness_policy,
         training_cutoff=cutoff,
         timezone=timezone,
         outcome_horizon=outcome_horizon,

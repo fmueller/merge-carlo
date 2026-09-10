@@ -27,7 +27,8 @@ language models, and no part of merge-carlo calls one.
 
 Pre-alpha. The repository is set up and the v0.1.0 scope is frozen in
 [`specs/v0.1.0.md`](specs/v0.1.0.md). **The offline synthetic demo works;
-read-only cohort collection works, but calibration is not implemented yet.** Track progress in
+read-only cohort collection and Python model calibration work, but the real-data
+calibration CLI is not implemented yet.** Track progress in
 [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 

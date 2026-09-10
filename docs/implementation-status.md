@@ -14,11 +14,18 @@ Last updated: 2026-09-10.
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
-| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | In progress: frozen-cutoff features |
+| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | In progress: model calibration |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- `calibration.calibrate_model` combines frozen features with required
+  provenance-tagged active-effort assumptions for every work-origin cohort.
+  It preserves elapsed review and merge observations as descriptive evidence,
+  records configurable evidence thresholds and readiness policy, emits
+  `exploratory_only` for weak support, and renders unavailable v0.1.0 quantities
+  as null with reasons. `write_calibration` atomically publishes the model,
+  calibration record, and model card. See [calibration](calibration.md).
 - `features.build_features` produces complete local-week arrival templates,
   declared-human substantive-review and first-decision observations,
   horizon-qualified requested-change prevalence and mature outcomes,
@@ -100,8 +107,8 @@ Last updated: 2026-09-10.
 
 ## Not implemented
 
-The real-data pipeline commands — `inspect`, `calibrate`, `validate`,
-`simulate`, and `report` — remain unimplemented. The CLI exposes `collect`, `demo`,
+The real-data pipeline commands `calibrate`, `validate`, `simulate`, and
+`report` remain unimplemented. The CLI exposes `collect`, `inspect`, `demo`,
 `--version` and `--help`. The README distinguishes working and planned commands.
 
 ## Unverified

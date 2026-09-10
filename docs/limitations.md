@@ -40,6 +40,17 @@ Different combinations of effort, staffing, and coordination delay reproduce
 similar latencies. v0.1.0 deliberately ships no optimizer that picks one of
 them.
 
+## Calibration
+
+The Python calibration API constructs an empirically informed model from a
+frozen feature set and explicitly supplied assumptions. It does not fit active
+review effort to historical latency. Constant, median-and-log-sigma lognormal,
+and empirical effort distributions remain operator assumptions, including when
+an empirical list is hand-entered. Evidence flags and an `exploratory_only`
+label qualify weak support; clearing those flags is not held-out validation or
+intervention validation. CLI integration and held-out diagnostics remain
+separate v0.1.0 tasks.
+
 ## Workflow class
 
 The implemented deterministic `simulation.engine.run_fifo` slice accepts fresh

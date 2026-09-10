@@ -1,12 +1,12 @@
 ---
 id: T-023-model-builder
 title: Calibrate a provenance-tagged model and model card
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies:
     - T-022-feature-builder
-updated_at: "2026-09-09T19:03:11Z"
+updated_at: "2026-09-10T20:59:42Z"
 ---
 
 # T-023-model-builder Calibrate a provenance-tagged model and model card
@@ -34,3 +34,5 @@ and its evidence metadata. No optimizer infers reviewer effort from latency.
 - A test asserting the model card renders every unavailable quantity as null with a reason.
 
 ## Implementation Notes
+
+- 2026-09-10T20:59:31Z: verification pass

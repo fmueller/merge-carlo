@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Provenance-tagged empirical model calibration through the Python API, with
+  required cohort effort assumptions, strict duration distributions, recorded
+  evidence thresholds, explicit exploratory labeling, deterministic model
+  cards, and atomic model/calibration artifacts.
 - Frozen-cutoff empirical feature construction through the Python API, with
   complete local-week arrivals, explicit human-review semantics, mature-cohort
   outcomes, labeled prevalence and completion conditioning, descriptive size

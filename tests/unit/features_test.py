@@ -164,6 +164,8 @@ def fixture() -> dict[str, object]:
 def build(data: dict[str, object] | None = None) -> FeatureSet:
     return build_features(
         data or fixture(),
+        dataset_content_hash="a" * 64,
+        readiness_policy="strict",
         cutoff=CUTOFF,
         timezone="UTC",
         outcome_horizon=HORIZON,
@@ -302,6 +304,8 @@ def test_invalid_feature_boundary_inputs(cutoff: datetime, horizon: timedelta, t
     with pytest.raises(ValueError, match=match):
         build_features(
             fixture(),
+            dataset_content_hash="a" * 64,
+            readiness_policy="strict",
             cutoff=cutoff,
             timezone=timezone,
             outcome_horizon=horizon,

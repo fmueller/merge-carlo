@@ -2,8 +2,11 @@
 
 `merge_carlo.features.build_features` converts a projected-store export into
 immutable empirical features for model calibration. It requires a timezone-aware
-training cutoff, a positive fixed outcome horizon, one declared timezone, and a
-set of pseudonymous actor IDs explicitly declared to be human reviewers.
+training cutoff, the source dataset's canonical content hash and readiness
+policy, a positive fixed outcome horizon, one declared timezone, and a set of
+pseudonymous actor IDs explicitly declared to be human reviewers. The source
+hash travels with the feature set so calibration cannot associate its features
+with another dataset's coverage.
 
 The builder fails closed unless pull-request enumeration is complete. It only
 certifies Monday-based local calendar weeks wholly inside the requested analysis
