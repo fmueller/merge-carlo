@@ -6,10 +6,12 @@ must be readable alongside it.
 
 ## GitHub ingestion
 
-The [read-only transport](github-transport.md) is available through Python only.
-It does not yet implement cohort collection, extraction manifests, projected
-SQLite storage, or an ingestion CLI. API-version metadata accompanies every
-transport result for the later extraction writer. Raw responses must not be
+The [read-only transport](github-transport.md) and
+[projected SQLite store](projected-store.md) are available through Python only.
+Cohort collection, resume reconciliation and an ingestion CLI remain downstream
+work. The store persists extraction manifests and allowlisted observations with
+workspace-scoped actor pseudonyms. API-version metadata accompanies every
+transport result for the extraction writer. Raw responses must not be
 stored as datasets. Conditional `304` results require a caller-held prior
 representation. Collection limits and failures are explicit, not evidence of
 complete history. Tests use synthetic responses, not live repository data.

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Projected observation SQLite Python API with recorded migrations, foreign-key
+  checks, atomic extraction replacement, private workspace HMAC identities,
+  allowlisted fields and canonical order-independent analytical content hashes.
 - Read-only GitHub transport Python API with same-origin pagination and
   redirects, bounded requests and payloads, conditional requests, rate-limit
   handling, explicit collection status and credential-safe diagnostics.
