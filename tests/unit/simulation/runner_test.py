@@ -61,6 +61,9 @@ def test_pairs_warmup_and_separate_assumption_summaries() -> None:
     assert fast.scenario.merges == 1  # warm-up bypass merge is excluded
     assert fast.merge_delta == -1
     assert fast.trace is None
+    assert fast.baseline.metrics is not None
+    assert fast.baseline.metrics.all_work.merges == 2
+    assert fast.baseline.metrics.new_ready.merges == 1
     assert "exploratory_only" in fast.limitations
     slow = next(r for r in rows if r.assumption_id == "slow" and r.scenario_id == "bypass")
     assert slow.baseline.merges == 0
@@ -121,6 +124,7 @@ def test_truncated_baseline_excludes_pair_but_keeps_valid_scenario() -> None:
     bypass = next(r for r in rows if r.scenario_id == "bypass")
     assert bypass.baseline.merges is None
     assert bypass.baseline.engine_truncated
+    assert bypass.baseline.metrics is None
     assert bypass.scenario.merges == 1
     assert bypass.merge_delta is None
     assert runner.comparison_incomplete
@@ -164,6 +168,7 @@ def test_stochastic_forwarding_replays_engine_with_same_keys() -> None:
     from merge_carlo.simulation.calendars import UTCInterval
     from merge_carlo.simulation.capacity import materialize_reviewers
     from merge_carlo.simulation.engine import run_fifo
+    from merge_carlo.simulation.metrics import MetricWindow
 
     assumption = AssumptionSet("random", 17, RevisionLoops(3, 11, 0.2, 0.6, 0.3), Abandonment(0.4, (8, 90)), 7)
     config = replace(experiment(6), assumptions=(assumption,), trace_replications=tuple(range(6)))
@@ -183,6 +188,7 @@ def test_stochastic_forwarding_replays_engine_with_same_keys() -> None:
             coordination_seconds=7,
             root_seed=42,
             replication=row.replication,
+            measurement=MetricWindow(config.bounds.warmup_seconds, span.seconds, 86400, 0),
         )
         assert row.trace[0] == expected
 

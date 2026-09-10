@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Measurement-window metric dictionaries for operational and new-ready work,
+  with queue integrals, completed-review latency quantiles, mature-cohort shares,
+  clipped utilization, explicit undefined reasons, and run-level summaries.
 - Sequential paired Monte Carlo execution across named assumption sets, with
   streamed rows, continuous warm-up, separate count summaries, truncation
   gating, and opt-in sampled engine diagnostics through the Python API.

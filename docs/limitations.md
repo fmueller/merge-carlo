@@ -132,8 +132,63 @@ diagnostics; `trace_replications=(0,)` opts into baseline/scenario FIFO results
 for replication zero, including final PR states and event-boundary accounting.
 These diagnostics are not a full per-transition event log. The runner retains
 only bounded current-run state and count summaries, unless the consumer chooses
-to accumulate rows. Full metrics (T-013), event-trace/artifact persistence and
-reports (T-014), and the CLI remain separate v0.1.0 work.
+to accumulate rows. Measurement dictionaries are now included on each valid
+row; event-trace/artifact persistence and reports (T-014), and the CLI remain
+separate v0.1.0 work.
+
+### Measurement dictionary
+
+`simulation.metrics.MetricWindow(start, end, fixed_horizon_seconds,
+backlog_threshold)` enables `run_fifo(..., measurement=...)` accounting.
+Times are elapsed seconds; the end must equal the simulation horizon. The
+runner enables it automatically using the run bounds, with configurable
+`Experiment.fixed_horizon_seconds` (default 86400 elapsed seconds) and
+`backlog_threshold` (default 0 queued PRs). These are declared analysis choices,
+not learned service targets or safe thresholds.
+
+`result.metrics` and each runner side's `.metrics` contain `all_work` and
+`new_ready` dictionaries. A truncated run has no usable dictionary (`None`,
+explained by `engine_truncated`), even if it merged earlier work. No full
+transition trace is needed. Definitions are:
+
+- All-work covers carry-in plus arrivals in `[start, end)`; work resolved
+  before start is excluded. New-ready covers only arrivals in that window.
+  Boundary WIP is measured immediately before events at each boundary.
+  Horizon censoring preserves end WIP, not a synthetic abandonment.
+- Arrivals, merges, abandonments and requested changes count window events.
+  End WIP = start WIP + arrivals − merges − abandonments at both levels.
+- Queue peak uses settled queue occupancy (after same-time dispatch), excluding
+  in-service and off-duty assigned reviews. Time-average queue length is the
+  exact piecewise-constant occupancy integral divided by window duration, not
+  a sample average. `queue_wait_seconds` is that integral in PR-seconds,
+  including unfinished queue waits, clipped to the window. Backlog exceedance
+  is a run-level 0/1 event: queue peak strictly exceeds the declared threshold.
+- First-review latency is readiness to first human-review **start**, conditioned
+  on that first review completing in the window. An interrupted, never-completed
+  review supplies no latency sample. Ready-to-merge latency is readiness to merge
+  for window merges. Both expose median and p95 with linear interpolation;
+  absence gives `None` with `no_completed_reviews` or `no_merges`.
+- Fixed-horizon reviewed/merged shares use each selected PR's readiness plus
+  the declared horizon. A deadline at or beyond end is excluded regardless of
+  early success; success is completion at or before the deadline. Reviewed
+  requires completed human review, never bypass. Total, eligible and excluded
+  counts accompany each share. Operational carry-in can have pre-window review
+  completion; the new-ready cohort avoids this survivor-conditioned population.
+- Unresolved share divides end WIP by the selected population. Empty populations
+  and empty horizon-eligible sets give `None` with `no_eligible_cohort`.
+- Utilization divides window-clipped active service by window-clipped declared
+  reviewer duty, excluding off-duty elapsed time. New-ready utilization uses
+  only that cohort's service but the same system capacity denominator. No duty
+  gives `None` with `no_declared_review_capacity`; idle declared capacity gives
+  zero. Unreviewed merges have no human-review start.
+
+`summarize_metrics` consumes one selected scalar per replication and returns its
+median, 5th and 95th percentiles, plus total/defined/excluded run counts. Feed it
+run medians or run p95s separately, never pooled PR delays, and keep assumption
+sets, scenarios and population levels separate. An all-undefined selection gives
+`no_defined_replications`. Exact quantiles retain these scalar values in the
+consumer; the runner does not accumulate them or PR diagnostics. Persisted
+reports and binomial uncertainty intervals remain T-014, not this primitive.
 
 Three kinds of uncertainty stay separate: random workflow variation under fixed
 parameters, Monte Carlo estimation error from a finite replication count, and

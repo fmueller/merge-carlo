@@ -13,6 +13,7 @@ from fractions import Fraction
 from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import LifecycleEvent as Event
 from merge_carlo.simulation.domain import PullRequest, PullRequestState
+from merge_carlo.simulation.metrics import Measurement, MetricWindow, RunMetrics
 from merge_carlo.simulation.randomness import random_stream
 
 
@@ -122,6 +123,7 @@ class FIFOResult:
     limitations: tuple[str, ...]
     engine_truncated: bool = False
     modeled_review_effort_avoided_seconds: float = 0
+    metrics: RunMetrics | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,6 +174,7 @@ def run_fifo(
     coordination_seconds: float = 0,
     root_seed: int = 0,
     replication: int = 0,
+    measurement: MetricWindow | None = None,
 ) -> FIFOResult:
     """Run over [0, span.seconds), retaining partial service at the horizon.
 
@@ -184,6 +187,9 @@ def run_fifo(
     Coordination is assumed elapsed delay after either approval or bypass.
     """
     loops = RevisionLoops() if loops is None else loops
+    if measurement is not None and measurement.end != span.seconds:
+        raise ValueError("measurement end must equal the simulation horizon")
+    meter = Measurement(measurement) if measurement is not None else None
     if not math.isfinite(coordination_seconds) or coordination_seconds < 0:
         raise ValueError("coordination delay must be finite and nonnegative")
     if root_seed < 0 or replication < 0:
@@ -255,15 +261,21 @@ def run_fifo(
         now = heapq.heappop(events)
         while events and events[0] == now:
             heapq.heappop(events)
-        for reviewer_id, pr_id in assigned.items():
-            if any(start <= previous < end for start, end in duty[reviewer_id]):
-                seconds = now - previous
-                service_used[pr_id] += seconds
-                total_service[pr_id] += seconds
-                states[pr_id] = states[pr_id].consume_review_service(
-                    float(total_service[pr_id]) - states[pr_id].active_review_seconds
-                )
-                active[reviewer_id] += seconds
+        active_assignments = {
+            reviewer_id: pr_id
+            for reviewer_id, pr_id in assigned.items()
+            if any(start <= previous < end for start, end in duty[reviewer_id])
+        }
+        if meter is not None:
+            meter.advance(states, float(previous), float(now), set(active_assignments.values()))
+        for reviewer_id, pr_id in active_assignments.items():
+            seconds = now - previous
+            service_used[pr_id] += seconds
+            total_service[pr_id] += seconds
+            states[pr_id] = states[pr_id].consume_review_service(
+                float(total_service[pr_id]) - states[pr_id].active_review_seconds
+            )
+            active[reviewer_id] += seconds
         if now == horizon:
             for pr_id, p in states.items():
                 if not p.terminal:
@@ -285,6 +297,8 @@ def run_fifo(
                     draw = random_stream(
                         root_seed, replication, pr_id, p.review_visit_count, "requested-change"
                     ).random()
+                    if meter is not None:
+                        meter.completed_review(p, float(now), draw < probability)
                     if draw < probability:
                         states[pr_id] = p.transition(Event.CHANGES_REQUESTED, at=float(now))
                         schedule(pr_id, now, loops.author_response_seconds)
@@ -399,4 +413,16 @@ def run_fifo(
         ),
         engine_truncated,
         float(sum(p.review_bypassed for p in states.values()) * service_seconds),
+        meter.finish(
+            tuple(states.values()),
+            float(
+                sum(
+                    max(Fraction(0), min(end, Fraction(meter.window.end)) - max(start, Fraction(meter.window.start)))
+                    for intervals in duty.values()
+                    for start, end in intervals
+                )
+            ),
+        )
+        if meter is not None and not engine_truncated
+        else None,
     )

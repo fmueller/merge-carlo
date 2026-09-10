@@ -1,7 +1,7 @@
 """Sequential paired runs; memory is bounded by one pair, not replication count.
 
-These Python contracts carry assumed parameters. Artifact schemas and the full
-metric dictionary are separate layers. No scenario or assumption name enters a
+These Python contracts carry assumed parameters. Artifact schemas are a separate
+layer. No scenario or assumption name enters a
 random key: shared proposals map common latent draws through their parameters.
 """
 
@@ -13,8 +13,8 @@ from types import MappingProxyType
 from merge_carlo.simulation.arrivals import AdditiveAI, ReplacementAI, WeekTemplate, generate_proposals
 from merge_carlo.simulation.calendars import DutyCalendar, LocalAbsence, RunBounds, UTCInterval
 from merge_carlo.simulation.capacity import materialize_reviewers
-from merge_carlo.simulation.domain import PullRequestState
 from merge_carlo.simulation.engine import Abandonment, FIFOResult, ReviewBypass, RevisionLoops, run_fifo
+from merge_carlo.simulation.metrics import MetricWindow, RunMetrics
 
 
 @dataclass(frozen=True, slots=True)
@@ -70,8 +70,11 @@ class Experiment:
     root_seed: int
     replications: int
     trace_replications: tuple[int, ...] = ()
+    fixed_horizon_seconds: float = 86400
+    backlog_threshold: int = 0
 
     def __post_init__(self) -> None:
+        MetricWindow(0, self.bounds.observation.seconds, self.fixed_horizon_seconds, self.backlog_threshold)
         if type(self.root_seed) is not int or self.root_seed < 0:
             raise ValueError("root seed must be a nonnegative integer")
         if type(self.replications) is not int or self.replications < 1:
@@ -99,6 +102,7 @@ class RunCounts:
 
     merges: int | None
     engine_truncated: bool
+    metrics: RunMetrics | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -188,17 +192,17 @@ class ExperimentRun(Iterator[PairedRow]):
                 coordination_seconds=assumption.coordination_seconds,
                 root_seed=experiment.root_seed,
                 replication=replication,
+                measurement=MetricWindow(
+                    experiment.bounds.warmup_seconds,
+                    span.seconds,
+                    experiment.fixed_horizon_seconds,
+                    experiment.backlog_threshold,
+                ),
             )
             counts = RunCounts(
-                None
-                if result.engine_truncated
-                else sum(
-                    p.state is PullRequestState.MERGED
-                    and p.terminal_at is not None
-                    and experiment.bounds.warmup_seconds <= p.terminal_at < span.seconds
-                    for p in result.pull_requests
-                ),
+                result.metrics.all_work.merges if result.metrics is not None else None,
                 result.engine_truncated,
+                result.metrics,
             )
             return result, counts, schedule.limitations + result.limitations
 
