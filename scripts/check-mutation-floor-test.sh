@@ -45,32 +45,52 @@ assert_reports() {
   fi
 }
 
-# Ten mutants, nine killed: exactly on a 90% floor.
+# Ten mutants, eight killed: exactly on the v0.1.0 80% floor.
 at_floor=""
-for i in 1 2 3 4 5 6 7 8 9; do
+for i in 1 2 3 4 5 6 7 8; do
   at_floor+="    merge_carlo.engine.x__run__mutmut_$i: killed"$'\n'
 done
+at_floor+="    merge_carlo.engine.x__run__mutmut_9: survived"$'\n'
 at_floor+="    merge_carlo.engine.x__run__mutmut_10: survived"
 
-# Ten mutants, eight killed: below a 90% floor.
+# Ten mutants, seven killed: below the floor.
 below_floor=""
-for i in 1 2 3 4 5 6 7 8; do
+for i in 1 2 3 4 5 6 7; do
   below_floor+="    merge_carlo.engine.x__run__mutmut_$i: killed"$'\n'
 done
+below_floor+="    merge_carlo.engine.x__run__mutmut_8: survived"$'\n'
 below_floor+="    merge_carlo.engine.x__run__mutmut_9: survived"$'\n'
 below_floor+="    merge_carlo.engine.x__run__mutmut_10: survived"
 
 # A weak module hidden behind a strong one; the repository total would pass.
-mixed="$at_floor"$'\n'"$below_floor"
-mixed="${mixed//merge_carlo.engine.x__run__mutmut_9: survived/merge_carlo.metrics.x__p95__mutmut_9: survived}"
+strong="${at_floor//survived/killed}"
+mixed="${strong//merge_carlo.engine/merge_carlo.metrics}"$'\n'"$below_floor"
 
 assert_accepts at-floor "$at_floor"
 assert_rejects below-floor "$below_floor" "below the mutation efficacy floor"
-assert_accepts below-floor-with-lower-floor "$below_floor" --floor 80
+assert_reports raw-counts-at-floor "$at_floor" "8/10"
+assert_reports raw-score-at-floor "$at_floor" "80.0%"
+assert_reports rejected-floor-visible "$below_floor" "BELOW FLOOR 80%"
+assert_rejects explicit-stricter-floor "$at_floor" "BELOW FLOOR 90%" --floor 90
+assert_accepts below-floor-with-lower-floor "$below_floor" --floor 70
+
+# Synthetic reproduction of the reported T-005 counts; no survivor is excluded.
+reported_counts=""
+for i in $(seq 1 39); do
+  status=survived
+  if [ "$i" -le 34 ]; then
+    status=killed
+  fi
+  reported_counts+="    merge_carlo.randomness.x__stream__mutmut_$i: $status"$'\n'
+done
+assert_accepts reported-counts-at-v010-floor "$reported_counts"
+assert_reports reported-raw-counts "$reported_counts" "34/39"
+assert_reports reported-raw-score "$reported_counts" "87.2%"
+assert_rejects reported-counts-at-old-floor "$reported_counts" "BELOW FLOOR 90%" --floor 90
 
 # A timed-out mutant is a killed mutant: the mutation changed behavior enough to
 # hang the suite, which the tests would have caught given time.
-timeout_counts="${at_floor//merge_carlo.engine.x__run__mutmut_10: survived/merge_carlo.engine.x__run__mutmut_10: timeout}"
+timeout_counts="${at_floor//survived/timeout}"
 assert_accepts timeout-counts-as-killed "$timeout_counts" --floor 100
 
 # Too few mutants is not a verdict in either direction.

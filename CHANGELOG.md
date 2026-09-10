@@ -25,4 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked
   development dependencies on fresh remote machines.
 
+### Changed
+
+- Lower the default per-module mutation efficacy floor from 90% to 80% for
+  v0.1.0 by explicit maintainer decision. Raw mutation results, survivors,
+  per-module accounting, and the ten-mutant minimum remain unchanged.
+
 [Unreleased]: https://github.com/fmueller/merge-carlo/compare/main...HEAD

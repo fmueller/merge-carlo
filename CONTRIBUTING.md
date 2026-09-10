@@ -69,6 +69,11 @@ dispatch, never on a pull request: mutmut re-runs the suite once per mutant. For
 a logic-heavy change, run `mise run test:mutate` locally instead — it mutates
 only the modules your change touched.
 
+The [v0.1.0 mutation policy](docs/mutation-policy.md) sets the per-module floor
+to 80% (previously 90%), with the existing ten-mutant minimum. Raw counts and
+survivors remain visible and unadjusted. Reassess this explicitly version-scoped
+threshold before adopting it for a later release.
+
 ## Tracked work
 
 Work is tracked with the `taskrail` CLI. Every change should map to a task whose

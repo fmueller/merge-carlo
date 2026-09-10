@@ -15,7 +15,7 @@
 # Reads `mutmut results --all true` on stdin, or runs it when given no input.
 set -euo pipefail
 
-floor=90
+floor=80
 min_mutants=10
 
 while [ "$#" -gt 0 ]; do

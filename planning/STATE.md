@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T12:03:29Z"
+updated_at: "2026-09-10T12:45:37Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: idle
 blockers: []
 next_action: 'Start task T-005-keyed-random-streams: Provide purpose-keyed reproducible random streams'
-last_verification_result: pass for T-004-fifo-review-engine at 2026-09-10T12:02:22Z
+last_verification_result: pass for T-035-equivalent-mutant-gate-policy at 2026-09-10T12:45:37Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,7 +34,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-004-fifo-review-engine at 2026-09-10T12:02:22Z
+- pass for T-035-equivalent-mutant-gate-policy at 2026-09-10T12:45:37Z
 
 ## Next Action
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 28
+- todo: 29
 - in_progress: 0
-- completed: 6
+- completed: 7
 - blocked: 0
 - cancelled: 0
