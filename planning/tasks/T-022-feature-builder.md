@@ -1,12 +1,12 @@
 ---
 id: T-022-feature-builder
 title: Build leakage-checked features at a frozen training cutoff
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies:
     - T-021-dataset-inspection
-updated_at: "2026-09-09T19:03:11Z"
+updated_at: "2026-09-10T20:24:24Z"
 ---
 
 # T-022-feature-builder Build leakage-checked features at a frozen training cutoff
@@ -34,3 +34,5 @@ attributed CI observations.
 - Unit tests per feature against a hand-computed fixture.
 
 ## Implementation Notes
+
+- 2026-09-10T20:24:13Z: verification pass

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Frozen-cutoff empirical feature construction through the Python API, with
+  complete local-week arrivals, explicit human-review semantics, mature-cohort
+  outcomes, labeled prevalence and completion conditioning, descriptive size
+  snapshots, CI attribution coverage, and temporal leakage checks.
 - Offline `inspect` reports in Markdown and canonical JSON with endpoint
   completeness, record and date coverage, missingness, censoring, readiness and
   origin unknown fractions, fit exclusions, and extraction limitations.

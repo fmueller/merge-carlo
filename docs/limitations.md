@@ -9,7 +9,8 @@ must be readable alongside it.
 The [cohort collector](cohort-collection.md) exposes `collect --resume` using the
 [read-only transport](github-transport.md) and
 [projected SQLite store](projected-store.md). Calibration and inspection remain
-downstream work. Enumeration is not a point-in-time GitHub transaction; later
+downstream work; frozen-cutoff features are available through the Python API.
+Enumeration is not a point-in-time GitHub transaction; later
 snapshots cannot establish earlier draft, size or review state. The conservative
 historical reader excludes such snapshots. Optional CI is not requested.
 The store persists extraction manifests and allowlisted observations with
@@ -220,9 +221,9 @@ unsupported assumption more valid.
 `simulation.arrivals.generate_proposals` resamples complete Monday-based local
 weeks with replacement and emits FIFO-compatible proposals, retaining each
 arrival's author and declared origin together. Callers must supply complete
-training weeks in one declared timezone, including empty weeks, and validate
-coverage and the training cutoff upstream. Dataset feature extraction is not
-implemented by this primitive. Fewer than eight distinct weeks adds
+training weeks in one declared timezone, including empty weeks. The feature
+builder validates that upstream boundary; the resampling primitive does not.
+Fewer than eight distinct weeks adds
 `exploratory_only`; no weeks is an error. This flag must travel with downstream
 results and does not certify empirical model readiness when absent.
 

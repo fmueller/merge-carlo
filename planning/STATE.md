@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T19:55:03Z"
+updated_at: "2026-09-10T20:24:24Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-022-feature-builder: Build leakage-checked features at a frozen training cutoff'
-last_verification_result: pass for T-021-dataset-inspection at 2026-09-10T19:54:50Z
+next_action: 'Start task T-023-model-builder: Calibrate a provenance-tagged model and model card'
+last_verification_result: pass for T-022-feature-builder at 2026-09-10T20:24:13Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-021-dataset-inspection at 2026-09-10T19:54:50Z
+- pass for T-022-feature-builder at 2026-09-10T20:24:13Z
 
 ## Next Action
 
-- Start task T-022-feature-builder: Build leakage-checked features at a frozen training cutoff
+- Start task T-023-model-builder: Calibrate a provenance-tagged model and model card
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 17
+- todo: 16
 - in_progress: 0
-- completed: 24
+- completed: 25
 - blocked: 0
 - cancelled: 0

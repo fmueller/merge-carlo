@@ -80,6 +80,9 @@ completion time, conservatively later than every page). Lifecycle events retain
 after the cutoff and undated legacy snapshots; it filters lifecycle events by
 source time. This conservative reader is not a calibrated feature pipeline, and
 does not certify history completeness. Read statuses from `export` alongside it.
+The downstream [feature builder](feature-builder.md) applies the complete
+cutoff, local-week, review, outcome, size, and CI-attribution contracts to an
+export.
 Snapshot observation time affects semantic hashes; identical observations at the
 same observation time hash independently of page order. Resume at a later time
 can legitimately change the content hash even if the API fields do not change.

@@ -14,11 +14,19 @@ Last updated: 2026-09-10.
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
-| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
+| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | In progress: frozen-cutoff features |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- `features.build_features` produces complete local-week arrival templates,
+  declared-human substantive-review and first-decision observations,
+  horizon-qualified requested-change prevalence and mature outcomes,
+  completion-conditioned merge durations, descriptive size snapshots, and
+  SHA-attributed CI observations. Synthetic hand calculations and leakage tests
+  cover pending/comment/author review exclusions, post-cutoff snapshots and
+  events, incomplete collections, and CI mismatches. See the
+  [feature builder](feature-builder.md).
 - Collection resolves strict or explicit created-at-proxy readiness and local
   operator-declared work origin into per-PR derived features. Unknown readiness
   is excluded from ready-based fitting; reopened, repeated ready/draft, and
