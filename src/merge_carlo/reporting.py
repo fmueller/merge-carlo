@@ -22,7 +22,7 @@ class Evidence(Contract):
     synthetic: bool
     training_cutoff: str | None
     template_basis: Literal["observed", "derived", "proxy", "assumed"] = "assumed"
-    validation_status: Literal["not_performed", "pass", "fail"] = "not_performed"
+    validation_status: Literal["not_performed", "pass", "fail", "insufficient_evidence"] = "not_performed"
 
 
 class Probability(Contract):

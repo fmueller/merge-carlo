@@ -1,12 +1,12 @@
 ---
 id: T-024-held-out-validation
 title: Run held-out descriptive validation with evidence gates
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies:
     - T-023-model-builder
-updated_at: "2026-09-09T19:03:12Z"
+updated_at: "2026-09-10T21:51:22Z"
 ---
 
 # T-024-held-out-validation Run held-out descriptive validation with evidence gates
@@ -35,3 +35,5 @@ tolerances.
 - An exit-code test for `validate --strict`.
 
 ## Implementation Notes
+
+- 2026-09-10T21:51:15Z: verification pass

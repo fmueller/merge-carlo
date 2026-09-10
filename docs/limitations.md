@@ -48,8 +48,9 @@ review effort to historical latency. Constant, median-and-log-sigma lognormal,
 and empirical effort distributions remain operator assumptions, including when
 an empirical list is hand-entered. Evidence flags and an `exploratory_only`
 label qualify weak support; clearing those flags is not held-out validation or
-intervention validation. CLI integration and held-out diagnostics remain
-separate v0.1.0 tasks.
+intervention validation. Held-out descriptive validation consumes a prepared
+offline replay-evidence contract; it does not fit or tune parameters, establish
+intervention validity, or turn a historical gate into an auto-approval claim.
 
 ## Workflow class
 

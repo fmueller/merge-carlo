@@ -106,13 +106,24 @@ limitations:
 uv run merge-carlo inspect   --dataset data/repository.sqlite --out out/inspection
 ```
 
+Apply descriptive gates to a prepared, versioned held-out replay evidence file.
+The default remains exploratory: it writes failed gates as warnings. Add
+`--strict` to exit with code 4 when a declared criterion fails:
+
+```bash
+uv run merge-carlo validate --input out/replay-evidence.json --out out/validation --strict
+```
+
+The replay evidence contains the frozen fitting and validation intervals,
+observed mature-cohort outcomes, and replication outcomes from replaying exact
+held-out arrival timestamps with only known-at-arrival attributes. See
+[`docs/validation.md`](docs/validation.md).
+
 The remaining real-data commands are planned, **not yet available**:
 
 ```bash
 uv run merge-carlo calibrate --dataset data/repository.sqlite --train-until 2026-07-01 \
                              --assumptions configs/team-assumptions.yaml --out models/repository
-uv run merge-carlo validate  --dataset data/repository.sqlite --model models/repository/model.json \
-                             --from 2026-07-01 --until 2026-08-01 --out out/validation
 uv run merge-carlo simulate  --model models/repository/model.json --scenarios configs/scenarios.yaml --out out/experiment
 uv run merge-carlo report    --results out/experiment --validation out/validation/validation.json \
                              --out out/experiment/report.md

@@ -14,6 +14,7 @@ from merge_carlo.demo import demo_experiment
 from merge_carlo.github import GitHubTransport, TransportLimits
 from merge_carlo.inspection import InspectionError, write_inspection
 from merge_carlo.store import ProjectedStore, WorkspaceKey
+from merge_carlo.validation import load_validation_evidence, run_validation, write_validation
 
 app = typer.Typer(
     name="merge-carlo",
@@ -148,3 +149,23 @@ def inspect(
         typer.echo("Cannot inspect: invalid or inaccessible dataset/output.", err=True)
         raise typer.Exit(code=2) from None
     typer.echo(f"Dataset inspection: {out / 'report.md'}")
+
+
+@app.command()
+def validate(
+    input: Annotated[Path, typer.Option(help="Versioned held-out replay evidence JSON.")],
+    out: Annotated[Path, typer.Option(help="Empty or absent directory for validation artifacts.")],
+    strict: Annotated[bool, typer.Option(help="Exit 4 when any declared evidence gate fails.")] = False,
+) -> None:
+    """Apply historical descriptive gates to an offline held-out replay."""
+    try:
+        result = run_validation(load_validation_evidence(input))
+        write_validation(result, out)
+    except (OSError, ValueError):
+        typer.echo("Cannot validate: invalid or inaccessible evidence/output.", err=True)
+        raise typer.Exit(code=2) from None
+    typer.echo(f"Validation {result.status}: {out / 'report.md'}")
+    if result.status == "fail":
+        if strict:
+            raise typer.Exit(code=4)
+        typer.echo("Validation failed with warnings; exploratory report was written.")

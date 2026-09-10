@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T20:59:54Z"
+updated_at: "2026-09-10T21:51:23Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-024-held-out-validation: Run held-out descriptive validation with evidence gates'
-last_verification_result: pass for T-023-model-builder at 2026-09-10T20:59:31Z
+next_action: 'Start task T-038-mutation-method-reporting: Count mangled class methods in mutation efficacy reports'
+last_verification_result: pass for T-024-held-out-validation at 2026-09-10T21:51:15Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-023-model-builder at 2026-09-10T20:59:31Z
+- pass for T-024-held-out-validation at 2026-09-10T21:51:15Z
 
 ## Next Action
 
-- Start task T-024-held-out-validation: Run held-out descriptive validation with evidence gates
+- Start task T-038-mutation-method-reporting: Count mangled class methods in mutation efficacy reports
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 15
+- todo: 14
 - in_progress: 0
-- completed: 26
+- completed: 27
 - blocked: 0
 - cancelled: 0

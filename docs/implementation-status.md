@@ -14,11 +14,21 @@ Last updated: 2026-09-10.
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
-| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | In progress: model calibration |
+| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | In progress: held-out validation |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- `merge-carlo validate --input replay-evidence.json --out out/validation`
+  validates a frozen chronological split from offline observed outcomes and
+  exact-timestamp replay replications. The versioned input rejects unknown keys;
+  outputs retain exact estimates, cohort sizes and variability for both mature
+  horizon shares, completion-conditioned first-review median, weekly merge
+  counts, and initialization discrepancy. Small cohorts produce
+  `insufficient_evidence`; exploratory failures write warnings while `--strict`
+  exits 4. Reports explicitly withhold causal, intervention, productivity,
+  auto-approval-safety, and material-discrepancy backlog claims. See
+  [held-out validation](validation.md).
 - `calibration.calibrate_model` combines frozen features with required
   provenance-tagged active-effort assumptions for every work-origin cohort.
   It preserves elapsed review and merge observations as descriptive evidence,
@@ -107,9 +117,10 @@ Last updated: 2026-09-10.
 
 ## Not implemented
 
-The real-data pipeline commands `calibrate`, `validate`, `simulate`, and
-`report` remain unimplemented. The CLI exposes `collect`, `inspect`, `demo`,
-`--version` and `--help`. The README distinguishes working and planned commands.
+The real-data pipeline commands `calibrate`, `simulate`, and `report` remain
+unimplemented. `validate` consumes prepared offline held-out replay evidence;
+the CLI also exposes `collect`, `inspect`, `demo`, `--version` and `--help`. The
+README distinguishes working and planned commands.
 
 ## Unverified
 

@@ -35,6 +35,29 @@ def test_bare_invocation_reports_invalid_input(runner: CliRunner) -> None:
 
 
 @pytest.mark.unit
+def test_validate_strict_exits_four_only_for_failed_criteria(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from merge_carlo.validation import ValidationResult
+
+    source = tmp_path / "evidence.json"
+    failed = ValidationResult.model_construct(status="fail")
+    monkeypatch.setattr("merge_carlo.cli.load_validation_evidence", lambda path: object())
+    monkeypatch.setattr("merge_carlo.cli.run_validation", lambda request: failed)
+    monkeypatch.setattr("merge_carlo.cli.write_validation", lambda result, out: None)
+
+    exploratory = runner.invoke(app, ["validate", "--input", str(source), "--out", str(tmp_path / "out")])
+    strict = runner.invoke(
+        app,
+        ["validate", "--input", str(source), "--out", str(tmp_path / "strict"), "--strict"],
+    )
+
+    assert exploratory.exit_code == 0
+    assert "failed with warnings" in exploratory.stdout
+    assert strict.exit_code == 4
+
+
+@pytest.mark.unit
 def test_collect_cli_and_resume(runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     def respond(request: httpx.Request) -> httpx.Response:
         return httpx.Response(200, json={"id": 91} if request.url.path == "/repos/example/repo" else [])

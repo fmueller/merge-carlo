@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Offline held-out descriptive validation through a versioned replay-evidence
+  contract and `validate` CLI, with chronological split rejection, configurable
+  pass/fail/insufficient-evidence gates, exact values and cohort variability,
+  initialization discrepancy, and strict exit code 4.
 - Provenance-tagged empirical model calibration through the Python API, with
   required cohort effort assumptions, strict duration distributions, recorded
   evidence thresholds, explicit exploratory labeling, deterministic model
