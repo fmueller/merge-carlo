@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T11:43:44Z"
+updated_at: "2026-09-10T12:03:29Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-004-fifo-review-engine: Run a FIFO review queue with constant service to a horizon'
-last_verification_result: pass for T-003-duty-calendars at 2026-09-10T11:43:44Z
+next_action: 'Start task T-005-keyed-random-streams: Provide purpose-keyed reproducible random streams'
+last_verification_result: pass for T-004-fifo-review-engine at 2026-09-10T12:02:22Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-003-duty-calendars at 2026-09-10T11:43:44Z
+- pass for T-004-fifo-review-engine at 2026-09-10T12:02:22Z
 
 ## Next Action
 
-- Start task T-004-fifo-review-engine: Run a FIFO review queue with constant service to a horizon
+- Start task T-005-keyed-random-streams: Provide purpose-keyed reproducible random streams
 
 ## Relevant Artifacts
 
@@ -52,6 +52,6 @@ continuation_notes:
 
 - todo: 28
 - in_progress: 0
-- completed: 5
+- completed: 6
 - blocked: 0
 - cancelled: 0

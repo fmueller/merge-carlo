@@ -17,6 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   revision invalidation, terminal outcomes, and review accounting.
 - Timezone-aware duty calendar primitives with weekly windows, dated absences,
   explicit DST boundary rejection, and local-day horizon and warm-up bounds.
+- A deterministic FIFO review engine with constant active service, stable
+  reviewer selection, no self-review, shift pause/resume, horizon censoring,
+  conservation boundaries, and separate active/duty accounting.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked

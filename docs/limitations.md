@@ -26,6 +26,28 @@ them.
 
 ## Workflow class
 
+The implemented deterministic `simulation.engine.run_fifo` slice accepts fresh
+READY proposals and a declared constant service duration (at least one second,
+rounded up). Readiness is elapsed seconds from a supplied UTC span's start.
+Reviewers supply sorted, disjoint UTC duty intervals, normally materialized by
+`DutyCalendar`. Inputs are not mutated and output ordering is stable by ID.
+Verification succeeds instantly and review approval merges instantly. Revision
+loops and abandonment scheduling remain tracked v0.1.0 work (T-007 and T-008);
+this slice rejects prior workflow state and abandonment deadlines.
+
+The run is half-open: arrivals at or beyond the horizon are excluded and a
+completion exactly at the horizon is censored, with all preceding active
+service retained. Equal-time processing accounts service first, then censors
+at the horizon, otherwise completes reviews, admits arrivals, and dispatches
+in reviewer-ID order. Shift-end completions before the horizon may merge.
+Interrupted reviews remain assigned across off-duty gaps. A proposal with no
+non-author reviewer having duty after its readiness carries a
+`no_eligible_reviewer:<pr_id>` limitation; it is not silently self-reviewed.
+Boundary records contain cumulative arrivals, merges, in-progress and unresolved
+counts; reviewer accounting separates active seconds from clipped duty seconds.
+Internal event arithmetic is exact; public times and durations remain floats.
+This is a Python API, not yet a CLI experiment or a reporting artifact contract.
+
 v0.1.0 models a **CI-before-review, one-required-review** workflow with a single
 central FIFO queue. It does not reproduce repositories that review in parallel
 with CI, require several approvals, route by CODEOWNERS, share review capacity
