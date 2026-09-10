@@ -31,15 +31,33 @@ READY proposals and a declared constant service duration (at least one second,
 rounded up). Readiness is elapsed seconds from a supplied UTC span's start.
 Reviewers supply sorted, disjoint UTC duty intervals, normally materialized by
 `DutyCalendar`. Inputs are not mutated and output ordering is stable by ID.
-Verification succeeds instantly and review approval merges instantly. Revision
-loops and abandonment scheduling remain tracked v0.1.0 work (T-007 and T-008);
-this slice rejects prior workflow state and abandonment deadlines.
+`RevisionLoops` supplies assumed constant elapsed verification and author-response
+delays, a verification-failure probability, and separate first/repeat review
+requested-change probabilities. These are assumptions, not observed effort.
+Verification runs concurrently without a runner queue and outside reviewer duty.
+Failures and requested changes cause an author response, a new revision and a
+new verification gate. Defaults preserve instant verification and approval;
+review approval still merges instantly. Abandonment scheduling remains tracked
+v0.1.0 work (T-008); this slice rejects prior state and abandonment deadlines.
+
+Inclusive per-proposal limits bound review visits and verification attempts
+across all revisions (both default to 100). Attempting further work stops the
+whole replication with `engine_truncated`, retaining diagnostic state and
+consumed service, without inventing abandonment or horizon censoring.
+`summarize_replications` excludes the entire truncated run, including earlier
+merges, exposes `engine_truncated_count`, marks the comparison incomplete and
+disables policy ranking. With no usable replications its outcome counts are
+`None`, not zero. Its pooled merge/unresolved counts are a Python API primitive;
+CLI artifacts, comparison-wide propagation and additional validity gates remain
+downstream work. Passing this truncation gate alone does not justify ranking.
 
 The run is half-open: arrivals at or beyond the horizon are excluded and a
 completion exactly at the horizon is censored, with all preceding active
 service retained. Equal-time processing accounts service first, then censors
 at the horizon, otherwise completes reviews, admits arrivals, and dispatches
-in reviewer-ID order. Shift-end completions before the horizon may merge.
+in reviewer-ID order after settling due verification and author-response events
+(including zero-delay chains, in stable proposal order). Shift-end completions
+before the horizon may merge.
 Interrupted reviews remain assigned across off-duty gaps. A proposal with no
 non-author reviewer having duty after its readiness carries a
 `no_eligible_reviewer:<pr_id>` limitation; it is not silently self-reviewed.
@@ -101,8 +119,8 @@ weeks are rejected, even outside the clipped portion of a sampled week. Source
 weeks are sorted by date; arrival tuple positions must remain stable. Proposal
 IDs use the target Monday and source tuple position, independent of scenario
 ordering and horizon length. Readiness is elapsed seconds from the run start.
-Latent service and revision draws remain the downstream caller's responsibility
-using these IDs and the keyed stream factory; no observed delay becomes effort.
+Latent service draws remain the downstream caller's responsibility using these
+IDs and the keyed stream factory; no observed delay becomes effort.
 This is a Python API, not a persisted model or CLI calibration command.
 
 Purpose-keyed streams provide deterministic pseudorandom draws, not a proof of
@@ -111,7 +129,9 @@ the same key encoding, PCG64, NumPy environment, and sampling calls; arbitrary
 NumPy upgrades are not a promise of identical distribution samples. Callers
 must use stable proposal/revision/purpose identities and omit scenario IDs for
 shared latent variables. The factory cannot infer the semantic role of a string.
-It is not yet connected to the deterministic FIFO engine.
+The FIFO engine keys verification decisions by proposal ID and revision with
+purpose `verification`, and requested changes by proposal ID and review visit
+with purpose `requested-change`, using the caller's root seed and replication.
 
 ## Review bypass
 

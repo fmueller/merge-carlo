@@ -20,6 +20,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A deterministic FIFO review engine with constant active service, stable
   reviewer selection, no self-review, shift pause/resume, horizon censoring,
   conservation boundaries, and separate active/duty accounting.
+- Verification and requested-change revision loops with keyed decisions,
+  separate first/repeat change probabilities, elapsed author-response delays,
+  and inclusive safety limits. Truncated runs are excluded from pooled outcome
+  counts and disable the comparison's policy-ranking gate.
 - Stateless purpose-keyed NumPy PCG64 random streams, reproducible by root
   seed, replication, and ordered proposal/revision/purpose keys.
 - Whole-week arrival resampling with bundled author/origin marks, stable

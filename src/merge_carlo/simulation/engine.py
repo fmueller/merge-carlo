@@ -1,8 +1,8 @@
 """Event-scheduled constant-service FIFO slice; times are seconds from span.start.
 
 At equal timestamps: account preceding service, censor at the horizon, finish
-reviews, admit arrivals, then dispatch by reviewer ID. Verification and merge
-are instantaneous successes. Inputs are fresh READY proposals, not saved runs.
+reviews, admit arrivals, settle verification/author events, then dispatch by
+reviewer ID. Inputs are fresh READY proposals, not saved runs.
 """
 
 import heapq
@@ -13,6 +13,40 @@ from fractions import Fraction
 from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import LifecycleEvent as Event
 from merge_carlo.simulation.domain import PullRequest, PullRequestState
+from merge_carlo.simulation.randomness import random_stream
+
+
+@dataclass(frozen=True, slots=True)
+class RevisionLoops:
+    """Assumed loop parameters, not measured effort or calibrated probabilities.
+
+    Delays are constant aggregate elapsed seconds, independent of duty and
+    runner capacity. Limits are inclusive per proposal across all revisions.
+    Zero delays preserve the original instant-success default.
+    """
+
+    verification_seconds: float = 0
+    author_response_seconds: float = 0
+    verification_failure_probability: float = 0
+    first_change_probability: float = 0
+    repeat_change_probability: float = 0
+    max_review_visits: int = 100
+    max_verification_attempts: int = 100
+
+    def __post_init__(self) -> None:
+        for delay in (self.verification_seconds, self.author_response_seconds):
+            if not math.isfinite(delay) or delay < 0:
+                raise ValueError("loop delays must be finite and nonnegative")
+        for probability in (
+            self.verification_failure_probability,
+            self.first_change_probability,
+            self.repeat_change_probability,
+        ):
+            if not 0 <= probability <= 1:
+                raise ValueError("loop probabilities must be between zero and one")
+        for limit in (self.max_review_visits, self.max_verification_attempts):
+            if type(limit) is not int or limit < 1:
+                raise ValueError("loop limits must be positive integers")
 
 
 @dataclass(frozen=True, slots=True)
@@ -49,6 +83,39 @@ class FIFOResult:
     reviewers: tuple[ReviewerAccounting, ...]
     boundaries: tuple[Boundary, ...]
     limitations: tuple[str, ...]
+    engine_truncated: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ReplicationSummary:
+    """Pooled counts from nontruncated runs only; not a policy recommendation."""
+
+    completed_replications: int
+    engine_truncated_count: int
+    merged: int | None
+    unresolved: int | None
+
+    @property
+    def comparison_incomplete(self) -> bool:
+        return self.engine_truncated_count > 0 or self.completed_replications == 0
+
+    @property
+    def policy_ranking_enabled(self) -> bool:
+        """Truncation gate only; downstream validity gates must also pass."""
+        return not self.comparison_incomplete
+
+
+def summarize_replications(results: tuple[FIFOResult, ...]) -> ReplicationSummary:
+    """Exclude whole truncated replications, including any earlier merges."""
+    complete = tuple(result for result in results if not result.engine_truncated)
+    return ReplicationSummary(
+        len(complete),
+        len(results) - len(complete),
+        sum(p.state is PullRequestState.MERGED for result in complete for p in result.pull_requests)
+        if complete
+        else None,
+        sum(p.censored for result in complete for p in result.pull_requests) if complete else None,
+    )
 
 
 def run_fifo(
@@ -57,6 +124,9 @@ def run_fifo(
     *,
     span: UTCInterval,
     service_seconds: float,
+    loops: RevisionLoops | None = None,
+    root_seed: int = 0,
+    replication: int = 0,
 ) -> FIFOResult:
     """Run over [0, span.seconds), retaining partial service at the horizon.
 
@@ -64,6 +134,9 @@ def run_fifo(
     reviewer can release an interrupted review to another reviewer. Proposals
     at/after the horizon are excluded; pre-run work and deadlines are rejected.
     """
+    loops = RevisionLoops() if loops is None else loops
+    if root_seed < 0 or replication < 0:
+        raise ValueError("root seed and replication must be non-negative")
     if not math.isfinite(service_seconds) or service_seconds < 1:
         raise ValueError("constant service must be finite and at least one second")
     service_seconds = math.ceil(service_seconds)
@@ -113,7 +186,18 @@ def run_fifo(
     assigned: dict[str, str] = {}
     active = dict.fromkeys(duty, Fraction(0))
     service_used: dict[str, Fraction] = {}
+    total_service: dict[str, Fraction] = {}
+    pending: dict[Fraction, list[str]] = {}
     boundaries: list[Boundary] = []
+    engine_truncated = False
+
+    def schedule(pr_id: str, at: Fraction, delay: float) -> None:
+        due = at + Fraction(delay)
+        if due < horizon:
+            pending.setdefault(due, []).append(pr_id)
+            if due != at:
+                heapq.heappush(events, due)
+
     previous = Fraction(0)
     while events:
         now = heapq.heappop(events)
@@ -123,8 +207,9 @@ def run_fifo(
             if any(start <= previous < end for start, end in duty[reviewer_id]):
                 seconds = now - previous
                 service_used[pr_id] += seconds
+                total_service[pr_id] += seconds
                 states[pr_id] = states[pr_id].consume_review_service(
-                    float(service_used[pr_id]) - states[pr_id].active_review_seconds
+                    float(total_service[pr_id]) - states[pr_id].active_review_seconds
                 )
                 active[reviewer_id] += seconds
         if now == horizon:
@@ -135,19 +220,47 @@ def run_fifo(
             for reviewer_id, pr_id in list(assigned.items()):
                 p = states[pr_id]
                 if service_used[pr_id] >= service_seconds:
-                    states[pr_id] = p.transition(Event.REVIEW_APPROVED, at=float(now)).transition(
-                        Event.MERGE_COMPLETED, at=float(now)
+                    probability = (
+                        loops.first_change_probability if p.review_visit_count == 1 else loops.repeat_change_probability
                     )
+                    draw = random_stream(
+                        root_seed, replication, pr_id, p.review_visit_count, "requested-change"
+                    ).random()
+                    if draw < probability:
+                        states[pr_id] = p.transition(Event.CHANGES_REQUESTED, at=float(now))
+                        schedule(pr_id, now, loops.author_response_seconds)
+                    else:
+                        states[pr_id] = p.transition(Event.REVIEW_APPROVED, at=float(now)).transition(
+                            Event.MERGE_COMPLETED, at=float(now)
+                        )
                     del assigned[reviewer_id]
             for p in arrivals.get(now, []):
-                states[p.pr_id] = p.transition(Event.START_VERIFICATION, at=float(now)).transition(
-                    Event.VERIFICATION_PASSED, at=float(now)
-                )
+                states[p.pr_id] = p.transition(Event.START_VERIFICATION, at=float(now))
+                total_service[p.pr_id] = Fraction(0)
+                schedule(p.pr_id, now, loops.verification_seconds)
+            while now in pending and not engine_truncated:
+                for pr_id in sorted(pending.pop(now)):
+                    p = states[pr_id]
+                    if p.state is PullRequestState.AUTHOR_RESPONSE:
+                        if p.verification_count >= loops.max_verification_attempts:
+                            engine_truncated = True
+                            break
+                        states[pr_id] = p.transition(Event.REVISION_SUBMITTED, at=float(now))
+                        schedule(pr_id, now, loops.verification_seconds)
+                    else:
+                        draw = random_stream(root_seed, replication, pr_id, p.revision, "verification").random()
+                        if draw < loops.verification_failure_probability:
+                            states[pr_id] = p.transition(Event.VERIFICATION_FAILED, at=float(now))
+                            schedule(pr_id, now, loops.author_response_seconds)
+                        else:
+                            states[pr_id] = p.transition(Event.VERIFICATION_PASSED, at=float(now))
             queue = sorted(
                 (p for p in states.values() if p.state is PullRequestState.QUEUED_FOR_REVIEW),
                 key=lambda p: (p.queue_entered_at, p.pr_id, p.revision),
             )
             for r in reviewers:
+                if engine_truncated:
+                    break
                 duty_end = next((end for start, end in duty[r.reviewer_id] if start <= now < end), None)
                 if duty_end is None:
                     continue
@@ -155,6 +268,9 @@ def run_fifo(
                     candidate = next((p for p in queue if p.author_id != r.reviewer_id), None)
                     if candidate is None:
                         continue
+                    if candidate.review_visit_count >= loops.max_review_visits:
+                        engine_truncated = True
+                        break
                     queue.remove(candidate)
                     states[candidate.pr_id] = candidate.transition(Event.REVIEW_STARTED, at=float(now))
                     assigned[r.reviewer_id] = candidate.pr_id
@@ -166,6 +282,8 @@ def run_fifo(
         wip = sum(not p.terminal for p in states.values())
         assert len(states) == merged + unresolved + wip
         boundaries.append(Boundary(float(now), len(states), merged, wip, unresolved))
+        if engine_truncated:
+            break
         previous = now
     return FIFOResult(
         tuple(states[key] for key in sorted(states)),
@@ -186,4 +304,5 @@ def run_fifo(
                 for r in reviewers
             )
         ),
+        engine_truncated,
     )
