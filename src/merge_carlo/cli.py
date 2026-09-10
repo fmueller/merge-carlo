@@ -8,6 +8,7 @@ import typer
 
 from merge_carlo import __version__
 from merge_carlo.artifacts import Evidence, write_experiment
+from merge_carlo.attribution import AttributionConfig
 from merge_carlo.cohort import SourceError, collect_cohort
 from merge_carlo.demo import demo_experiment
 from merge_carlo.github import GitHubTransport, TransportLimits
@@ -59,6 +60,10 @@ def collect(
     end: Annotated[str, typer.Option(help="Exclusive timezone-aware analysis end (ISO 8601).")],
     out: Annotated[Path, typer.Option(help="Dataset directory; empty or absent unless resuming.")],
     workspace: Annotated[Path, typer.Option(help="Private key directory outside the dataset.")],
+    attribution_config: Annotated[
+        Path | None,
+        typer.Option(help="Local YAML with readiness policy and explicit actor-origin declarations."),
+    ] = None,
     resume: Annotated[bool, typer.Option(help="Reconcile the existing extraction from page one.")] = False,
     api_version: Annotated[str, typer.Option(help="GitHub REST API version.")] = "2022-11-28",
     max_pages: Annotated[int, typer.Option(min=1, help="Page budget per collection.")] = 100,
@@ -80,6 +85,7 @@ def collect(
         analysis_start, analysis_end = datetime.fromisoformat(start), datetime.fromisoformat(end)
         if analysis_start.tzinfo is None or analysis_end.tzinfo is None or analysis_start >= analysis_end:
             raise ValueError
+        attribution = AttributionConfig.from_yaml(attribution_config) if attribution_config else AttributionConfig()
         key = WorkspaceKey(workspace) if workspace.exists() else WorkspaceKey.create(workspace)
         out.mkdir(parents=True, exist_ok=True)
         discard_empty = False
@@ -97,7 +103,15 @@ def collect(
                 ProjectedStore(out / "dataset.sqlite", key, existing_only=resume) as store,
             ):
                 try:
-                    manifest = collect_cohort(transport, store, repo, analysis_start, analysis_end, resume=resume)
+                    manifest = collect_cohort(
+                        transport,
+                        store,
+                        repo,
+                        analysis_start,
+                        analysis_end,
+                        resume=resume,
+                        attribution=attribution,
+                    )
                     statuses = store.export(manifest.id)["collection_status"]
                     assert isinstance(statuses, list)
                     incomplete = any(row["status"] in {"partial", "unavailable"} for row in statuses)

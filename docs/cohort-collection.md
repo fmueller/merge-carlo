@@ -21,12 +21,41 @@ run enumerates all states and currently open PRs from page one, follows Link
 pagination, and unions immutable IDs. There is no update-time cutoff. The cohort
 includes creations in `[start, end)` and older PRs whose current open/closing
 evidence overlaps the interval; uncertain close times are retained conservatively.
-Reopened PRs remain in totals; fit exclusions and readiness inference are T-019.
+Every retained PR gets one derived attribution record. Strict readiness is the
+default: one observed `ready_for_review` event is used, while a current
+non-draft snapshot alone is not evidence that the PR was created ready. A
+non-draft snapshot whose source `updated_at` still equals `created_at` supports
+reconstruction at creation. Otherwise readiness is unknown and excluded from
+ready-based calibration rather than assigned zero draft time. Reopened PRs and
+repeated draft/ready lifecycles remain in totals but are explicitly ineligible
+for mechanistic fitting. Incomplete lifecycle history is also ineligible.
+
+The optional `--attribution-config PATH` loads bounded, data-only YAML. It can
+select the explicit created-at proxy and declare work origin by immutable GitHub
+actor ID:
+
+```yaml
+readiness_policy: created_at_proxy
+actor_origins:
+  - actor_id: 123456
+    origin: ai
+    basis: assumed
+```
+
+The allowed origins are `human`, `ai`, and `non_ai_automation`; allowed bases
+are `observed`, `derived`, `proxy`, `assumed`, and `synthetic`. Stronger bases
+win deterministic conflicts in that order. A tie between different origins
+stays `unknown` with `conflicting_mapping` recorded. Missing and unmapped authors
+also stay unknown. Account kind is retained independently: a `Bot` is never
+treated as evidence of AI-assisted work. The local mapping is not copied into
+the dataset; only each PR's resolved origin and basis are exported. No detector
+or `ai_generated_ratio` exists.
 
 Reviews and issue lifecycle events are paginated for every selected PR. This is
 the issue-events endpoint, not the non-archival repository activity Events API.
-Non-lifecycle events such as labels are discarded. CI and derived features are
-explicitly `not_requested`. Malformed projected records or ambiguous duplicate
+Non-lifecycle events such as labels are discarded. CI is explicitly
+`not_requested`; derived attribution features are computed locally. Malformed
+projected records or ambiguous duplicate
 snapshots yield `partial`; newer PR `updated_at` values supersede older ones.
 Collection is not a point-in-time transaction on GitHub: concurrent changes or
 deletions can still prevent reconstructing an exact historical repository state.
@@ -56,4 +85,4 @@ same observation time hash independently of page order. Resume at a later time
 can legitimately change the content hash even if the API fields do not change.
 
 All verification uses synthetic HTTP fixtures. Live GitHub collection has not
-been tested; calibration, origin attribution and the inspection CLI are pending.
+been tested; calibration and the inspection CLI are pending.

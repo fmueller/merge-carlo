@@ -9,6 +9,7 @@ from uuid import uuid4
 
 from pydantic import ValidationError
 
+from merge_carlo.attribution import AttributionConfig, resolve_attribution
 from merge_carlo.github import Collection, GitHubTransport
 from merge_carlo.store import Batch, Kind, Manifest, ProjectedStore, StoreError, project_observation
 
@@ -62,6 +63,7 @@ def collect_cohort(
     analysis_end: datetime,
     *,
     resume: bool = False,
+    attribution: AttributionConfig | None = None,
     clock: Callable[[], datetime] = lambda: datetime.now(UTC),
 ) -> Manifest:
     """Always start at page one; no update-time cutoff or stored offset.
@@ -105,6 +107,7 @@ def collect_cohort(
     else:
         store.save(manifest, [Batch("pull_requests", [], status="partial", reason="interrupted")])
 
+    attribution = attribution or AttributionConfig()
     results = [
         transport.collect(f"{base}/pulls?state={state}&sort=created&direction=asc&per_page=100")
         for state in ("all", "open")
@@ -124,16 +127,26 @@ def collect_cohort(
     batches = [pulls]
     for row in pulls.records:
         pr_id = cast(int, row["id"])
+        lifecycle: Batch | None = None
         children: tuple[tuple[Kind, str], ...] = (
             ("reviews", f"{base}/pulls/{row['number']}/reviews?per_page=100"),
             ("lifecycle_events", f"{base}/issues/{row['number']}/events?per_page=100"),
         )
         for kind, path in children:
             result = transport.collect(path)
-            batches.append(_batch(kind, [result], clock(), pr_id))
-        optional_kinds: tuple[Kind, ...] = ("ci_observations", "derived_features")
-        for kind in optional_kinds:
-            batches.append(Batch(kind, [], pr_id=pr_id, status="not_requested"))
+            batch = _batch(kind, [result], clock(), pr_id)
+            batches.append(batch)
+            if kind == "lifecycle_events":
+                lifecycle = batch
+        assert lifecycle is not None
+        feature = resolve_attribution(
+            row,
+            lifecycle.records,
+            attribution,
+            lifecycle_complete=lifecycle.status == "complete",
+        )
+        batches.append(Batch("derived_features", [dict(feature)], pr_id=pr_id))
+        batches.append(Batch("ci_observations", [], pr_id=pr_id, status="not_requested"))
     manifest = manifest.model_copy(update={"retrieved_at": clock()})
     store.save(manifest, batches)
     return manifest

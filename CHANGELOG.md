@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Conservative readiness resolution and declared work-origin attribution during
+  collection, with explicit proxy policy, provenance, lifecycle fit exclusions,
+  and local YAML actor mappings that never infer AI use from account kind.
 - Read-only `collect` CLI with all-state/open cohort reconciliation, paginated
   reviews and lifecycle events, explicit partial status, atomic resume and
   observation-time-gated historical snapshot access.

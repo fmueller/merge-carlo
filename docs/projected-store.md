@@ -53,12 +53,13 @@ check output are not stored. Invalid retained fields reject the entire save with
 a static `StoreError`; they do not become missing observations. Config metadata
 rejects extra fields and hides input values in validation-error text.
 
-Lifecycle projections currently accept ready/draft, closed/reopened, merged,
-and review-dismissed events. The collector must select supported event records;
-an unsupported event cannot silently produce a complete empty history. CI inputs
-are check-run shaped. Derived features are persisted, not computed by this API;
-readiness/origin resolution remains T-019. Unknown origin is never inferred from
-actor kind.
+Lifecycle projections accept ready/draft, closed/reopened, merged, and
+review-dismissed events. The collector selects supported event records; an
+unsupported event cannot silently produce a complete empty history. CI inputs
+are check-run shaped. Collection persists one derived attribution feature per
+PR with readiness time, basis and policy; declared origin and resolution basis;
+and mechanistic-fit eligibility with an explicit exclusion reason. Unknown
+origin is never inferred from actor kind.
 
 ## Atomicity and semantic hashes
 

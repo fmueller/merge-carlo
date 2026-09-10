@@ -1,12 +1,12 @@
 ---
 id: T-019-readiness-and-origin
 title: Resolve readiness basis and work origin attribution
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#read-only-github-ingestion
 dependencies:
     - T-018-cohort-collection
-updated_at: "2026-09-09T19:03:11Z"
+updated_at: "2026-09-10T19:24:20Z"
 ---
 
 # T-019-readiness-and-origin Resolve readiness basis and work origin attribution
@@ -34,3 +34,5 @@ and conflicts resolve deterministically with the basis recorded.
 - A test asserting all-unknown origin stays unknown in exports.
 
 ## Implementation Notes
+
+- 2026-09-10T19:24:20Z: verification pass

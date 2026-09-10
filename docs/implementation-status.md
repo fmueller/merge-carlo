@@ -19,6 +19,13 @@ Last updated: 2026-09-10.
 
 ## Verified
 
+- Collection resolves strict or explicit created-at-proxy readiness and local
+  operator-declared work origin into per-PR derived features. Unknown readiness
+  is excluded from ready-based fitting; reopened, repeated ready/draft, and
+  incomplete lifecycles remain in totals with exclusion reasons. Actor kind
+  never implies work origin, conflicts resolve by recorded provenance, and
+  unknown remains a first-class export value. No AI detector or generated-code
+  ratio exists. See [collection](cohort-collection.md).
 - `collect --resume` reconciles all-state/open PRs and paginated reviews and
   lifecycle events into the projected store. Synthetic fixtures cover old open
   PRs, closed-without-merge outcomes, duplicate conflicts, half-open bounds,

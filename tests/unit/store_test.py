@@ -123,7 +123,11 @@ def test_projection_export_and_privacy(tmp_path: Path, key: WorkspaceKey) -> Non
                     "id": 7,
                     "ready_at": STAMP,
                     "readiness_basis": "observed_event",
+                    "readiness_policy": "strict",
                     "origin": "unknown",
+                    "origin_basis": "unmapped",
+                    "fit_eligible": True,
+                    "fit_exclusion_reason": None,
                     "basis": "derived",
                     "body": secrets[0],
                 }

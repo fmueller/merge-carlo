@@ -91,7 +91,10 @@ uv run merge-carlo collect --repo OWNER/REPOSITORY \
 
 Repeat with `--resume` to reconcile from page one. The private workspace key
 must stay outside the dataset. Incomplete source collections exit 3 and retain
-explicit statuses. Live integration has not been tested.
+explicit statuses. Readiness defaults to strict evidence handling and work
+origin stays unknown unless declared in a local attribution configuration; see
+[cohort collection](docs/cohort-collection.md). Live integration has not been
+tested.
 
 The remaining real-data commands are planned, **not yet available**:
 

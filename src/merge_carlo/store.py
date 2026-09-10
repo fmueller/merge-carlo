@@ -221,7 +221,22 @@ class _Feature(_Projection):
     id: Identifier
     ready_at: Timestamp | None = None
     readiness_basis: Literal["observed_event", "supported_reconstruction", "created_at_proxy", "unknown"]
+    readiness_policy: Literal["strict", "created_at_proxy"]
     origin: Literal["human", "ai", "non_ai_automation", "unknown"]
+    origin_basis: Literal[
+        "observed",
+        "derived",
+        "proxy",
+        "assumed",
+        "synthetic",
+        "unmapped",
+        "missing_author",
+        "conflicting_mapping",
+    ]
+    fit_eligible: Annotated[bool, Field(strict=True)]
+    fit_exclusion_reason: (
+        Literal["reopened", "repeated_readiness_cycle", "incomplete_lifecycle", "unknown_readiness"] | None
+    ) = None
     basis: Literal["observed", "derived", "proxy", "assumed", "synthetic"]
 
 

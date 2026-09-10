@@ -7,6 +7,7 @@ from typing import cast
 import httpx
 import pytest
 
+from merge_carlo.attribution import AttributionConfig, OriginDeclaration
 from merge_carlo.cohort import _batch, collect_cohort
 from merge_carlo.github import Collection, GitHubTransport, TransportLimits
 from merge_carlo.store import ProjectedStore, StoreError, WorkspaceKey
@@ -73,12 +74,91 @@ def test_cohort_union_pagination_children_and_cutoff(tmp_path: Path) -> None:
         assert {row["id"] for row in rows(data, "pull_requests")} == {1, 2, 3}
         assert len(rows(data, "reviews")) == 3
         assert len(rows(data, "lifecycle_events")) == 3
+        assert len(rows(data, "derived_features")) == 3
+        assert {row["origin"] for row in rows(data, "derived_features")} == {"unknown"}
         assert "PRIVATE" not in str(data)
         assert all(row["observed_at"] == "2026-03-01T00:00:00Z" for row in rows(data, "pull_requests"))
         assert store.historical(manifest.id, END)["pull_requests"] == []
         assert len(store.historical(manifest.id, END)["lifecycle_events"]) == 3
         assert store.historical(manifest.id, NOW)["pull_requests"] == data["pull_requests"]
         assert len(paths) == 10
+
+
+def test_collection_exports_readiness_origin_and_fit_exclusions(tmp_path: Path) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/repos/example/repo":
+            return httpx.Response(200, json={"id": 91})
+        if request.url.path.endswith("/pulls"):
+            return httpx.Response(
+                200,
+                json=[
+                    pull(1, user={"id": 42, "type": "Bot"}),
+                    pull(2, user=None),
+                ],
+            )
+        if request.url.path.endswith("/reviews"):
+            return httpx.Response(200, json=[])
+        if request.url.path.endswith("/11/events"):
+            return httpx.Response(
+                200,
+                json=[
+                    {"id": 8, "event": "ready_for_review", "created_at": "2026-01-06T00:00:00Z"},
+                    {"id": 9, "event": "reopened", "created_at": "2026-01-07T00:00:00Z"},
+                ],
+            )
+        return httpx.Response(200, json=[])
+
+    config = AttributionConfig(actor_origins=(OriginDeclaration(actor_id=42, origin="ai", basis="assumed"),))
+    with (
+        GitHubTransport(transport=httpx.MockTransport(respond)) as transport,
+        ProjectedStore(tmp_path / "data.sqlite", WorkspaceKey.create(tmp_path / "key")) as store,
+    ):
+        manifest = collect_cohort(
+            transport,
+            store,
+            "example/repo",
+            START,
+            END,
+            attribution=config,
+            clock=lambda: NOW,
+        )
+        data = store.export(manifest.id)
+
+    features = {row["pr_id"]: row for row in rows(data, "derived_features")}
+    assert (features[1]["origin"], features[1]["origin_basis"]) == ("ai", "assumed")
+    assert (features[1]["fit_eligible"], features[1]["fit_exclusion_reason"]) == (False, "reopened")
+    assert (features[2]["origin"], features[2]["origin_basis"]) == ("unknown", "missing_author")
+    assert (features[2]["ready_at"], features[2]["readiness_basis"]) == (None, "unknown")
+    assert "ai_generated_ratio" not in str(data)
+
+
+def test_projected_partial_lifecycle_is_excluded_from_fit(tmp_path: Path) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/repos/example/repo":
+            return httpx.Response(200, json={"id": 91})
+        if request.url.path.endswith("/pulls"):
+            return httpx.Response(200, json=[pull(1)])
+        if request.url.path.endswith("/events"):
+            return httpx.Response(
+                200,
+                json=[
+                    {"id": 8, "event": "ready_for_review", "created_at": "2026-01-06T00:00:00Z"},
+                    {"event": "reopened"},
+                ],
+            )
+        return httpx.Response(200, json=[])
+
+    with (
+        GitHubTransport(transport=httpx.MockTransport(respond)) as transport,
+        ProjectedStore(tmp_path / "data.sqlite", WorkspaceKey.create(tmp_path / "key")) as store,
+    ):
+        manifest = collect_cohort(transport, store, "example/repo", START, END, clock=lambda: NOW)
+        data = store.export(manifest.id)
+
+    lifecycle_status = next(row for row in rows(data, "collection_status") if row["kind"] == "lifecycle_events")
+    feature = rows(data, "derived_features")[0]
+    assert (lifecycle_status["status"], lifecycle_status["reason"]) == ("partial", "invalid_payload")
+    assert (feature["fit_eligible"], feature["fit_exclusion_reason"]) == (False, "incomplete_lifecycle")
 
 
 def test_partial_resume_restarts_enumeration_and_preserves_on_interrupt(tmp_path: Path) -> None:

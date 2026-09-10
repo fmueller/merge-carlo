@@ -6,6 +6,7 @@ from typer.testing import CliRunner
 
 from merge_carlo import __version__
 from merge_carlo.cli import app
+from merge_carlo.store import ProjectedStore, WorkspaceKey
 
 
 @pytest.mark.unit
@@ -61,6 +62,64 @@ def test_collect_cli_and_resume(runner: CliRunner, tmp_path: Path, monkeypatch: 
     (tmp_path / "out" / "unrelated").write_text("KEEP")
     assert runner.invoke(app, [*args, "--resume"]).exit_code == 2
     assert (tmp_path / "out" / "unrelated").read_text() == "KEEP"
+
+
+@pytest.mark.unit
+def test_collect_accepts_explicit_attribution_config(
+    runner: CliRunner, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def respond(request: httpx.Request) -> httpx.Response:
+        if request.url.path == "/repos/example/repo":
+            return httpx.Response(200, json={"id": 91})
+        if request.url.path.endswith("/pulls"):
+            return httpx.Response(
+                200,
+                json=[
+                    {
+                        "id": 1,
+                        "number": 11,
+                        "state": "open",
+                        "created_at": "2026-01-05T00:00:00Z",
+                        "updated_at": "2026-01-06T00:00:00Z",
+                        "draft": False,
+                        "user": {"id": 42, "type": "Bot"},
+                    }
+                ],
+            )
+        return httpx.Response(200, json=[])
+
+    monkeypatch.setattr(httpx, "HTTPTransport", lambda **kwargs: httpx.MockTransport(respond))
+    config = tmp_path / "attribution.yaml"
+    config.write_text(
+        "readiness_policy: created_at_proxy\nactor_origins:\n  - actor_id: 42\n    origin: ai\n    basis: assumed\n",
+        encoding="utf-8",
+    )
+    result = runner.invoke(
+        app,
+        [
+            "collect",
+            "--repo",
+            "example/repo",
+            "--start",
+            "2026-01-01T00:00:00Z",
+            "--end",
+            "2026-02-01T00:00:00Z",
+            "--out",
+            str(tmp_path / "out"),
+            "--workspace",
+            str(tmp_path / "private"),
+            "--attribution-config",
+            str(config),
+        ],
+    )
+
+    assert result.exit_code == 0, result.output
+    with ProjectedStore(
+        tmp_path / "out" / "dataset.sqlite", WorkspaceKey(tmp_path / "private"), existing_only=True
+    ) as store:
+        features = store.export(store.manifests()[0].id)["derived_features"]
+    assert isinstance(features, list)
+    assert [(row["readiness_policy"], row["origin"]) for row in features] == [("created_at_proxy", "ai")]
 
 
 @pytest.mark.unit
