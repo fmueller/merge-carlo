@@ -6,10 +6,33 @@ from hypothesis import strategies as st
 
 from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import PullRequest, WorkOrigin
-from merge_carlo.simulation.engine import Reviewer, RevisionLoops, run_fifo, summarize_replications
+from merge_carlo.simulation.engine import Abandonment, Reviewer, RevisionLoops, run_fifo, summarize_replications
 
 pytestmark = pytest.mark.unit
 START = datetime(2026, 1, 1, tzinfo=UTC)
+
+
+@pytest.mark.parametrize("deadline,reason,consumed", [(3, "abandoned", 3), (5, "abandoned", 5), (7, "merged", 5)])
+def test_abandonment_competes_with_completion(deadline: float, reason: str, consumed: float) -> None:
+    result = run_fifo(
+        (pr("a", ready=2),),
+        (Reviewer("r", (span(0, 20),)),),
+        span=span(0, 20),
+        service_seconds=5,
+        abandonment=Abandonment(probability=1, elapsed_seconds=(deadline,)),
+    )
+    p = result.pull_requests[0]
+    assert p.abandonment_deadline == 2 + deadline
+    assert (p.terminal_reason, p.terminal_at, p.active_review_seconds) == (reason, 2 + consumed, consumed)
+    assert result.reviewers[0].active_seconds == consumed
+    assert not result.engine_truncated
+    assert all(
+        b.arrivals == b.merges + b.closed_without_merge + b.unresolved + b.work_in_progress for b in result.boundaries
+    )
+    summary = summarize_replications((result,))
+    assert summary.closed_without_merge == (reason == "abandoned")
+    assert summary.merged == (reason == "merged")
+    assert summary.unresolved == 0
 
 
 def span(start: float, end: float) -> UTCInterval:
@@ -18,6 +41,235 @@ def span(start: float, end: float) -> UTCInterval:
 
 def pr(name: str, author: str = "author", ready: float = 0) -> PullRequest:
     return PullRequest(name, author, WorkOrigin.UNKNOWN, ready)
+
+
+@pytest.mark.parametrize("durations", [(), (0,), (-1,), (float("nan"),), (float("inf"),), (2, 0)])
+def test_invalid_abandonment_durations(durations: tuple[float, ...]) -> None:
+    with pytest.raises(ValueError, match="durations"):
+        Abandonment(1, durations)
+
+
+@pytest.mark.parametrize("probability", [-0.1, 1.1, float("nan")])
+def test_invalid_abandonment_probability(probability: float) -> None:
+    with pytest.raises(ValueError, match="probability"):
+        Abandonment(probability, (1,))
+
+
+@pytest.mark.parametrize("off_duty", [False, True])
+def test_abandonment_releases_occupancy_and_stale_completion_is_harmless(off_duty: bool) -> None:
+    result = run_fifo(
+        (pr("a"), pr("b", ready=2)),
+        (Reviewer("r", (span(0, 1), span(4, 20)) if off_duty else (span(0, 20),)),),
+        span=span(0, 20),
+        service_seconds=5,
+        abandonment=Abandonment(1, (3,)),
+    )
+    a, b = result.pull_requests
+    assert (a.terminal_at, b.terminal_at) == (3, 5)
+    assert (a.active_review_seconds, b.active_review_seconds) == ((1, 1) if off_duty else (3, 2))
+    assert b.first_review_at == (4 if off_duty else 3)
+    assert b.queue_wait_seconds == (2 if off_duty else 1)
+    assert all(p.terminal_reason == "abandoned" for p in result.pull_requests)
+    assert result.reviewers[0].active_seconds == (2 if off_duty else 5)
+
+
+@pytest.mark.parametrize(
+    "verification,response,failure,changes,deadline,visits,attempts,service,wait",
+    [
+        (7, 0, 0, 0, 3, 0, 1, 0, 0),
+        (3, 0, 0, 0, 3, 0, 1, 0, 0),
+        (0, 7, 1, 0, 3, 0, 1, 0, 0),
+        (0, 7, 0, 1, 9, 1, 1, 2, 0),
+        (0, 0, 0, 0, 1, 0, 1, 0, 1),
+    ],
+)
+def test_abandonment_cancels_pending_loops_and_queued_work(
+    verification: float,
+    response: float,
+    failure: float,
+    changes: float,
+    deadline: float,
+    visits: int,
+    attempts: int,
+    service: float,
+    wait: float,
+) -> None:
+    result = run_fifo(
+        (pr("a"),),
+        () if wait else (Reviewer("r", (span(0, 30),)),),
+        span=span(0, 30),
+        service_seconds=2,
+        loops=RevisionLoops(verification, response, failure, changes, max_verification_attempts=1),
+        abandonment=Abandonment(1, (deadline,)),
+    )
+    p = result.pull_requests[0]
+    assert (p.terminal_reason, p.terminal_at) == ("abandoned", deadline)
+    assert (p.review_visit_count, p.verification_count, p.active_review_seconds, p.queue_wait_seconds) == (
+        visits,
+        attempts,
+        service,
+        wait,
+    )
+    assert not result.engine_truncated
+
+
+@pytest.mark.parametrize("deadline", [10, 12])
+def test_abandonment_at_or_after_horizon_is_censored(deadline: float) -> None:
+    result = run_fifo(
+        (pr("a"),),
+        (Reviewer("r", (span(0, 10),)),),
+        span=span(0, 10),
+        service_seconds=10,
+        abandonment=Abandonment(1, (deadline,)),
+    )
+    p = result.pull_requests[0]
+    assert p.censored and p.terminal_at == 10 and p.active_review_seconds == 10
+    assert result.boundaries[-1].closed_without_merge == 0
+    assert result.boundaries[-1].unresolved == 1
+
+
+def test_abandonment_sampling_is_entry_only_keyed_and_threshold_exclusive(monkeypatch: pytest.MonkeyPatch) -> None:
+    from typing import cast
+
+    from numpy.random import Generator
+
+    calls: list[tuple[int, int, tuple[str | int, ...]]] = []
+
+    class Draw:
+        def random(self) -> float:
+            return 0.5
+
+        def integers(self, high: int) -> int:
+            assert high == 2
+            return 1
+
+    def stream(seed: int, replication: int, *key: str | int) -> Generator:
+        calls.append((seed, replication, key))
+        return cast(Generator, Draw())
+
+    monkeypatch.setattr("merge_carlo.simulation.engine.random_stream", stream)
+    result = run_fifo(
+        (pr("a", ready=2), pr("outside", ready=30)),
+        (Reviewer("r", (span(0, 30),)),),
+        span=span(0, 30),
+        service_seconds=2,
+        loops=RevisionLoops(first_change_probability=1),
+        abandonment=Abandonment(0.6, (1, 11)),
+        root_seed=23,
+        replication=4,
+    )
+    assert result.pull_requests[0].abandonment_deadline == 13
+    assert result.pull_requests[0].terminal_at == 6
+    assert calls == [
+        (23, 4, key)
+        for key in [
+            ("a", "abandonment-occurrence"),
+            ("a", "abandonment-duration"),
+            ("a", 1, "verification"),
+            ("a", 1, "requested-change"),
+            ("a", 2, "verification"),
+            ("a", 2, "requested-change"),
+        ]
+    ]
+    calls.clear()
+    excluded = run_fifo(
+        (pr("a"),),
+        (),
+        span=span(0, 10),
+        service_seconds=2,
+        abandonment=Abandonment(0.5, (1, 11)),
+    )
+    assert excluded.pull_requests[0].abandonment_deadline is None
+    assert calls == [(0, 0, ("a", "abandonment-occurrence")), (0, 0, ("a", 1, "verification"))]
+
+
+@pytest.mark.property
+@given(st.integers(0, 10000), st.sampled_from([0.0, 0.4, 1.0]))
+def test_abandonment_reproducibility_and_conservation(seed: int, probability: float) -> None:
+    proposals = (pr("a", "r", 0.3), pr("b", "s", 1.7), pr("c", ready=2.3))
+    reviewers = (Reviewer("r", (span(0, 5), span(10, 30))), Reviewer("s", (span(3, 17),)))
+    abandonment = Abandonment(probability, (0.7, 4.3, 31))
+    loops = RevisionLoops(0.7, 1.3, 0.2, 0.6, 0.4)
+    result = run_fifo(
+        proposals, reviewers, span=span(0, 30), service_seconds=3, loops=loops, abandonment=abandonment, root_seed=seed
+    )
+    assert result == run_fifo(
+        tuple(reversed(proposals)),
+        tuple(reversed(reviewers)),
+        span=span(0, 30),
+        service_seconds=3,
+        loops=loops,
+        abandonment=abandonment,
+        root_seed=seed,
+    )
+    assert all(
+        b.arrivals == b.merges + b.closed_without_merge + b.unresolved + b.work_in_progress for b in result.boundaries
+    )
+    assert all(0 <= r.active_seconds <= r.duty_seconds for r in result.reviewers)
+    assert sum(p.active_review_seconds for p in result.pull_requests) == pytest.approx(
+        sum(r.active_seconds for r in result.reviewers)
+    )
+    assert all(p.abandonment_deadline is None for p in proposals)
+    for p in result.pull_requests:
+        if p.terminal_reason == "abandoned":
+            assert p.terminal_at == p.abandonment_deadline and not p.censored
+        if p.terminal_reason == "merged":
+            assert p.approved_revision == p.verified_revision == p.revision
+            assert p.terminal_at is not None
+            assert p.abandonment_deadline is None or p.terminal_at < p.abandonment_deadline
+
+
+def test_closed_summary_excludes_truncated_runs_and_distinguishes_no_runs() -> None:
+    from dataclasses import replace
+
+    closed = run_fifo((pr("a"),), (), span=span(0, 10), service_seconds=1, abandonment=Abandonment(1, (2,)))
+    truncated = replace(closed, engine_truncated=True)
+    assert summarize_replications((closed, closed, truncated)).closed_without_merge == 2
+    assert summarize_replications((truncated,)).closed_without_merge is None
+    assert summarize_replications(()).closed_without_merge is None
+
+
+@pytest.mark.parametrize("verification,service,merge_at", [(0, 5, 5), (5, 3, 8)])
+def test_abandonment_does_not_skip_other_due_proposals(
+    verification: float, service: float, merge_at: float, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from typing import cast
+
+    from numpy.random import Generator
+
+    from merge_carlo.simulation.randomness import random_stream
+
+    class Draw:
+        def __init__(self, value: float) -> None:
+            self.value = value
+
+        def random(self) -> float:
+            return self.value
+
+    def stream(seed: int, replication: int, *key: str | int) -> Generator:
+        if key[-1] == "abandonment-occurrence":
+            return cast(Generator, Draw(0 if key[0] == "a" else 1))
+        return random_stream(seed, replication, *key)
+
+    monkeypatch.setattr("merge_carlo.simulation.engine.random_stream", stream)
+    result = run_fifo(
+        (pr("a"), pr("b")),
+        (Reviewer("r", (span(0, 20),)), Reviewer("s", (span(0, 20),))),
+        span=span(0, 20),
+        service_seconds=service,
+        loops=RevisionLoops(verification_seconds=verification),
+        abandonment=Abandonment(0.5, (5,)),
+    )
+    a, b = result.pull_requests
+    assert (a.terminal_reason, a.terminal_at, a.active_review_seconds) == (
+        "abandoned",
+        5,
+        0 if verification else 5,
+    )
+    assert (b.terminal_reason, b.terminal_at, b.active_review_seconds) == ("merged", merge_at, service)
+    assert (b.review_visit_count, b.verification_count) == (1, 1)
+    assert summarize_replications((result,)).closed_without_merge == 1
+    assert [boundary.at for boundary in result.boundaries].count(5) == 1
 
 
 def test_first_changes_then_approval_reverifies_and_counts_all_service() -> None:

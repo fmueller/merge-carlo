@@ -1,19 +1,37 @@
 """Event-scheduled constant-service FIFO slice; times are seconds from span.start.
 
-At equal timestamps: account preceding service, censor at the horizon, finish
-reviews, admit arrivals, settle verification/author events, then dispatch by
-reviewer ID. Inputs are fresh READY proposals, not saved runs.
+At equal timestamps: account preceding service, censor at the horizon, abandon
+due proposals, finish reviews, admit arrivals, settle verification/author events,
+then dispatch by reviewer ID. Inputs are fresh READY proposals, not saved runs.
 """
 
 import heapq
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from fractions import Fraction
 
 from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import LifecycleEvent as Event
 from merge_carlo.simulation.domain import PullRequest, PullRequestState
 from merge_carlo.simulation.randomness import random_stream
+
+
+@dataclass(frozen=True, slots=True)
+class Abandonment:
+    """Assumed deadline probability and equally weighted elapsed-second samples.
+
+    A singleton is a constant distribution. These are exogenous assumptions,
+    not inferred from review effort; sampling occurs once per admitted proposal.
+    """
+
+    probability: float
+    elapsed_seconds: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        if not 0 <= self.probability <= 1:
+            raise ValueError("abandonment probability must be between zero and one")
+        if not self.elapsed_seconds or any(not math.isfinite(t) or t <= 0 for t in self.elapsed_seconds):
+            raise ValueError("abandonment durations must be nonempty, finite and positive")
 
 
 @dataclass(frozen=True, slots=True)
@@ -75,6 +93,7 @@ class Boundary:
     merges: int
     work_in_progress: int
     unresolved: int
+    closed_without_merge: int = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -94,6 +113,7 @@ class ReplicationSummary:
     engine_truncated_count: int
     merged: int | None
     unresolved: int | None
+    closed_without_merge: int | None = None
 
     @property
     def comparison_incomplete(self) -> bool:
@@ -115,6 +135,9 @@ def summarize_replications(results: tuple[FIFOResult, ...]) -> ReplicationSummar
         if complete
         else None,
         sum(p.censored for result in complete for p in result.pull_requests) if complete else None,
+        sum(p.state is PullRequestState.CLOSED_WITHOUT_MERGE for result in complete for p in result.pull_requests)
+        if complete
+        else None,
     )
 
 
@@ -125,6 +148,7 @@ def run_fifo(
     span: UTCInterval,
     service_seconds: float,
     loops: RevisionLoops | None = None,
+    abandonment: Abandonment | None = None,
     root_seed: int = 0,
     replication: int = 0,
 ) -> FIFOResult:
@@ -132,7 +156,9 @@ def run_fifo(
 
     Duty comes from DutyCalendar.materialize (or disjoint UTC fixtures). No
     reviewer can release an interrupted review to another reviewer. Proposals
-    at/after the horizon are excluded; pre-run work and deadlines are rejected.
+    at/after the horizon are excluded; pre-run work and supplied deadlines are
+    rejected. Abandonment samples an elapsed deadline once at entry, using
+    proposal-keyed probability and duration streams independent of loop draws.
     """
     loops = RevisionLoops() if loops is None else loops
     if root_seed < 0 or replication < 0:
@@ -188,6 +214,7 @@ def run_fifo(
     service_used: dict[str, Fraction] = {}
     total_service: dict[str, Fraction] = {}
     pending: dict[Fraction, list[str]] = {}
+    deadlines: dict[Fraction, list[str]] = {}
     boundaries: list[Boundary] = []
     engine_truncated = False
 
@@ -217,8 +244,15 @@ def run_fifo(
                 if not p.terminal:
                     states[pr_id] = p.transition(Event.HORIZON_REACHED, at=float(now))
         else:
+            for pr_id in deadlines.pop(now, []):
+                p = states[pr_id]
+                if not p.terminal:
+                    states[pr_id] = p.transition(Event.ABANDONED, at=float(now))
             for reviewer_id, pr_id in list(assigned.items()):
                 p = states[pr_id]
+                if p.terminal:
+                    del assigned[reviewer_id]
+                    continue
                 if service_used[pr_id] >= service_seconds:
                     probability = (
                         loops.first_change_probability if p.review_visit_count == 1 else loops.repeat_change_probability
@@ -235,12 +269,29 @@ def run_fifo(
                         )
                     del assigned[reviewer_id]
             for p in arrivals.get(now, []):
+                if (
+                    abandonment is not None
+                    and random_stream(root_seed, replication, p.pr_id, "abandonment-occurrence").random()
+                    < abandonment.probability
+                ):
+                    index = int(
+                        random_stream(root_seed, replication, p.pr_id, "abandonment-duration").integers(
+                            len(abandonment.elapsed_seconds)
+                        )
+                    )
+                    deadline = now + Fraction(abandonment.elapsed_seconds[index])
+                    p = replace(p, abandonment_deadline=float(deadline))
+                    if deadline < horizon:
+                        deadlines.setdefault(deadline, []).append(p.pr_id)
+                        heapq.heappush(events, deadline)
                 states[p.pr_id] = p.transition(Event.START_VERIFICATION, at=float(now))
                 total_service[p.pr_id] = Fraction(0)
                 schedule(p.pr_id, now, loops.verification_seconds)
             while now in pending and not engine_truncated:
                 for pr_id in sorted(pending.pop(now)):
                     p = states[pr_id]
+                    if p.terminal:
+                        continue
                     if p.state is PullRequestState.AUTHOR_RESPONSE:
                         if p.verification_count >= loops.max_verification_attempts:
                             engine_truncated = True
@@ -278,10 +329,11 @@ def run_fifo(
                 remaining = service_seconds - service_used[assigned[r.reviewer_id]]
                 heapq.heappush(events, min(duty_end, now + remaining))
         merged = sum(p.state is PullRequestState.MERGED for p in states.values())
+        closed = sum(p.state is PullRequestState.CLOSED_WITHOUT_MERGE for p in states.values())
         unresolved = sum(p.censored for p in states.values())
         wip = sum(not p.terminal for p in states.values())
-        assert len(states) == merged + unresolved + wip
-        boundaries.append(Boundary(float(now), len(states), merged, wip, unresolved))
+        assert len(states) == merged + closed + unresolved + wip
+        boundaries.append(Boundary(float(now), len(states), merged, wip, unresolved, closed))
         if engine_truncated:
             break
         previous = now

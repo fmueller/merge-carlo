@@ -37,8 +37,20 @@ requested-change probabilities. These are assumptions, not observed effort.
 Verification runs concurrently without a runner queue and outside reviewer duty.
 Failures and requested changes cause an author response, a new revision and a
 new verification gate. Defaults preserve instant verification and approval;
-review approval still merges instantly. Abandonment scheduling remains tracked
-v0.1.0 work (T-008); this slice rejects prior state and abandonment deadlines.
+review approval still merges instantly. This slice rejects prior state and
+caller-supplied abandonment deadlines.
+
+`Abandonment(probability, elapsed_seconds)` declares an assumed probability of
+having a deadline and a nonempty empirical distribution of finite positive
+elapsed seconds, sampled with equal weight (a singleton is constant). At entry,
+each admitted proposal draws once using its ID and purposes
+`abandonment-occurrence` and `abandonment-duration`, independent of revision and
+review draws. Duration is added to readiness, not review start; revisions never
+reset it. No configuration means no deadlines. These are exogenous assumptions,
+not observed effort or a fitted behavioral response to congestion. A deadline
+cancels queued, verification, author-response, and review work; it releases even
+off-duty review occupancy and retains only consumed active service. A later
+deadline cannot change an achieved merge.
 
 Inclusive per-proposal limits bound review visits and verification attempts
 across all revisions (both default to 100). Attempting further work stops the
@@ -47,22 +59,25 @@ consumed service, without inventing abandonment or horizon censoring.
 `summarize_replications` excludes the entire truncated run, including earlier
 merges, exposes `engine_truncated_count`, marks the comparison incomplete and
 disables policy ranking. With no usable replications its outcome counts are
-`None`, not zero. Its pooled merge/unresolved counts are a Python API primitive;
+`None`, not zero. Its pooled merge/closed-without-merge/unresolved counts are a Python API primitive;
 CLI artifacts, comparison-wide propagation and additional validity gates remain
 downstream work. Passing this truncation gate alone does not justify ranking.
 
 The run is half-open: arrivals at or beyond the horizon are excluded and a
 completion exactly at the horizon is censored, with all preceding active
 service retained. Equal-time processing accounts service first, then censors
-at the horizon, otherwise completes reviews, admits arrivals, and dispatches
+at the horizon, otherwise abandons due proposals before completing reviews,
+admits arrivals, and dispatches
 in reviewer-ID order after settling due verification and author-response events
 (including zero-delay chains, in stable proposal order). Shift-end completions
 before the horizon may merge.
 Interrupted reviews remain assigned across off-duty gaps. A proposal with no
 non-author reviewer having duty after its readiness carries a
 `no_eligible_reviewer:<pr_id>` limitation; it is not silently self-reviewed.
-Boundary records contain cumulative arrivals, merges, in-progress and unresolved
-counts; reviewer accounting separates active seconds from clipped duty seconds.
+Boundary records contain cumulative arrivals, merges, closed-without-merge,
+in-progress and unresolved counts; closed outcomes balance the conservation
+ledger rather than disappearing from reporting. Reviewer accounting separates
+active seconds from clipped duty seconds.
 Internal event arithmetic is exact; public times and durations remain floats.
 This is a Python API, not yet a CLI experiment or a reporting artifact contract.
 

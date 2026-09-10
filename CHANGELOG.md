@@ -24,6 +24,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   separate first/repeat change probabilities, elapsed author-response delays,
   and inclusive safety limits. Truncated runs are excluded from pooled outcome
   counts and disable the comparison's policy-ranking gate.
+- Exogenous abandonment deadlines sampled at proposal entry from assumed
+  probability and positive elapsed-duration samples. Deadlines win completion
+  ties, cancel future work, release reviewers, and retain consumed service;
+  closed-without-merge outcomes remain in conservation and pooled counts.
 - Stateless purpose-keyed NumPy PCG64 random streams, reproducible by root
   seed, replication, and ordered proposal/revision/purpose keys.
 - Whole-week arrival resampling with bundled author/origin marks, stable
