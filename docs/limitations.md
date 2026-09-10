@@ -6,10 +6,13 @@ must be readable alongside it.
 
 ## GitHub ingestion
 
-The [read-only transport](github-transport.md) and
-[projected SQLite store](projected-store.md) are available through Python only.
-Cohort collection, resume reconciliation and an ingestion CLI remain downstream
-work. The store persists extraction manifests and allowlisted observations with
+The [cohort collector](cohort-collection.md) exposes `collect --resume` using the
+[read-only transport](github-transport.md) and
+[projected SQLite store](projected-store.md). Calibration and inspection remain
+downstream work. Enumeration is not a point-in-time GitHub transaction; later
+snapshots cannot establish earlier draft, size or review state. The conservative
+historical reader excludes such snapshots. Optional CI is not requested.
+The store persists extraction manifests and allowlisted observations with
 workspace-scoped actor pseudonyms. API-version metadata accompanies every
 transport result for the extraction writer. Raw responses must not be
 stored as datasets. Conditional `304` results require a caller-held prior

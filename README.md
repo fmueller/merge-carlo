@@ -27,7 +27,7 @@ language models, and no part of merge-carlo calls one.
 
 Pre-alpha. The repository is set up and the v0.1.0 scope is frozen in
 [`specs/v0.1.0.md`](specs/v0.1.0.md). **The offline synthetic demo works;
-the real-data pipeline is not implemented yet.** Track progress in
+read-only cohort collection works, but calibration is not implemented yet.** Track progress in
 [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 
@@ -79,13 +79,23 @@ These are illustrative inputs, not measured behavior or a policy recommendation.
 The two synthetic weeks are exploratory; active review service is an assumed
 constant. Replacement changes origin only and does not imply different effort.
 
-The following real-data commands are planned, **not yet available**.
-The real-data pipeline will read one explicitly selected repository. `GH_TOKEN`
-comes from the environment or a secret manager; never put a token in a command,
-configuration file, or report.
+Read-only [cohort collection](docs/cohort-collection.md) reads one explicitly
+selected, authorized repository. `GITHUB_TOKEN` comes from the environment;
+never put a token in a command, configuration file, or report.
 
 ```bash
-uv run merge-carlo collect   --repo OWNER/REPOSITORY --since 2026-04-01 --until 2026-09-01 --out data/repository.sqlite
+uv run merge-carlo collect --repo OWNER/REPOSITORY \
+  --start 2026-04-01T00:00:00Z --end 2026-09-01T00:00:00Z \
+  --out data/cohort --workspace /private/path/merge-carlo-key
+```
+
+Repeat with `--resume` to reconcile from page one. The private workspace key
+must stay outside the dataset. Incomplete source collections exit 3 and retain
+explicit statuses. Live integration has not been tested.
+
+The remaining real-data commands are planned, **not yet available**:
+
+```bash
 uv run merge-carlo inspect   --dataset data/repository.sqlite --out out/inspection
 uv run merge-carlo calibrate --dataset data/repository.sqlite --train-until 2026-07-01 \
                              --assumptions configs/team-assumptions.yaml --out models/repository

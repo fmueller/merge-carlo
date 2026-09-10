@@ -11,13 +11,21 @@ import os
 import secrets
 import sqlite3
 import stat
-from datetime import UTC
+from datetime import UTC, datetime
 from pathlib import Path
 from types import TracebackType
-from typing import Annotated, Literal, Self
+from typing import Annotated, Literal, Self, cast
 from uuid import UUID
 
-from pydantic import AfterValidator, AwareDatetime, BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import (
+    AfterValidator,
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    ValidationError,
+    model_validator,
+)
 
 
 class StoreError(ValueError):
@@ -154,6 +162,7 @@ class _Head(_Projection):
 
 
 class _Pull(_Projection):
+    observed_at: Timestamp | None = Field(default=None, exclude_if=lambda value: value is None)
     id: Identifier
     number: Identifier
     state: Literal["open", "closed"]
@@ -170,6 +179,7 @@ class _Pull(_Projection):
 
 
 class _Review(_Projection):
+    observed_at: Timestamp | None = Field(default=None, exclude_if=lambda value: value is None)
     id: Identifier
     state: Literal["APPROVED", "CHANGES_REQUESTED", "COMMENTED", "DISMISSED", "PENDING"]
     submitted_at: Timestamp | None = None
@@ -228,6 +238,14 @@ def _canonical(value: object) -> str:
     return json.dumps(value, sort_keys=True, separators=(",", ":"), allow_nan=False)
 
 
+def project_observation(kind: Kind, raw: dict[str, object]) -> dict[str, object]:
+    """Validate and allowlist a transient record; actor pseudonymization is at save."""
+    try:
+        return _MODELS[kind].model_validate(raw).model_dump(mode="json")
+    except ValidationError:
+        raise StoreError("invalid projected observation") from None
+
+
 # Only these source-owned identifiers are interpolated in SQL; every value is bound.
 _MIGRATION_1 = (
     "CREATE TABLE workspace (fingerprint TEXT NOT NULL)",
@@ -254,10 +272,14 @@ class ProjectedStore:
     reconciliation belongs to the collector, not insertion order.
     """
 
-    def __init__(self, path: Path, key: WorkspaceKey) -> None:
+    def __init__(self, path: Path, key: WorkspaceKey, *, existing_only: bool = False) -> None:
         self._key = key
         try:
-            self._db = sqlite3.connect(path, isolation_level=None)
+            self._db = sqlite3.connect(
+                path.resolve().as_uri() + "?mode=rw" if existing_only else path,
+                uri=existing_only,
+                isolation_level=None,
+            )
         except sqlite3.Error:
             raise StoreError("cannot open projected store") from None
         try:
@@ -265,6 +287,8 @@ class ProjectedStore:
             self._db.execute("BEGIN IMMEDIATE")
             self._db.execute("CREATE TABLE IF NOT EXISTS schema_migrations (version INTEGER PRIMARY KEY)")
             versions = self._db.execute("SELECT version FROM schema_migrations ORDER BY version").fetchall()
+            if existing_only and not versions:
+                raise StoreError("existing projected store required")
             if versions not in ([], [(1,)]):
                 raise StoreError("unsupported schema")
             if not versions:
@@ -307,13 +331,13 @@ class ProjectedStore:
                     raise StoreError("duplicate collection")
                 statuses[status_key] = (batch.status, batch.reason)
                 for raw in batch.records:
-                    model = _MODELS[batch.kind].model_validate(raw)
-                    data = model.model_dump(mode="json")
+                    data = project_observation(batch.kind, raw)
                     for actor_field in ("user", "actor"):
                         actor = data.get(actor_field)
                         if actor is not None:
+                            assert isinstance(actor, dict)
                             actor["id"] = self._key.actor(actor["id"])
-                    record_key = (batch.kind, parent, data["id"])
+                    record_key = (batch.kind, parent, cast(int, data["id"]))
                     payload = _canonical(data)
                     if record_key in projected and projected[record_key] != payload:
                         raise StoreError("conflicting duplicate observation")
@@ -406,3 +430,32 @@ class ProjectedStore:
 
     def content_hash(self, extraction_id: UUID) -> str:
         return hashlib.sha256(_canonical(self.export(extraction_id)).encode()).hexdigest()
+
+    def manifests(self) -> list[Manifest]:
+        """Read extraction identities for resume without a persisted page cursor."""
+        try:
+            return [
+                Manifest.model_validate_json(row[0]) for row in self._db.execute("SELECT manifest FROM extractions")
+            ]
+        except (sqlite3.Error, ValidationError):
+            raise StoreError("cannot read extraction manifest") from None
+
+    def historical(self, extraction_id: UUID, cutoff: datetime) -> dict[str, list[dict[str, object]]]:
+        """Conservative inputs, not reconstructed features or a complete history.
+
+        PR and mutable review snapshots require observation by the cutoff;
+        lifecycle events use source time. Undated snapshots are not evidence.
+        CI and derived features have no historical reader contract yet.
+        """
+        if cutoff.tzinfo is None or cutoff.utcoffset() is None:
+            raise StoreError("cutoff must be timezone aware")
+        data = self.export(extraction_id)
+        result: dict[str, list[dict[str, object]]] = {}
+        for kind in ("pull_requests", "reviews", "lifecycle_events"):
+            rows = data[kind]
+            assert isinstance(rows, list)
+            field = "created_at" if kind == "lifecycle_events" else "observed_at"
+            result[kind] = [
+                row for row in rows if row.get(field) is not None and datetime.fromisoformat(row[field]) <= cutoff
+            ]
+        return result

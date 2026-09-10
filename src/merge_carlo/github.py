@@ -155,7 +155,9 @@ class GitHubTransport:
             return self.limits.max_wait + 1
         return max(0, max(delays, default=fallback))
 
-    def collect(self, path: str, *, etag: str | None = None, last_modified: str | None = None) -> Collection:
+    def collect(
+        self, path: str, *, etag: str | None = None, last_modified: str | None = None, single: bool = False
+    ) -> Collection:
         """Fetch a JSON object-array collection, following Link rel=next.
 
         Conditional headers apply only to the initial resource. `not_modified`
@@ -163,9 +165,9 @@ class GitHubTransport:
         are returned only for a single-page complete response.
         """
         with self._lock, _private_diagnostics():
-            return self._collect(path, etag, last_modified)
+            return self._collect(path, etag, last_modified, single)
 
-    def _collect(self, path: str, etag: str | None, last_modified: str | None) -> Collection:
+    def _collect(self, path: str, etag: str | None, last_modified: str | None, single: bool) -> Collection:
         records: list[dict[str, object]] = []
         pages = requests = retries = 0
         seen: set[str] = set()
@@ -252,6 +254,10 @@ class GitHubTransport:
                     if self._token and self._token.encode() in payload:
                         return failed("credential_in_response")
                     data = json.loads(payload)
+                    if single:
+                        if not isinstance(data, dict):
+                            return failed("invalid_payload")
+                        data = [data]
                     if not isinstance(data, list) or any(not isinstance(item, dict) for item in data):
                         return failed("invalid_payload")
                     room = self.limits.max_records - len(records)

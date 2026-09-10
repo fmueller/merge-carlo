@@ -13,12 +13,17 @@ Last updated: 2026-09-10.
 | M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
-| M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
+| M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
 | M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- `collect --resume` reconciles all-state/open PRs and paginated reviews and
+  lifecycle events into the projected store. Synthetic fixtures cover old open
+  PRs, closed-without-merge outcomes, duplicate conflicts, half-open bounds,
+  partial children, interruption and resume identity checks. Later snapshots
+  are excluded from historical cutoffs. See [collection](cohort-collection.md).
 - `merge-carlo demo --out out/demo --seed 42 --replications 200` runs the
   synthetic scenario suite with only the base assumption set. Integration tests
   forbid HTTP-client/socket construction and compare repeated artifacts byte for
@@ -80,8 +85,8 @@ Last updated: 2026-09-10.
 
 ## Not implemented
 
-The real-data pipeline commands — `collect`, `inspect`, `calibrate`, `validate`,
-`simulate`, and `report` — remain unimplemented. The CLI exposes `demo`,
+The real-data pipeline commands — `inspect`, `calibrate`, `validate`,
+`simulate`, and `report` — remain unimplemented. The CLI exposes `collect`, `demo`,
 `--version` and `--help`. The README distinguishes working and planned commands.
 
 ## Unverified
