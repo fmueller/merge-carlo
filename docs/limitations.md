@@ -86,6 +86,25 @@ unsupported assumption more valid.
 
 ## Random streams
 
+`simulation.arrivals.generate_proposals` resamples complete Monday-based local
+weeks with replacement and emits FIFO-compatible proposals, retaining each
+arrival's author and declared origin together. Callers must supply complete
+training weeks in one declared timezone, including empty weeks, and validate
+coverage and the training cutoff upstream. Dataset feature extraction is not
+implemented by this primitive. Fewer than eight distinct weeks adds
+`exploratory_only`; no weeks is an error. This flag must travel with downstream
+results and does not certify empirical model readiness when absent.
+
+Offsets are wall-clock durations from Monday midnight, mapped to UTC before
+half-open horizon clipping. Ambiguous or nonexistent arrival times in sampled
+weeks are rejected, even outside the clipped portion of a sampled week. Source
+weeks are sorted by date; arrival tuple positions must remain stable. Proposal
+IDs use the target Monday and source tuple position, independent of scenario
+ordering and horizon length. Readiness is elapsed seconds from the run start.
+Latent service and revision draws remain the downstream caller's responsibility
+using these IDs and the keyed stream factory; no observed delay becomes effort.
+This is a Python API, not a persisted model or CLI calibration command.
+
 Purpose-keyed streams provide deterministic pseudorandom draws, not a proof of
 statistical independence or cryptographic randomness. Reproducibility assumes
 the same key encoding, PCG64, NumPy environment, and sampling calls; arbitrary

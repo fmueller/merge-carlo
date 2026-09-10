@@ -11,7 +11,7 @@ Last updated: 2026-09-10.
 | --- | --- | --- |
 | M0 | Repository setup: packaging, toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Deterministic core: domain contracts, calendars, one queue, constant service | In progress: domain contracts and calendars |
-| M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams |
+| M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Not started |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | Not started |
 | M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Not started |
@@ -19,6 +19,15 @@ Last updated: 2026-09-10.
 
 ## Verified
 
+- `simulation.arrivals.generate_proposals` resamples caller-certified complete
+  local weeks with replacement, retaining readiness/author/origin bundles.
+  Tests cover stable proposal IDs and latent keys, timezone week boundaries,
+  DST mapping/rejection, half-open clipping, and the `exploratory_only` label
+  below eight distinct training weeks (including empty weeks). Results contain
+  fresh FIFO-compatible proposals with readiness seconds from the UTC span's
+  start; dataset extraction and stochastic engine integration remain pending.
+  Scoped mutation testing exceeds the v0.1.0 80% floor; decorated dataclass
+  validators remain outside mutmut discovery (existing T-033).
 - Purpose-keyed streams pass call-order, consumption-isolation, key-boundary,
   numeric canonicalization, and cross-process hash-seed checks. Use
   `simulation.randomness.random_stream(42, 0, "pr-17", 1, "effort")` to get a
@@ -29,7 +38,7 @@ Last updated: 2026-09-10.
   integer for SeedSequence. Repeating the call restarts the sequence; retain
   the generator for successive draws. Common latent keys must omit scenario
   identifiers, letting scenarios transform the same draws. This is a Python
-  primitive only; arrival generation and stochastic engine integration remain
+  primitive only; stochastic engine integration remains
   tracked work. See [limitations](limitations.md#random-streams).
 - Duty calendars pass spring-forward and fall-back UTC fixtures, absence
   subtraction and conservation tests, overnight clipping, and local-day run

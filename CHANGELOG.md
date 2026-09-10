@@ -22,6 +22,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   conservation boundaries, and separate active/duty accounting.
 - Stateless purpose-keyed NumPy PCG64 random streams, reproducible by root
   seed, replication, and ordered proposal/revision/purpose keys.
+- Whole-week arrival resampling with bundled author/origin marks, stable
+  proposal identities, timezone mapping, and an `exploratory_only` flag for
+  fewer than eight complete training weeks.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked
