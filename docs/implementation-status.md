@@ -14,11 +14,17 @@ Last updated: 2026-09-10.
 | M2 | Stochastic scenario slice: keyed randomness, arrival transforms, loops, bypass | In progress: keyed random streams and week-template arrivals |
 | M3 | Experiment and report: replication runner, paired deltas, metrics, offline demo | Complete: Python artifacts and one-command synthetic demo |
 | M4 | Read-only data pipeline: GitHub adapter, projected store, provenance, quality report | In progress: transport, store and cohort collection |
-| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | In progress: held-out validation |
+| M5 | Empirical model and validation: week templates, features, held-out diagnostics, benchmark | Complete |
 | M6 | Release hardening: schemas, docs, benchmark, optional authorized live smoke test | Not started |
 
 ## Verified
 
+- Held-out validation now compares the mechanistic FIFO baseline with an
+  elapsed-delay resampling benchmark under the same arrivals, mature cohorts,
+  horizons, and local-week accounting. The descriptive reference has no capacity
+  queue, preserves merged, closed-without-merge, and non-completed categories,
+  and reports when it describes a baseline metric better; it is explicitly not
+  an intervention model.
 - `merge-carlo validate --input replay-evidence.json --out out/validation`
   validates a frozen chronological split from offline observed outcomes and
   exact-timestamp replay replications. The versioned input rejects unknown keys;

@@ -20,9 +20,11 @@ from merge_carlo.reporting import markdown, wilson
 from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import PullRequest, PullRequestState, WorkOrigin
 from merge_carlo.simulation.engine import Reviewer, RevisionLoops, run_fifo
+from merge_carlo.simulation.randomness import random_stream
 
 type ValidationStatus = Literal["pass", "fail", "insufficient_evidence"]
 type ValidationProtocol = Literal["held_out", "in_sample_diagnostic"]
+type CompletionCategory = Literal["merged", "closed_without_merge", "not_completed"]
 type ValidationMetric = Literal[
     "reviewed_within_48_hours_share",
     "merged_within_7_days_share",
@@ -126,6 +128,70 @@ class ReplayOutcomes:
 
 
 @dataclass(frozen=True, slots=True, config=ConfigDict(extra="forbid"))
+class ElapsedDelayObservation:
+    """One joint historical delay/outcome record for the descriptive benchmark."""
+
+    ready_at: datetime
+    observed_until: datetime
+    first_review_elapsed_seconds: float | None
+    completion_category: CompletionCategory
+    completion_elapsed_seconds: float | None
+
+    def __post_init__(self) -> None:
+        if any(value.tzinfo is None or value.utcoffset() is None for value in (self.ready_at, self.observed_until)):
+            raise ValueError("benchmark observation timestamps must be timezone aware")
+        ready_at = self.ready_at.astimezone(UTC)
+        observed_until = self.observed_until.astimezone(UTC)
+        if ready_at >= observed_until:
+            raise ValueError("benchmark observation interval must be positive")
+        if self.first_review_elapsed_seconds is not None:
+            _validate_samples((self.first_review_elapsed_seconds,), "first-review elapsed times")
+        if self.completion_category == "not_completed":
+            if self.completion_elapsed_seconds is not None:
+                raise ValueError("not-completed observations cannot have a completion delay")
+        elif self.completion_elapsed_seconds is None:
+            raise ValueError("completed observations require a completion delay")
+        else:
+            _validate_samples((self.completion_elapsed_seconds,), "completion elapsed times")
+        if (
+            self.first_review_elapsed_seconds is not None
+            and self.completion_elapsed_seconds is not None
+            and self.first_review_elapsed_seconds > self.completion_elapsed_seconds
+        ):
+            raise ValueError("first review cannot occur after completion")
+        observed_seconds = (observed_until - ready_at).total_seconds()
+        if self.first_review_elapsed_seconds is not None and self.first_review_elapsed_seconds > observed_seconds:
+            raise ValueError("first review falls outside the benchmark observation interval")
+        if self.completion_elapsed_seconds is not None and self.completion_elapsed_seconds > observed_seconds:
+            raise ValueError("completion falls outside the benchmark observation interval")
+
+
+@dataclass(frozen=True, slots=True, config=ConfigDict(extra="forbid"))
+class CompletionCategoryCounts:
+    merged: int
+    closed_without_merge: int
+    not_completed: int
+
+    def __post_init__(self) -> None:
+        for value in (self.merged, self.closed_without_merge, self.not_completed):
+            _validate_count(value, "benchmark completion-category count")
+
+
+@dataclass(frozen=True, slots=True, config=ConfigDict(extra="forbid"))
+class DelayBenchmarkReplication:
+    outcomes: ReplayOutcomes
+    completion_categories: CompletionCategoryCounts
+
+
+@dataclass(frozen=True, slots=True, config=ConfigDict(extra="forbid"))
+class DelayBenchmark:
+    replications: tuple[DelayBenchmarkReplication, ...]
+    observations_content_hash: str
+    label: Literal["descriptive_reference_not_intervention_model"] = "descriptive_reference_not_intervention_model"
+    capacity_queue: Literal[False] = False
+
+
+@dataclass(frozen=True, slots=True, config=ConfigDict(extra="forbid"))
 class HeldOutEvidence:
     """Frozen split plus outcomes from exact-timestamp held-out replay."""
 
@@ -137,6 +203,7 @@ class HeldOutEvidence:
     validation_interval_end: datetime
     observed: ObservedOutcomes
     replay_replications: tuple[ReplayOutcomes, ...]
+    delay_benchmark: DelayBenchmark
     model_content_hash: str = "0" * 64
     replay_arrivals_content_hash: str = "0" * 64
     thresholds: ValidationThresholds = ValidationThresholds()
@@ -196,6 +263,7 @@ class ValidationInput:
     observed: ObservedOutcomes
     model: FrozenReplayModel
     arrivals: tuple[ReplayArrival, ...]
+    benchmark_observations: tuple[ElapsedDelayObservation, ...]
     reviewer_duty: tuple[ReplayDuty, ...]
     root_seed: int
     replications: int
@@ -242,6 +310,16 @@ class ValidationGate(_ResultModel):
     passed: bool | None
 
 
+class BenchmarkComparison(_ResultModel):
+    metric: ValidationMetric
+    observed: Estimate
+    mechanistic: Estimate
+    elapsed_delay_benchmark: Estimate
+    mechanistic_absolute_error: float | None
+    benchmark_absolute_error: float | None
+    better_description: Literal["mechanistic", "elapsed_delay_benchmark", "tie", "unavailable"]
+
+
 class ValidationResult(_ResultModel):
     status: ValidationStatus
     protocol: ValidationProtocol
@@ -257,6 +335,11 @@ class ValidationResult(_ResultModel):
     replay_replications: int
     evidence_flags: tuple[str, ...]
     gates: tuple[ValidationGate, ...]
+    benchmark_label: Literal["descriptive_reference_not_intervention_model"]
+    benchmark_capacity_queue: Literal[False]
+    benchmark_observations_content_hash: str
+    benchmark_completion_categories: tuple[CompletionCategoryCounts, ...]
+    benchmark_comparison: tuple[BenchmarkComparison, ...]
     initialization_discrepancy: Estimate
     absolute_backlog_forecast_supported: bool
     unsupported: dict[str, Unavailable]
@@ -321,7 +404,7 @@ def load_validation_evidence(path: Path) -> HeldOutEvidence:
     return replay_held_out(request)
 
 
-def _weekly_counts(result: tuple[PullRequest, ...], start: datetime, end: datetime, timezone: str) -> tuple[int, ...]:
+def _weekly_counts(event_seconds: tuple[float, ...], start: datetime, end: datetime, timezone: str) -> tuple[int, ...]:
     try:
         zone = ZoneInfo(timezone)
     except ZoneInfoNotFoundError:
@@ -335,13 +418,96 @@ def _weekly_counts(result: tuple[PullRequest, ...], start: datetime, end: dateti
             keys.append(key)
         day += timedelta(days=1)
     counts = dict.fromkeys(keys, 0)
-    for pull in result:
-        if pull.state is PullRequestState.MERGED and pull.terminal_at is not None:
-            at = start + timedelta(seconds=pull.terminal_at)
-            key = at.astimezone(zone).date().isocalendar()[:2]
-            if key in counts:
-                counts[key] += 1
+    for elapsed in event_seconds:
+        key = (start + timedelta(seconds=elapsed)).astimezone(zone).date().isocalendar()[:2]
+        if key in counts:
+            counts[key] += 1
     return tuple(counts.values())
+
+
+def replay_elapsed_delay_benchmark(request: ValidationInput) -> DelayBenchmark:
+    """Resample joint historical delays onto held-out arrivals without a capacity queue."""
+    if not request.benchmark_observations:
+        raise ValueError("elapsed-delay benchmark observations must be nonempty")
+    fitting_start = request.fitting_interval_start.astimezone(UTC)
+    training_cutoff = request.training_cutoff.astimezone(UTC)
+    if any(
+        row.ready_at.astimezone(UTC) < fitting_start or row.observed_until.astimezone(UTC) > training_cutoff
+        for row in request.benchmark_observations
+    ):
+        raise ValueError("benchmark observations must be frozen within the fitting interval")
+    if any(
+        row.observed_until.astimezone(UTC) - row.ready_at.astimezone(UTC) < timedelta(days=7)
+        for row in request.benchmark_observations
+    ):
+        raise ValueError("benchmark observations require seven-day follow-up")
+    start = request.validation_interval_start.astimezone(UTC)
+    end = request.validation_interval_end.astimezone(UTC)
+    span_seconds = (end - start).total_seconds()
+    replications: list[DelayBenchmarkReplication] = []
+    for replication in range(request.replications):
+        stream = random_stream(request.root_seed, replication, "elapsed-delay-benchmark")
+        sampled = tuple(
+            request.benchmark_observations[int(index)]
+            for index in stream.integers(0, len(request.benchmark_observations), size=len(request.arrivals))
+        )
+        ready_seconds = tuple((row.ready_at.astimezone(UTC) - start).total_seconds() for row in request.arrivals)
+        review_delays = tuple(
+            observation.first_review_elapsed_seconds
+            for ready, observation in zip(ready_seconds, sampled, strict=True)
+            if observation.first_review_elapsed_seconds is not None
+            and ready + observation.first_review_elapsed_seconds <= span_seconds
+        )
+        reviewed_mature = tuple(
+            (ready, observation)
+            for ready, observation in zip(ready_seconds, sampled, strict=True)
+            if ready + 48 * 3600 <= span_seconds
+        )
+        merged_mature = tuple(
+            (ready, observation)
+            for ready, observation in zip(ready_seconds, sampled, strict=True)
+            if ready + 7 * 86400 <= span_seconds
+        )
+        merged_at = tuple(
+            ready + observation.completion_elapsed_seconds
+            for ready, observation in zip(ready_seconds, sampled, strict=True)
+            if observation.completion_category == "merged"
+            and observation.completion_elapsed_seconds is not None
+            and ready + observation.completion_elapsed_seconds < span_seconds
+        )
+        categories = CompletionCategoryCounts(
+            sum(row.completion_category == "merged" for row in sampled),
+            sum(row.completion_category == "closed_without_merge" for row in sampled),
+            sum(row.completion_category == "not_completed" for row in sampled),
+        )
+        replications.append(
+            DelayBenchmarkReplication(
+                ReplayOutcomes(
+                    sum(
+                        observation.first_review_elapsed_seconds is not None
+                        and observation.first_review_elapsed_seconds <= 48 * 3600
+                        for _, observation in reviewed_mature
+                    ),
+                    len(reviewed_mature),
+                    sum(
+                        observation.completion_category == "merged"
+                        and observation.completion_elapsed_seconds is not None
+                        and observation.completion_elapsed_seconds <= 7 * 86400
+                        for _, observation in merged_mature
+                    ),
+                    len(merged_mature),
+                    float(median(review_delays)) if review_delays else None,
+                    len(review_delays),
+                    _weekly_counts(merged_at, start, end, request.model.timezone),
+                    0,
+                ),
+                categories,
+            )
+        )
+    observations = TypeAdapter(tuple[ElapsedDelayObservation, ...]).dump_python(
+        request.benchmark_observations, mode="json"
+    )
+    return DelayBenchmark(tuple(replications), _content_hash(observations))
 
 
 def replay_held_out(request: ValidationInput) -> HeldOutEvidence:
@@ -430,13 +596,23 @@ def replay_held_out(request: ValidationInput) -> HeldOutEvidence:
                 len(merged),
                 float(median(delays)) if delays else None,
                 len(delays),
-                _weekly_counts(result.pull_requests, start, end, request.model.timezone),
+                _weekly_counts(
+                    tuple(
+                        pull.terminal_at
+                        for pull in result.pull_requests
+                        if pull.state is PullRequestState.MERGED and pull.terminal_at is not None
+                    ),
+                    start,
+                    end,
+                    request.model.timezone,
+                ),
                 0,
             )
         )
     model_value = TypeAdapter(FrozenReplayModel).dump_python(request.model, mode="json")
     model_value["reviewer_duty"] = TypeAdapter(tuple[ReplayDuty, ...]).dump_python(request.reviewer_duty, mode="json")
     arrivals_value = TypeAdapter(tuple[ReplayArrival, ...]).dump_python(request.arrivals, mode="json")
+    benchmark = replay_elapsed_delay_benchmark(request)
     return HeldOutEvidence(
         request.model.model_version,
         request.dataset_content_hash,
@@ -446,6 +622,7 @@ def replay_held_out(request: ValidationInput) -> HeldOutEvidence:
         request.validation_interval_end,
         request.observed,
         tuple(replayed),
+        benchmark,
         _content_hash(model_value),
         _content_hash(arrivals_value),
         request.thresholds,
@@ -497,6 +674,67 @@ def _gate(
         tolerance=tolerance,
         passed=error <= tolerance if evaluate and error is not None else None,
     )
+
+
+def _benchmark_estimates(replications: tuple[DelayBenchmarkReplication, ...]) -> dict[ValidationMetric, Estimate]:
+    outcomes = tuple(row.outcomes for row in replications)
+    return {
+        "reviewed_within_48_hours_share": _quantiles(
+            tuple(
+                row.reviewed_within_48_hours_successes / row.reviewed_mature_pull_requests
+                for row in outcomes
+                if row.reviewed_mature_pull_requests
+            )
+        ),
+        "merged_within_7_days_share": _quantiles(
+            tuple(
+                row.merged_within_7_days_successes / row.merged_mature_pull_requests
+                for row in outcomes
+                if row.merged_mature_pull_requests
+            )
+        ),
+        "first_review_median_seconds": _quantiles(
+            tuple(row.first_review_median_seconds for row in outcomes if row.first_review_median_seconds is not None)
+        ),
+        "weekly_merge_count": _quantiles(tuple(float(median(row.weekly_merge_counts)) for row in outcomes)),
+    }
+
+
+def _benchmark_comparison(
+    gates: tuple[ValidationGate, ...], benchmark: DelayBenchmark
+) -> tuple[BenchmarkComparison, ...]:
+    benchmark_estimates = _benchmark_estimates(benchmark.replications)
+    comparisons = []
+    for gate in gates:
+        if gate.metric not in benchmark_estimates:
+            continue
+        benchmark_estimate = benchmark_estimates[gate.metric]
+        benchmark_error = (
+            abs(gate.observed.value - benchmark_estimate.value)
+            if gate.observed.value is not None and benchmark_estimate.value is not None
+            else None
+        )
+        mechanistic_error = gate.absolute_error
+        if benchmark_error is None or mechanistic_error is None:
+            better: Literal["mechanistic", "elapsed_delay_benchmark", "tie", "unavailable"] = "unavailable"
+        elif benchmark_error < mechanistic_error:
+            better = "elapsed_delay_benchmark"
+        elif mechanistic_error < benchmark_error:
+            better = "mechanistic"
+        else:
+            better = "tie"
+        comparisons.append(
+            BenchmarkComparison(
+                metric=gate.metric,
+                observed=gate.observed,
+                mechanistic=gate.simulated,
+                elapsed_delay_benchmark=benchmark_estimate,
+                mechanistic_absolute_error=mechanistic_error,
+                benchmark_absolute_error=benchmark_error,
+                better_description=better,
+            )
+        )
+    return tuple(comparisons)
 
 
 def run_validation(evidence: HeldOutEvidence) -> ValidationResult:
@@ -630,6 +868,13 @@ def run_validation(evidence: HeldOutEvidence) -> ValidationResult:
         replay_replications=len(replications),
         evidence_flags=tuple(flags),
         gates=gates,
+        benchmark_label=evidence.delay_benchmark.label,
+        benchmark_capacity_queue=evidence.delay_benchmark.capacity_queue,
+        benchmark_observations_content_hash=evidence.delay_benchmark.observations_content_hash,
+        benchmark_completion_categories=tuple(
+            row.completion_categories for row in evidence.delay_benchmark.replications
+        ),
+        benchmark_comparison=_benchmark_comparison(gates, evidence.delay_benchmark),
         initialization_discrepancy=discrepancy,
         absolute_backlog_forecast_supported=initialization.passed is True,
         unsupported={
@@ -667,6 +912,16 @@ def render_validation_report(result: ValidationResult) -> str:
     )
     flags = ", ".join(result.evidence_flags) if result.evidence_flags else "none"
     backlog = "supported by this descriptive gate" if result.absolute_backlog_forecast_supported else "not supported"
+    comparison = "\n".join(
+        f"| {row.metric} | {_estimate(row.observed)} | {_estimate(row.mechanistic)} | "
+        f"{_estimate(row.elapsed_delay_benchmark)} | {_number(row.mechanistic_absolute_error)} | "
+        f"{_number(row.benchmark_absolute_error)} | {row.better_description} |"
+        for row in result.benchmark_comparison
+    )
+    categories = "; ".join(
+        f"merged={row.merged}, closed_without_merge={row.closed_without_merge}, not_completed={row.not_completed}"
+        for row in result.benchmark_completion_categories
+    )
     return (
         "# Historical descriptive validation\n\n"
         f"Status: `{evidence_label}`. Protocol: `{result.protocol}`. {protocol_warning}\n\n"
@@ -681,6 +936,16 @@ def render_validation_report(result: ValidationResult) -> str:
         "Cohort sizes | Absolute error | Tolerance | Gate |\n"
         "| --- | --- | --- | --- | ---: | ---: | --- |\n"
         f"{gates}\n\n"
+        "## Elapsed-delay resampling benchmark\n\n"
+        "This benchmark is a descriptive reference, not an intervention model. No capacity queue is added; joint "
+        "historical review delay and completion-category records are resampled directly onto the same held-out "
+        "arrivals and evaluated with the same cohort and horizon definitions.\n\n"
+        f"Benchmark observations content hash: `{result.benchmark_observations_content_hash}`. Sampled completion "
+        f"categories by replication: {categories}.\n\n"
+        "| Metric | Observed | Mechanistic median | Elapsed-delay median | Mechanistic absolute error | "
+        "Benchmark absolute error | Lower point-estimate error |\n"
+        "| --- | --- | --- | --- | ---: | ---: | --- |\n"
+        f"{comparison}\n\n"
         f"Initialization discrepancy: {_estimate(result.initialization_discrepancy)}. "
         f"Absolute backlog forecasting: {backlog}. Warm-up from empty does not guarantee steady state.\n\n"
         "This is historical descriptive validation only. It does not establish causal validation, intervention "

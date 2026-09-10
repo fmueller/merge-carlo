@@ -1,12 +1,12 @@
 ---
 id: T-025-delay-benchmark
 title: Compare against the elapsed-delay resampling benchmark
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies:
     - T-024-held-out-validation
-updated_at: "2026-09-09T19:03:12Z"
+updated_at: "2026-09-10T22:33:49Z"
 ---
 
 # T-025-delay-benchmark Compare against the elapsed-delay resampling benchmark
@@ -31,3 +31,5 @@ against the mechanistic baseline description.
 - A test asserting the benchmark adds no capacity queue.
 
 ## Implementation Notes
+
+- 2026-09-10T22:33:44Z: verification pass

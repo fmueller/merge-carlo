@@ -14,6 +14,10 @@ from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import PullRequest, PullRequestState, TerminalReason, WorkOrigin
 from merge_carlo.simulation.engine import FIFOResult, Reviewer
 from merge_carlo.validation import (
+    CompletionCategoryCounts,
+    DelayBenchmark,
+    DelayBenchmarkReplication,
+    ElapsedDelayObservation,
     FrozenReplayModel,
     HeldOutEvidence,
     ObservedOutcomes,
@@ -24,6 +28,7 @@ from merge_carlo.validation import (
     ValidationThresholds,
     load_validation_evidence,
     render_validation_report,
+    replay_elapsed_delay_benchmark,
     replay_held_out,
     run_validation,
     write_validation,
@@ -64,6 +69,10 @@ def evidence(*, observed_count: int = 40, reviewed: float = 0.75, merged: float 
         )
         for value, latency, backlog in ((0.725, 3500.0, 4), (0.775, 3700.0, 5), (0.75, 3600.0, 4))
     )
+    benchmark = DelayBenchmark(
+        tuple(DelayBenchmarkReplication(row, CompletionCategoryCounts(24, 8, 8)) for row in replications),
+        "b" * 64,
+    )
     return HeldOutEvidence(
         model_version="fifo-v0.1",
         dataset_content_hash="a" * 64,
@@ -73,6 +82,7 @@ def evidence(*, observed_count: int = 40, reviewed: float = 0.75, merged: float 
         validation_interval_end=datetime(2026, 2, 1, tzinfo=UTC),
         observed=observed,
         replay_replications=replications,
+        delay_benchmark=benchmark,
         thresholds=thresholds,
     )
 
@@ -87,11 +97,170 @@ def replay_input() -> ValidationInput:
         observed=ObservedOutcomes(1, 1, 1, 1, (1.0,), (1, 0, 0, 0, 0), 0),
         model=FrozenReplayModel("fifo-v0.1", "UTC", 1.0),
         arrivals=(ReplayArrival("pr-1", "author", WorkOrigin.HUMAN, datetime(2026, 1, 2, tzinfo=UTC)),),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 10, 1, tzinfo=UTC),
+                datetime(2025, 10, 8, tzinfo=UTC),
+                1.0,
+                "merged",
+                2.0,
+            ),
+        ),
         reviewer_duty=(ReplayDuty("reviewer", datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC)),),
         root_seed=7,
         replications=3,
         thresholds=ValidationThresholds(min_mature_pull_requests=1, min_replications=3),
     )
+
+
+def test_elapsed_delay_benchmark_has_no_capacity_queue_and_preserves_non_completion_categories() -> None:
+    request = replace(
+        replay_input(),
+        validation_interval_end=datetime(2026, 1, 20, tzinfo=UTC),
+        arrivals=tuple(
+            ReplayArrival(f"pr-{index}", f"author-{index}", WorkOrigin.HUMAN, datetime(2026, 1, 2, tzinfo=UTC))
+            for index in range(3)
+        ),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 10, 1, tzinfo=UTC),
+                datetime(2025, 10, 8, tzinfo=UTC),
+                10.0,
+                "closed_without_merge",
+                20.0,
+            ),
+            ElapsedDelayObservation(
+                datetime(2025, 10, 8, tzinfo=UTC),
+                datetime(2025, 10, 15, tzinfo=UTC),
+                None,
+                "not_completed",
+                None,
+            ),
+        ),
+        root_seed=11,
+        replications=4,
+    )
+
+    benchmark = replay_elapsed_delay_benchmark(request)
+
+    assert benchmark.capacity_queue is False
+    assert benchmark.label == "descriptive_reference_not_intervention_model"
+    assert all(row.outcomes.first_review_median_seconds in (10.0, None) for row in benchmark.replications)
+    assert all(row.outcomes.first_review_completions <= 3 for row in benchmark.replications)
+    assert (
+        sum(
+            row.completion_categories.closed_without_merge + row.completion_categories.not_completed
+            for row in benchmark.replications
+        )
+        == 12
+    )
+    assert all(row.completion_categories.merged == 0 for row in benchmark.replications)
+
+
+def test_elapsed_delay_benchmark_uses_the_mechanistic_horizon_boundaries_and_local_weeks() -> None:
+    request = replace(
+        replay_input(),
+        arrivals=(
+            ReplayArrival("seven-day-boundary", "a", WorkOrigin.HUMAN, datetime(2026, 1, 25, tzinfo=UTC)),
+            ReplayArrival("48-hour-boundary", "b", WorkOrigin.HUMAN, datetime(2026, 1, 30, tzinfo=UTC)),
+        ),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 10, 1, tzinfo=UTC),
+                datetime(2025, 10, 8, tzinfo=UTC),
+                48 * 3600.0,
+                "merged",
+                7 * 86400.0,
+            ),
+        ),
+        replications=1,
+    )
+
+    benchmark = replay_elapsed_delay_benchmark(request)
+
+    assert benchmark.replications[0] == DelayBenchmarkReplication(
+        ReplayOutcomes(2, 2, 1, 1, 48 * 3600.0, 2, (0, 0, 0, 0, 0), 0),
+        CompletionCategoryCounts(2, 0, 0),
+    )
+
+
+def test_report_compares_mechanistic_and_elapsed_delay_descriptions_even_when_mechanistic_is_worse() -> None:
+    request = replace(
+        replay_input(),
+        observed=ObservedOutcomes(1, 1, 1, 1, (100.0,), (1, 0, 0, 0, 0), 0),
+        model=FrozenReplayModel("slow-fifo", "UTC", 10_000.0),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 10, 1, tzinfo=UTC),
+                datetime(2025, 10, 8, tzinfo=UTC),
+                100.0,
+                "merged",
+                200.0,
+            ),
+        ),
+    )
+
+    result = run_validation(replay_held_out(request))
+    report = render_validation_report(result)
+
+    review = next(row for row in result.benchmark_comparison if row.metric == "first_review_median_seconds")
+    assert review.better_description == "elapsed_delay_benchmark"
+    assert review.benchmark_absolute_error == 0
+    assert review.mechanistic_absolute_error is not None and review.mechanistic_absolute_error > 0
+    assert "Elapsed-delay resampling benchmark" in report
+    assert "descriptive reference, not an intervention model" in report
+    assert "No capacity queue is added" in report
+    assert "elapsed_delay_benchmark" in report
+
+
+def test_benchmark_rejects_source_evidence_not_frozen_before_the_training_cutoff(tmp_path: Path) -> None:
+    request = replace(
+        replay_input(),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 12, 26, tzinfo=UTC),
+                datetime(2026, 1, 2, tzinfo=UTC),
+                None,
+                "not_completed",
+                None,
+            ),
+        ),
+    )
+    payload = TypeAdapter(ValidationInput).dump_python(request, mode="json")
+    payload["schema_version"] = 1
+    source = tmp_path / "leaking-evidence.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ValueError, match="benchmark observations must be frozen within the fitting interval"):
+        load_validation_evidence(source)
+
+
+def test_benchmark_rejects_source_records_without_seven_day_follow_up() -> None:
+    request = replace(
+        replay_input(),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 10, 1, tzinfo=UTC),
+                datetime(2025, 10, 2, tzinfo=UTC),
+                None,
+                "not_completed",
+                None,
+            ),
+        ),
+    )
+
+    with pytest.raises(ValueError, match="benchmark observations require seven-day follow-up"):
+        replay_held_out(request)
+
+
+def test_elapsed_delay_observation_rejects_review_after_completion_but_accepts_equality() -> None:
+    start = datetime(2025, 10, 1, tzinfo=UTC)
+    observed_until = datetime(2025, 10, 8, tzinfo=UTC)
+
+    with pytest.raises(ValueError, match="first review cannot occur after completion"):
+        ElapsedDelayObservation(start, observed_until, 2.0, "merged", 1.0)
+
+    assert ElapsedDelayObservation(start, observed_until, 1.0, "merged", 1.0).first_review_elapsed_seconds == 1.0
 
 
 def test_pass_outputs_exact_values_cohorts_variability_and_cautions(tmp_path: Path) -> None:
@@ -488,7 +657,7 @@ def test_report_is_the_complete_deterministic_evidence_record() -> None:
 
     assert (
         hashlib.sha256(report.encode()).hexdigest()
-        == "7830fe7f9fd21ec62b3c160130821c5b1722b02da8a06327434e0ae94a35801c"
+        == "37a59964a4706374ab31abca717037d5948dd7330784c465c7529c58fcb6cb04"
     )
 
 
