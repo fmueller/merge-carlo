@@ -29,6 +29,17 @@ The previously proposed manual-equivalence exception was not shipped and is
 not part of this policy. No allowlist, adjusted score, or manual override is
 introduced.
 
+## Differential scope
+
+`mise run test:mutate` evaluates only the exact modules selected by its diff.
+The guard accepts repeated `--module <dotted-name>` arguments; without them,
+the full gate still evaluates every discovered module independently. Unrelated
+cached results cannot fail or inflate a differential verdict. Missing selected
+results or selected `not checked` mutants fail, even below ten mutants.
+Completed small samples still report insufficient evidence. Counts and survivor
+denominators are unchanged; `uv run mutmut results --all true` retains all raw
+outcomes, including unrelated modules.
+
 ## T-005 and remaining release work
 
 T-005 reported 34/39 = 87.2%. Those same raw counts fail at 90% and pass at 80%,
@@ -37,8 +48,8 @@ synthetic shell fixture, not by importing or rerunning T-005's isolated code.
 The T-005 owner must reconcile this policy and rerun its actual verification;
 the old failed run must not be rewritten as a historical pass.
 
-This removes T-005's numerical-floor blocker, not the distinct T-034 problem
-where differential reporting includes untouched, unexecuted modules. T-034
-must resolve that accounting before claiming a clean differential gate.
+T-035 removes T-005's numerical-floor blocker. T-034 resolves the separate
+differential accounting problem described above. T-005 must reconcile both
+changes and rerun its actual verification before claiming a clean gate.
 T-033 (dataclass mutation discovery) and T-030 (release mutation validation)
 also remain applicable to v0.1.0. None is implemented by T-035.

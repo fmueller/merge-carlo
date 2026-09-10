@@ -1,12 +1,12 @@
 ---
 id: T-034-differential-mutation-scope
 title: Scope differential mutation verdicts to executed modules
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-004-fifo-review-engine
-updated_at: "2026-09-10T11:57:25Z"
+updated_at: "2026-09-10T13:00:24Z"
 ---
 
 # T-034-differential-mutation-scope Scope differential mutation verdicts to executed modules
@@ -35,7 +35,29 @@ T-033's omitted dataclass-method discovery issue.
   selected run output with `mutmut results --all true`.
 - Run script tests and both differential and full reporting checks.
 
+### Executed evidence (2026-09-10)
+
+- Strict TDD: `bash scripts/check-mutation-floor-test.sh` first failed with
+  `unknown argument: --module`; the runner fixture then failed on unrelated
+  calendars at 0/10. Both now pass through the same shell suite.
+- `mise run check` passed twice: Ruff, formatting, strict mypy (14 files),
+  pytest (160 passed), and all policy/tooling shell suites.
+- A disposable checkout with an engine-only comment diff and fresh mutation
+  cache ran `BASE=HEAD bash scripts/mutate-diff.sh`: engine 254/262 (96.9%),
+  pass. Raw `uv run mutmut results --all true` still included calendars
+  0/61, not checked. Unscoped reporting of that output failed as expected.
+- Subsequent `uv run mutmut run` and unscoped reporting passed: engine
+  254/262, calendars 58/61, CLI 2/3 (insufficient evidence). No raw mutant
+  was excluded from its module denominator.
+- Dedicated code-simplifier review recommended no changes. General independent
+  code-reviewer lane and fresh candidate validation both concluded:
+  "No concrete task-relevant findings." No specialist language/framework,
+  security, or database lane applies to this Bash/AWK-only change.
+- No findings needed fixes or deferrals; no new v0.1.0 follow-up was exposed.
+  T-033 discovery coverage and T-030 release validation remain separate work.
+
 ## Implementation Notes
 
 Filed during T-004; no tooling fix implemented in that task. Relevant owners:
 `scripts/mutate-diff.sh` and `scripts/check-mutation-floor.sh`.
+- 2026-09-10T13:00:24Z: verification pass

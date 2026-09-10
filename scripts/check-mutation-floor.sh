@@ -13,13 +13,23 @@
 # evidence does not support a conclusion.
 #
 # Reads `mutmut results --all true` on stdin, or runs it when given no input.
+# Repeat --module with exact module names to limit differential verdicts.
 set -euo pipefail
 
 floor=80
 min_mutants=10
+selected=""
 
 while [ "$#" -gt 0 ]; do
   case "$1" in
+    --module)
+      if [[ ! "${2:-}" =~ ^[A-Za-z_][A-Za-z0-9_]*(\.[A-Za-z_][A-Za-z0-9_]*)*$ ]]; then
+        echo "check-mutation-floor: --module requires a dotted module name" >&2
+        exit 2
+      fi
+      selected+="$2 "
+      shift 2
+      ;;
     --floor)
       floor="${2:-}"
       shift 2
@@ -57,7 +67,14 @@ fi
 # A result line is "    <module>.<function>__mutmut_<n>: <status>". The module is
 # everything before the mangled function name, so a status is attributed to the
 # file it came from rather than to the repository as a whole.
-printf '%s\n' "$results" | awk -v floor="$floor" -v min_mutants="$min_mutants" '
+printf '%s\n' "$results" | awk -v floor="$floor" -v min_mutants="$min_mutants" -v selected="$selected" '
+  BEGIN {
+    count = split(selected, names, " ")
+    for (i = 1; i <= count; i++) {
+      wanted[names[i]] = 1
+      total[names[i]] = 0
+    }
+  }
   match($0, /^[[:space:]]*[A-Za-z_][A-Za-z0-9_.]*__mutmut_[0-9]+:[[:space:]]*[a-z_ ]+$/) {
     split($0, parts, ":")
     name = parts[1]
@@ -69,7 +86,13 @@ printf '%s\n' "$results" | awk -v floor="$floor" -v min_mutants="$min_mutants" '
     sub(/\.[^.]*__mutmut_[0-9]+$/, "", name)
     module = name
 
+    if (count && !(module in wanted)) {
+      next
+    }
     total[module]++
+    if (status == "not checked") {
+      unexecuted[module]++
+    }
     if (status == "killed" || status == "timeout") {
       killed[module]++
     }
@@ -99,8 +122,16 @@ printf '%s\n' "$results" | awk -v floor="$floor" -v min_mutants="$min_mutants" '
       module = modules[i]
       k = killed[module] + 0
       t = total[module]
+      if (t == 0) {
+        printf "check-mutation-floor: missing results: %s\n", module > "/dev/stderr"
+        failed = 1
+        continue
+      }
       efficacy = 100 * k / t
-      if (t < min_mutants) {
+      if (count && unexecuted[module]) {
+        printf "  %-40s %3d/%-3d  %5.1f%%  unexecuted mutants (%d)\n", module, k, t, efficacy, unexecuted[module]
+        failed = 1
+      } else if (t < min_mutants) {
         printf "  %-40s %3d/%-3d  %5.1f%%  insufficient evidence (%d mutants, floor needs %d)\n", module, k, t, efficacy, t, min_mutants
       } else if (efficacy + 0.0000001 < floor) {
         printf "  %-40s %3d/%-3d  %5.1f%%  BELOW FLOOR %d%%\n", module, k, t, efficacy, floor
@@ -111,7 +142,7 @@ printf '%s\n' "$results" | awk -v floor="$floor" -v min_mutants="$min_mutants" '
     }
 
     if (failed) {
-      print "check-mutation-floor: a module is below the mutation efficacy floor" > "/dev/stderr"
+      print "check-mutation-floor: missing execution or a module is below the mutation efficacy floor" > "/dev/stderr"
       exit 1
     }
     exit 0

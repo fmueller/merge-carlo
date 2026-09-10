@@ -110,6 +110,18 @@ fi
 
 assert_rejects no-results "" "no mutation results were found"
 
+# Differential scope is exact, and unrelated cached outcomes never contribute.
+unexecuted="${strong//killed/not checked}"
+unrelated="${unexecuted//merge_carlo.engine/merge_carlo.engine_extra}"
+assert_accepts selected-only "$at_floor"$'\n'"$unrelated" --module merge_carlo.engine
+assert_reports selected-raw-counts "$at_floor"$'\n'"$unrelated" "8/10" --module merge_carlo.engine
+assert_rejects unrelated-cannot-inflate "$mixed" "BELOW FLOOR 80%" --module merge_carlo.engine
+assert_rejects missing-selected "$strong" "missing results: merge_carlo.absent" --module merge_carlo.absent
+assert_rejects missing-second-selected "$strong" "missing results: merge_carlo.absent" --module merge_carlo.engine --module merge_carlo.absent
+assert_rejects incomplete-selected "${at_floor/survived/not checked}" "unexecuted mutants" --module merge_carlo.engine
+assert_rejects small-incomplete-selected "merge_carlo.engine.x__run__mutmut_1: not checked" "unexecuted mutants" --module merge_carlo.engine
+assert_rejects full-retains-unrelated "$at_floor"$'\n'"$unrelated" "below the mutation efficacy floor"
+
 # Bad arguments are refused rather than silently defaulted.
 if printf '%s\n' "$at_floor" | bash "$checker" --floor ninety >/dev/null 2>&1; then
   fail "a non-numeric floor was accepted"
@@ -118,4 +130,5 @@ if printf '%s\n' "$at_floor" | bash "$checker" --nonsense >/dev/null 2>&1; then
   fail "an unknown argument was accepted"
 fi
 
+bash "$script_dir/mutate-diff-test.sh"
 printf 'mutation floor checks passed\n'

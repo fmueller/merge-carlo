@@ -27,6 +27,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Scope differential mutation verdicts to changed modules, rejecting missing
+  selected execution without counting unrelated cached results. Full-gate
+  per-module checks and raw mutation counts remain unchanged.
 - Lower the default per-module mutation efficacy floor from 90% to 80% for
   v0.1.0 by explicit maintainer decision. Raw mutation results, survivors,
   per-module accounting, and the ten-mutant minimum remain unchanged.

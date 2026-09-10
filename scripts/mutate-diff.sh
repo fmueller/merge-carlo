@@ -31,6 +31,7 @@ if [ -z "$changed" ]; then
 fi
 
 patterns=()
+scope=()
 while IFS= read -r path; do
   [ -z "$path" ] && continue
   module="${path#src/}"
@@ -38,10 +39,11 @@ while IFS= read -r path; do
   module="${module//\//.}"
   module="${module%.__init__}"
   patterns+=("$module.*")
+  scope+=(--module "$module")
 done <<<"$changed"
 
 echo "mutate-diff: mutating ${#patterns[@]} module(s) changed since $base"
 printf '  %s\n' "${patterns[@]}"
 
 uv run mutmut run "${patterns[@]}"
-uv run mutmut results --all true | bash "$(dirname "${BASH_SOURCE[0]}")/check-mutation-floor.sh"
+uv run mutmut results --all true | bash "$(dirname "${BASH_SOURCE[0]}")/check-mutation-floor.sh" "${scope[@]}"
