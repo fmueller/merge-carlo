@@ -17,6 +17,24 @@ from merge_carlo.simulation.randomness import random_stream
 
 
 @dataclass(frozen=True, slots=True)
+class ReviewBypass:
+    """Assumed eligibility and independent audit probabilities, not a classifier.
+
+    None eligibility uses operator-supplied PullRequest.bypass_eligible labels.
+    Audit flags are always resolved by the engine, once at proposal entry.
+    """
+
+    eligible_fraction: float | None
+    audit_fraction: float
+
+    def __post_init__(self) -> None:
+        if self.eligible_fraction is not None and not 0 <= self.eligible_fraction <= 1:
+            raise ValueError("eligible fraction must be between zero and one")
+        if not 0 <= self.audit_fraction <= 1:
+            raise ValueError("audit fraction must be between zero and one")
+
+
+@dataclass(frozen=True, slots=True)
 class Abandonment:
     """Assumed deadline probability and equally weighted elapsed-second samples.
 
@@ -103,6 +121,7 @@ class FIFOResult:
     boundaries: tuple[Boundary, ...]
     limitations: tuple[str, ...]
     engine_truncated: bool = False
+    modeled_review_effort_avoided_seconds: float = 0
 
 
 @dataclass(frozen=True, slots=True)
@@ -149,6 +168,8 @@ def run_fifo(
     service_seconds: float,
     loops: RevisionLoops | None = None,
     abandonment: Abandonment | None = None,
+    bypass: ReviewBypass | None = None,
+    coordination_seconds: float = 0,
     root_seed: int = 0,
     replication: int = 0,
 ) -> FIFOResult:
@@ -159,8 +180,12 @@ def run_fifo(
     at/after the horizon are excluded; pre-run work and supplied deadlines are
     rejected. Abandonment samples an elapsed deadline once at entry, using
     proposal-keyed probability and duration streams independent of loop draws.
+    Bypass is opt-in; eligibility and audit draws omit revision and scenario.
+    Coordination is assumed elapsed delay after either approval or bypass.
     """
     loops = RevisionLoops() if loops is None else loops
+    if not math.isfinite(coordination_seconds) or coordination_seconds < 0:
+        raise ValueError("coordination delay must be finite and nonnegative")
     if root_seed < 0 or replication < 0:
         raise ValueError("root seed and replication must be non-negative")
     if not math.isfinite(service_seconds) or service_seconds < 1:
@@ -264,11 +289,21 @@ def run_fifo(
                         states[pr_id] = p.transition(Event.CHANGES_REQUESTED, at=float(now))
                         schedule(pr_id, now, loops.author_response_seconds)
                     else:
-                        states[pr_id] = p.transition(Event.REVIEW_APPROVED, at=float(now)).transition(
-                            Event.MERGE_COMPLETED, at=float(now)
-                        )
+                        states[pr_id] = p.transition(Event.REVIEW_APPROVED, at=float(now))
+                        schedule(pr_id, now, coordination_seconds)
                     del assigned[reviewer_id]
             for p in arrivals.get(now, []):
+                if bypass is not None:
+                    eligible = (
+                        p.bypass_eligible
+                        if bypass.eligible_fraction is None
+                        else random_stream(root_seed, replication, p.pr_id, "bypass-eligibility").random()
+                        < bypass.eligible_fraction
+                    )
+                    audited = eligible and (
+                        random_stream(root_seed, replication, p.pr_id, "bypass-audit").random() < bypass.audit_fraction
+                    )
+                    p = replace(p, bypass_eligible=eligible, bypass_audited=audited)
                 if (
                     abandonment is not None
                     and random_stream(root_seed, replication, p.pr_id, "abandonment-occurrence").random()
@@ -292,7 +327,9 @@ def run_fifo(
                     p = states[pr_id]
                     if p.terminal:
                         continue
-                    if p.state is PullRequestState.AUTHOR_RESPONSE:
+                    if p.state is PullRequestState.APPROVED_WAITING_MERGE:
+                        states[pr_id] = p.transition(Event.MERGE_COMPLETED, at=float(now))
+                    elif p.state is PullRequestState.AUTHOR_RESPONSE:
                         if p.verification_count >= loops.max_verification_attempts:
                             engine_truncated = True
                             break
@@ -305,6 +342,9 @@ def run_fifo(
                             schedule(pr_id, now, loops.author_response_seconds)
                         else:
                             states[pr_id] = p.transition(Event.VERIFICATION_PASSED, at=float(now))
+                            if bypass is not None and p.bypass_eligible and not p.bypass_audited:
+                                states[pr_id] = states[pr_id].transition(Event.REVIEW_BYPASSED, at=float(now))
+                                schedule(pr_id, now, coordination_seconds)
             queue = sorted(
                 (p for p in states.values() if p.state is PullRequestState.QUEUED_FOR_REVIEW),
                 key=lambda p: (p.queue_entered_at, p.pr_id, p.revision),
@@ -351,10 +391,12 @@ def run_fifo(
         tuple(
             f"no_eligible_reviewer:{p.pr_id}"
             for p in sorted(states.values(), key=lambda p: p.pr_id)
-            if not any(
+            if not (bypass is not None and p.bypass_eligible and not p.bypass_audited)
+            and not any(
                 r.reviewer_id != p.author_id and any(end > p.ready_at for _, end in duty[r.reviewer_id])
                 for r in reviewers
             )
         ),
         engine_truncated,
+        float(sum(p.review_bypassed for p in states.values()) * service_seconds),
     )

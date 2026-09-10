@@ -37,8 +37,9 @@ requested-change probabilities. These are assumptions, not observed effort.
 Verification runs concurrently without a runner queue and outside reviewer duty.
 Failures and requested changes cause an author response, a new revision and a
 new verification gate. Defaults preserve instant verification and approval;
-review approval still merges instantly. This slice rejects prior state and
-caller-supplied abandonment deadlines.
+review approval merges after the assumed `coordination_seconds` delay (zero
+by default), outside reviewer duty and without holding a reviewer. This slice
+rejects prior state and caller-supplied abandonment deadlines.
 
 `Abandonment(probability, elapsed_seconds)` declares an assumed probability of
 having a deadline and a nonempty empirical distribution of finite positive
@@ -166,6 +167,32 @@ purpose `verification`, and requested changes by proposal ID and review visit
 with purpose `requested-change`, using the caller's root seed and replication.
 
 ## Review bypass
+
+`run_fifo(..., bypass=ReviewBypass(eligible_fraction, audit_fraction))` enables
+hypothetical bypass. Fractions are assumed probabilities, not exact quotas.
+An eligibility fraction of `None` uses operator-supplied `bypass_eligible`
+proposal labels; a numeric fraction replaces those labels. Audit flags are
+resolved at entry using an independent `bypass-audit` draw, while fractional
+eligibility uses `bypass-eligibility`. Both keys include proposal identity and
+replication, never revision or scenario, so comparable scenarios share latent
+draws. No bypass configuration means normal human review even for labeled work.
+Audited eligible proposals follow the normal review path, including requested
+changes. Non-audited eligible work bypasses only after successful verification,
+then waits the same coordination delay as human-approved work. Abandonment and
+the half-open horizon still win ties. Bypass sets no human approval, first-review
+timestamp or review visit; downstream review service-level metrics must use
+human-review evidence, never merge as a substitute.
+
+`simulation.bypass.summarize_bypass(result)` reports admitted eligible and
+audited counts, unreviewed merges and their fraction of all merges (`None` with
+`no_merges` when undefined), and modeled active-review demand avoided. Avoided
+effort counts one rounded-up assumed constant visit at each bypass transition,
+including work later abandoned or censored during coordination. It is not
+paired baseline effort saved and does not invent counterfactual repeat visits.
+Truncated runs are rejected. `render_bypass_report(summary)` renders these
+aggregates and the qualifications below without rerunning the simulation.
+These are whole-run Python API diagnostics; measurement windows, mature-cohort
+metrics and persisted CLI reports remain T-012 through T-014 work in v0.1.0.
 
 The simulated bypass scenario reduces modeled human-review demand and increases
 unreviewed merges. The model does not estimate escaped defects and does not

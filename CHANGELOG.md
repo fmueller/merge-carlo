@@ -37,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   across load sweeps, and realized cohort counts on proposal schedules.
 - Named review-calendar replacements and reviewer-specific half-open absences,
   with explicit-offset boundaries and immutable FIFO-ready capacity resolution.
+- Hypothetical review bypass with assumed eligibility or operator labels,
+  independently keyed audits, verification-gated bypass and elapsed merge
+  coordination. Qualified whole-run diagnostics report unreviewed merges and
+  assumed review demand avoided, with unsupported risk and safety fields null.
 - Project marks in `assets/`: a fan logo for the README and social preview,
   a die favicon and avatar for small sizes, both adapting to light and dark.
 - Amp orb lifecycle scripts that prepare the pinned toolchain and locked
