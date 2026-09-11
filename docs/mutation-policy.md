@@ -36,6 +36,10 @@ The guard accepts repeated `--module <dotted-name>` arguments; without them,
 the full gate still evaluates every discovered module independently. Unrelated
 cached results cannot fail or inflate a differential verdict. Missing selected
 results or selected `not checked` mutants fail, even below ten mutants.
+Each differential run deletes `mutants/mutmut-stats.json` first (T-044):
+against a saved cache mutmut 3.7.0 profiles only new tests, so an existing test
+that reaches a newly added function would never run against its mutants and
+they would be reported as false survivors. Other cached mutant state is kept.
 Completed small samples still report insufficient evidence. Counts and survivor
 denominators are unchanged; `uv run mutmut results --all true` retains all raw
 outcomes, including unrelated modules.
@@ -209,9 +213,11 @@ overstates the time. Its 894 s is about a sixth of the workflow's 90-minute
 timeout, so the timeout and the scheduled command are unchanged. The hosted
 run's mutation step took 1,316 s (21 min 56 s), about a quarter of the timeout.
 The differential run selected only `merge_carlo.simulation.engine`.
-From a cold cache it first collects test coverage across the whole suite; later
-runs reuse that cache. Timeout outcomes vary slightly between runs (14 against
-13 above) because they depend on machine load.
+Timeout outcomes vary slightly between runs (14 against 13 above) because they
+depend on machine load.
+
+Each differential run first collects test coverage across the whole suite. Since
+T-044 it rebuilds that coverage map every time rather than reusing a saved one.
 
 ### CI run
 

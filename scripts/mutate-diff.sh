@@ -45,5 +45,9 @@ done <<<"$changed"
 echo "mutate-diff: mutating ${#patterns[@]} module(s) changed since $base"
 printf '  %s\n' "${patterns[@]}"
 
+# mutmut 3.7.0 profiles only new tests against a saved stats cache, so an existing
+# test that reaches a newly added function would never run against its mutants and
+# they would be reported as survivors. Rebuild the test mapping on every run.
+rm -f mutants/mutmut-stats.json
 uv run mutmut run "${patterns[@]}"
 uv run mutmut results --all true | bash "$(dirname "${BASH_SOURCE[0]}")/check-mutation-floor.sh" "${scope[@]}"
