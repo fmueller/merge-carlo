@@ -5,7 +5,7 @@ status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies: []
-updated_at: "2026-09-11T12:55:51Z"
+updated_at: "2026-09-11T12:57:42Z"
 ---
 
 # T-042-cli-help-ci-styling Keep the CLI help test independent of CI terminal styling
@@ -45,3 +45,4 @@ The test strips ANSI SGR sequences from the help output before asserting. A
 `CliRunner` environment override would not help, because Typer reads the
 variables at import time. `typer` does not re-export `unstyle`, and `click` is
 only a transitive dependency, so a local regex avoids a new import.
+- 2026-09-11T12:57:42Z: verification pass

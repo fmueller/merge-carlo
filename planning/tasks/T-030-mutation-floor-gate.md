@@ -66,6 +66,10 @@ Runtime on an AMD Ryzen 9 5950X with a cold cache:
 - differential `scripts/mutate-diff.sh` after an `engine.py`-only change: 224 s,
   mutating only `merge_carlo.simulation.engine`.
 
-Not verified: the weekly GitHub workflow run was not dispatched, because pushing
-the change was not requested.
+CI (added after verification): the first dispatch, run 34601152100 on `a003260`,
+failed while collecting stats. It hit the CI-only CLI help test failure, fixed
+by T-042. Run 34601538915 on `5593ae2` passed every step. Its mutation step took
+1,316 s. The engine, runner, and metric modules match the local result. Twelve
+mutants killed locally survive on CI because those tests depend on the host
+timezone or SQLite build; T-043 follows up.
 - 2026-09-11T11:49:21Z: verification pass

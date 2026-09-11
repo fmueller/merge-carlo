@@ -85,7 +85,9 @@ complete until T-037 lands.
   Pydantic validators and CLI command bodies are verified by behavioral tests,
   not mutation testing (T-040, T-041); see the
   [mutation policy](mutation-policy.md). The full mutation gate passed locally
-  (T-030); its weekly GitHub workflow run has not been observed for that change.
+  and in the GitHub workflow (run 34601538915, T-030). Seven timezone and five
+  SQLite URI mutants are killed locally but survive on CI because those tests
+  depend on the host (T-043).
 
 ## Unsupported in v0.1.0
 
@@ -106,7 +108,8 @@ experiment report for the complete qualifications.
 ## Remaining v0.1.0 work
 
 The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-037
-comparison truncation propagation, and T-039 persisted experiment CLI wiring. Their presence means v0.1.0 should not be
+comparison truncation propagation, T-039 persisted experiment CLI wiring, and
+T-043 host-independent timezone and SQLite URI mutation kills. Their presence means v0.1.0 should not be
 described as fully complete or published.
 
 Three tasks are deferred to the inactive v0.2.0 draft spec:

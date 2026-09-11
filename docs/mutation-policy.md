@@ -146,8 +146,8 @@ the 80% floor; counts are raw killed-or-timeout over all discovered mutants.
 | `merge_carlo.validation` | 981/1192 (82.3%) | ok |
 
 Before the tests below, the engine scored 598/613 (97.6%) and the metrics module
-277/285 (97.2%). The weekly GitHub workflow run of this gate has not been
-observed for this change.
+277/285 (97.2%). The GitHub `Mutation tests` workflow also passed; see "CI run"
+below.
 
 ### Surviving mutants in the engine, runner, and metric modules
 
@@ -200,13 +200,50 @@ threads), starting each run from an empty `mutants/` cache. Every run generated
 | Full gate, `uv run mutmut run` | 32 (default) | 383 s |
 | Full gate, `uv run mutmut run --max-children 4` | 4 | 894 s |
 | Differential, `scripts/mutate-diff.sh` after an `engine.py`-only change | 32 (default) | 224 s |
+| Full gate, GitHub-hosted `ubuntu-latest` (run 34601538915) | mutmut default | 1,316 s |
 
 The four-worker run matches the vCPU count of a GitHub-hosted `ubuntu-latest`
 runner. It overlapped briefly with a smaller scoped run, so it slightly
 overstates the time. Its 894 s is about a sixth of the workflow's 90-minute
-timeout, so the timeout and the scheduled command are unchanged. A hosted
-runner's cores are slower, so this is a local estimate, not a measured CI
-runtime. The differential run selected only `merge_carlo.simulation.engine`.
+timeout, so the timeout and the scheduled command are unchanged. The hosted
+run's mutation step took 1,316 s (21 min 56 s), about a quarter of the timeout.
+The differential run selected only `merge_carlo.simulation.engine`.
 From a cold cache it first collects test coverage across the whole suite; later
 runs reuse that cache. Timeout outcomes vary slightly between runs (14 against
 13 above) because they depend on machine load.
+
+### CI run
+
+The `Mutation tests` workflow passed every step, including the floor, in run
+34601538915 (manual dispatch on commit `5593ae2`, GitHub-hosted
+`ubuntu-latest`). The job took 22 min 6 s. Of 7,872 mutants, 6,827 were killed,
+14 timed out, and 1,031 survived. The engine, runner, and metric modules match
+the local result exactly.
+
+Twelve mutants killed locally survived on CI. Every module still clears the
+floor, but these modules score lower there: `attribution` 165/188 (87.8%),
+`features` 636/781 (81.4%), `inspection` 669/818 (81.8%),
+`simulation.calendars` 58/61 (95.1%), `store` 362/440 (82.3%), and `validation`
+977/1192 (82.0%).
+
+- Seven replace `astimezone(UTC)` with `astimezone(None)`, which converts to
+  the host's local zone: `attribution` `_timestamp` 13, `features`
+  `build_features` 395, `simulation.calendars` `_local_to_utc` 9, and
+  `validation` `replay_held_out` 26, 28, 100, and 101. The tests notice this
+  only when the host zone is not UTC. With `_local_to_utc` mutant 9 applied,
+  10 calendar tests fail under CEST, but all 22 pass under `TZ=UTC`.
+  `_timestamp` mutant 13 fails 3 attribution tests under CEST and none under
+  `TZ=UTC`. GitHub-hosted runners use UTC.
+- Five drop or falsify the SQLite `uri=` argument: `inspection` `_read_dataset`
+  17, 19, and 23, and `store` `ProjectedStore.__init__` 5 and 7. Without
+  `uri=True`, SQLite treats a `file:` name as a URI only if it was compiled
+  with `SQLITE_USE_URI`. The locked local interpreter's SQLite 3.50.4 was not
+  compiled with it; Ubuntu's system SQLite 3.45.1 was. The runner's Python
+  probably links a SQLite built the same way, but that was not checked on the
+  runner.
+
+These kills depend on the host, and the mutants are not equivalent. On a UTC
+host with URI-enabled SQLite, a regression to host-local time or to
+path-interpreted database names would pass the tests. The CI count is the
+lower, authoritative figure for those modules. T-043 tracks making these tests
+independent of the host.
