@@ -21,6 +21,8 @@ from merge_carlo.simulation.arrivals import AdditiveAI
 from merge_carlo.simulation.metrics import HorizonShare, Metric, MetricDictionary, summarize_metrics
 from merge_carlo.simulation.runner import Experiment, run_experiment
 
+DEPENDENCY_NAMES = ("numpy", "simpy", "pydantic", "httpx", "pyyaml", "typer")
+
 
 def _json(value: object) -> str:
     return json.dumps(value, sort_keys=True, ensure_ascii=True, separators=(",", ":"), allow_nan=False) + "\n"
@@ -249,9 +251,7 @@ def _bundle(experiment: Experiment, evidence: Evidence, stage: Path) -> None:
             "rng_scheme": (
                 "SHA-256 canonical ASCII JSON string keys / SeedSequence / PCG64; scenario-independent latent keys"
             ),
-            "dependency_versions": {
-                name: version(name) for name in ("numpy", "simpy", "pydantic", "httpx", "pyyaml", "typer")
-            },
+            "dependency_versions": {name: version(name) for name in DEPENDENCY_NAMES},
             "python_version": platform.python_version(),
             "content_hashes": content_hashes,
             "dataset_content_hash": hashlib.sha256(_json(resolved["templates"]).encode("utf-8")).hexdigest(),

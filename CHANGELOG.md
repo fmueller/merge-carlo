@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- A reproducible performance benchmark, `uv run python -m merge_carlo.benchmark`,
+  that runs the synthetic demo workload sequentially and prints its parameters,
+  hardware, dependency versions, wall time, peak RSS, engine event count, and
+  output size. Recorded results in `docs/performance.md` make no universal
+  runtime promise.
 - Machine-readable JSON Lines console output through global `--json`, preserving
   stable process exit codes across success, invalid input, source/access failure,
   incomplete collection, and strict validation failure.

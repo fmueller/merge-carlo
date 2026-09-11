@@ -33,3 +33,17 @@ def test_release_docs_cover_console_contract_and_report_limitations() -> None:
     assert "active review effort" in limitations
     assert "defect_escape_rate: null" in report
     assert "Historical fit is not causal validation" in report
+
+
+@pytest.mark.unit
+def test_performance_benchmark_is_recorded_without_a_runtime_promise() -> None:
+    performance = (ROOT / "docs" / "performance.md").read_text(encoding="utf-8")
+    status = (ROOT / "docs" / "implementation-status.md").read_text(encoding="utf-8")
+
+    assert "uv run python -m merge_carlo.benchmark" in performance
+    for field in ("wall_seconds", "peak_rss_bytes", "engine_events", "output_bytes", "dependency_versions"):
+        assert f'"{field}"' in performance
+    assert "No universal runtime" in performance
+    assert "## Profile" in performance
+    assert "The performance benchmark is not yet recorded" not in status
+    assert "docs/performance.md" in status or "(performance.md)" in status

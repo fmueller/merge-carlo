@@ -28,9 +28,10 @@ language models, and no part of merge-carlo calls one.
 Pre-alpha. The v0.1.0 scope is frozen in
 [`specs/v0.1.0.md`](specs/v0.1.0.md). The offline synthetic demo, read-only
 cohort collection, inspection, Python model calibration, held-out descriptive
-validation, and schema export are implemented. The persisted real-data
-`calibrate`, `simulate`, and `report` command path, performance evidence, final
-mutation gate, and release publishing remain tracked work. Track exact progress
+validation, schema export, and a recorded
+[performance benchmark](docs/performance.md) are implemented. The persisted
+real-data `calibrate`, `simulate`, and `report` command path, final mutation
+gate, and release publishing remain tracked work. Track exact progress
 in [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 

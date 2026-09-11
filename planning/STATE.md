@@ -1,14 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-10T23:33:30Z"
+updated_at: "2026-09-11T07:41:35Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
 status_summary: idle
 blockers: []
-next_action: 'Start task T-027-performance-benchmark: Record a reproducible performance benchmark'
-last_verification_result: pass for T-028-release-documentation at 2026-09-10T23:33:23Z
+next_action: Select the next eligible task
+last_verification_result: pass for T-027-performance-benchmark at 2026-09-11T07:41:35Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -34,11 +34,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-028-release-documentation at 2026-09-10T23:33:23Z
+- pass for T-027-performance-benchmark at 2026-09-11T07:41:35Z
 
 ## Next Action
 
-- Start task T-027-performance-benchmark: Record a reproducible performance benchmark
+- Select the next eligible task
 
 ## Relevant Artifacts
 
@@ -50,8 +50,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 10
+- todo: 9
 - in_progress: 0
-- completed: 31
+- completed: 32
 - blocked: 0
 - cancelled: 0

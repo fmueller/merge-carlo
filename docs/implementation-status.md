@@ -63,8 +63,9 @@ complete until T-037 lands.
 - **Live GitHub integration has not been run.** No authorized dataset was
   collected for this release work, so collection against GitHub, real-team
   calibration, and real-data validation remain unverified.
-- The performance benchmark is not yet recorded (T-027). No universal runtime,
-  throughput, memory, or scalability claim is supported.
+- The [performance benchmark](performance.md) is recorded for the synthetic demo
+  workload on one machine (T-027). It supports no universal runtime, throughput,
+  memory, or scalability claim, and summary memory grows with replication count.
 - Held-out validation is historical and descriptive. It does not validate
   interventions, and small or incomplete evidence produces
   `insufficient_evidence`, not a pass.
@@ -92,7 +93,7 @@ experiment report for the complete qualifications.
 ## Remaining v0.1.0 work
 
 The open tracked tasks after this documentation task are T-020 optional CI
-enrichment, T-027 performance evidence, T-029 trusted release publishing, T-030
+enrichment, T-029 trusted release publishing, T-030
 release mutation validation, T-033 dataclass mutation discovery, T-036 Taskrail
 reopening support, T-037 comparison truncation propagation, T-039 persisted
 experiment CLI wiring, T-040 artifact-validator mutation discovery, and T-041

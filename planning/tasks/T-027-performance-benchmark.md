@@ -1,12 +1,12 @@
 ---
 id: T-027-performance-benchmark
 title: Record a reproducible performance benchmark
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-025-delay-benchmark
-updated_at: "2026-09-09T19:03:12Z"
+updated_at: "2026-09-11T07:41:35Z"
 ---
 
 # T-027-performance-benchmark Record a reproducible performance benchmark
@@ -30,3 +30,5 @@ time, peak memory, event count, and output size.
 - A test asserting trace retention respects the configured sampling bound.
 
 ## Implementation Notes
+
+- 2026-09-11T07:41:35Z: verification pass
