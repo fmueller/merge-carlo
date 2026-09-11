@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-11T16:07:27Z"
+updated_at: "2026-09-11T23:24:44Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: Select the next eligible task
-last_verification_result: pass for T-044-differential-mutation-stats at 2026-09-11T16:07:27Z
+next_action: Resolve blocker on T-033-dataclass-mutation-coverage
+last_verification_result: pass for T-045-configure-opencode-for-private-z-ai-workflows at 2026-09-11T23:24:44Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-044-differential-mutation-stats at 2026-09-11T16:07:27Z
+- pass for T-045-configure-opencode-for-private-z-ai-workflows at 2026-09-11T23:24:44Z
 
 ## Next Action
 
-- Select the next eligible task
+- Resolve blocker on T-033-dataclass-mutation-coverage
 
 ## Relevant Artifacts
 
@@ -53,6 +53,6 @@ continuation_notes:
 
 - todo: 5
 - in_progress: 0
-- completed: 38
+- completed: 39
 - blocked: 1
 - cancelled: 0

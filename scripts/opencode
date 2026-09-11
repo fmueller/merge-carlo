@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+
+usage() {
+  cat >&2 <<'EOF'
+Usage: scripts/opencode [--profile PROFILE] [OpenCode arguments]
+
+Profiles:
+  glm-5.3-low | glm-5.3-high | glm-5.3-max
+  glm-5.3-flash-low | glm-5.3-flash-high | glm-5.3-flash-max
+
+Profiles apply to `run`. Use OpenCode's native --model and --variant flags for
+future models and variants.
+EOF
+}
+
+profile="${OPENCODE_PROFILE:-}"
+if [[ "${1:-}" == "--profile" ]]; then
+  [[ $# -ge 2 ]] || { usage; exit 2; }
+  profile="$2"
+  shift 2
+fi
+unset OPENCODE_PROFILE
+
+model=""
+variant=""
+case "$profile" in
+  "") ;;
+  glm-5.3-low | glm-5.3-high | glm-5.3-max)
+    model="zai-coding-plan/glm-5.3"
+    variant="${profile##*-}"
+    ;;
+  glm-5.3-flash-low | glm-5.3-flash-high | glm-5.3-flash-max)
+    model="zai-coding-plan/glm-5.3-flash"
+    variant="${profile##*-}"
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac
+
+if [[ -n "$profile" && "${1:-}" != "run" ]]; then
+  printf 'OpenCode profiles require the noninteractive `run` command.\n' >&2
+  usage
+  exit 2
+fi
+if [[ -z "${ZAI_API_KEY:-}" ]]; then
+  printf 'ZAI_API_KEY is unavailable; configure the project-scoped Amp secret and start a fresh orb.\n' >&2
+  exit 1
+fi
+if [[ ! -x "$HOME/.local/bin/mise" ]]; then
+  printf 'OpenCode is unavailable; run `mise run setup`.\n' >&2
+  exit 1
+fi
+opencode_command=("$HOME/.local/bin/mise" exec -- opencode)
+
+python3 "$REPO_ROOT/scripts/sync-opencode-skills.py" --quiet
+
+# OpenCode's built-in Z.AI Coding Plan provider recognizes ZHIPU_API_KEY.
+# Translate the project secret in process memory and do not expose both names to
+# OpenCode or persist credentials through `opencode auth login`.
+export ZHIPU_API_KEY="$ZAI_API_KEY"
+unset ZAI_API_KEY
+
+cd "$REPO_ROOT"
+if [[ -n "$profile" ]]; then
+  shift
+  exec "${opencode_command[@]}" run --model "$model" --variant "$variant" "$@"
+fi
+exec "${opencode_command[@]}" "$@"

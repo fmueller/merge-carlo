@@ -94,11 +94,12 @@ grep -Fq -- '--connect-timeout 10' "$setup" || fail "mise bootstrap has no conne
 grep -Fq -- '--retry-max-time 180' "$setup" || fail "mise bootstrap has no retry deadline"
 grep -Fq 'MISE_HTTP_DOWNLOAD_TIMEOUT=60s' "$setup" || fail "mise downloads have no bounded timeout"
 grep -Fq 'github:tessariq/taskrail' "$repo_root/mise.toml" || fail "Taskrail is not pinned in mise.toml"
+grep -Fq 'opencode = "1.18.30"' "$repo_root/mise.toml" || fail "OpenCode is not pinned in mise.toml"
 [[ -f "$repo_root/mise.lock" ]] || fail "mise.lock is missing"
 grep -Fq 'bash scripts/check-orb-setup-test.sh' "$repo_root/.github/workflows/build.yml" \
   || fail "CI does not run the orb setup contract"
 
-if grep -Eq '(mise install|uv sync|lefthook install)' "$resume"; then
+if grep -Eq '(mise install|uv sync|lefthook install|opencode install)' "$resume"; then
   fail "resume reinstalls setup dependencies"
 fi
 
