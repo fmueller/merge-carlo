@@ -35,7 +35,7 @@ No objects are pickled. Artifacts are:
 | `model-card.json` | Parameter-group provenance, distinct training-week count and unsupported risk/safety quantities |
 | `replications.jsonl` | Streamed baseline/scenario metric pairs, identities, truncation flags and limitations |
 | `paired-deltas.jsonl` | Per-replication all-work merge differences; relative difference is undefined for a zero baseline or truncated pair |
-| `summary.json` | Separate assumption/scenario/population metric summaries, paired merge summaries and event probabilities |
+| `summary.json` | Requested/usable/engine-truncated replication counts, separate assumption/scenario/population metric summaries, paired merge summaries and event probabilities |
 | `summary.csv` | Long-form metric summaries with total, defined, excluded, median, central-90% bounds and undefined reason |
 | `report.md` | Deterministic six-section report, read from `summary.json` |
 | `traces.jsonl` | Only explicitly requested sampled engine diagnostics; empty by default, not a full transition log |
@@ -52,9 +52,22 @@ Summaries retain scalar metric values for exact run-level quantiles; they do not
 pool individual PR latencies or retain all replication/trace objects. Baselines
 are counted once per assumption and replication. Both `all_work` and `new_ready`
 are preserved, including fixed-horizon total/eligible/excluded counts. Undefined
-replication reasons remain in paired rows. Truncation excludes outcomes and marks
-the comparison incomplete; no report ranks policies. T-037 owns the additional
-prominent requested/usable/truncated comparison-count presentation.
+replication reasons remain in paired rows.
+
+`summary.json` carries `replication_counts`: requested, usable and
+engine-truncated runs for every assumption/scenario, with the baseline counted
+once per assumption and replication. An engine-truncated run contributes no
+outcome value, including merges that happened before truncation; its
+`replications.jsonl` row keeps `engine_truncated: true` with null metrics, and a
+requested trace keeps its final PR states and consumed reviewer service. Any
+truncated run in any assumption set or scenario marks the whole comparison
+incomplete. The report shows the counts table in its first section and states
+that policy ranking is disabled; zero usable runs leave outcomes null, never
+zero. No report ranks policies. The reader rejects saved summaries whose counts
+do not sum to the requested replications, that miss or duplicate a count, that
+claim more defined outcomes than usable runs (paired rows are checked against
+both sides), or that record truncation in a complete comparison. CSV rows keep
+per-metric total/defined/excluded counts and do not repeat this table.
 
 Backlog exceedance and the share of paired runs with more merges use two-sided
 95% Wilson intervals. These estimate conditional run-event probabilities, not

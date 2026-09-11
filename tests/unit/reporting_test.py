@@ -1,15 +1,18 @@
 """Fixed artifact fixture: rendering is independent of simulation."""
 
 import json
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any
 
 import pytest
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from merge_carlo.reporting import (
     Comparison,
     Evidence,
     Probability,
+    ReplicationCount,
     Summary,
     SummaryRow,
     markdown,
@@ -29,6 +32,10 @@ def fixture() -> Summary:
         requested_replications=10,
         comparison_incomplete=True,
         limitations=["engine_truncated", "exploratory_only"],
+        replication_counts=[
+            ReplicationCount(assumption="low", scenario="baseline", requested=10, usable=10, engine_truncated=0),
+            ReplicationCount(assumption="low", scenario="load", requested=10, usable=8, engine_truncated=2),
+        ],
         rows=[
             SummaryRow(assumption="low", scenario="load", metric="all_work.merges", summary=stats),
             SummaryRow(
@@ -182,6 +189,52 @@ def test_reject_invalid_saved_summary(tmp_path: Path, field: str, value: object)
     data["rows"][0]["summary"][field] = value
     (tmp_path / "summary.json").write_text(json.dumps(data))
     with pytest.raises(ValidationError):
+        render_report(tmp_path)
+
+
+def test_report_exposes_truncation_counts_and_disables_ranking(tmp_path: Path) -> None:
+    (tmp_path / "summary.json").write_text(fixture().model_dump_json())
+    report = render_report(tmp_path)
+    assert "| Assumption | Scenario | Requested | Usable | Engine-truncated |" in report
+    assert "| low | load | 10 | 8 | 2 |" in report
+    assert "Policy ranking disabled: 2 of 20 runs engine-truncated" in report
+    assert report.index("| low | load | 10 | 8 | 2 |") < report.index("## Scenario comparison")
+
+
+@pytest.mark.parametrize(
+    "mutate,message",
+    [
+        (lambda d: d["replication_counts"][1].update(usable=9), "usable and engine-truncated counts must sum"),
+        (lambda d: d["replication_counts"][1].update(requested=12, usable=10), "requested replications"),
+        (lambda d: d["replication_counts"][1].update(usable=7, engine_truncated=3), "exceed usable replications"),
+        (lambda d: d["replication_counts"].pop(0), "missing replication counts"),
+        (lambda d: d["replication_counts"].pop(1), "missing replication counts"),
+        (lambda d: d["replication_counts"].append(d["replication_counts"][0]), "duplicate replication counts"),
+        (lambda d: d.update(comparison_incomplete=False), "engine truncation requires an incomplete comparison"),
+        (lambda d: d["replication_counts"][1].update(usable=-1, engine_truncated=11), "greater than or equal to 0"),
+    ],
+)
+def test_reject_inconsistent_saved_replication_counts(
+    tmp_path: Path, mutate: Callable[[dict[str, Any]], object], message: str
+) -> None:
+    data = fixture().model_dump(mode="json")
+    mutate(data)
+    (tmp_path / "summary.json").write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match=message):
+        render_report(tmp_path)
+
+
+def test_reject_paired_defined_beyond_usable_baseline(tmp_path: Path) -> None:
+    data = fixture().model_dump(mode="json")
+    defined = MetricSummary(10, 10, 0, Metric(0), Metric(0), Metric(0))
+    data["comparisons"][0].update(
+        absolute=TypeAdapter(MetricSummary).dump_python(defined),
+        more_merges=wilson(0, 10).model_dump(mode="json"),
+    )
+    data["replication_counts"][1].update(usable=10, engine_truncated=0)
+    data["replication_counts"][0].update(usable=9, engine_truncated=1)
+    (tmp_path / "summary.json").write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match="exceed usable replications"):
         render_report(tmp_path)
 
 

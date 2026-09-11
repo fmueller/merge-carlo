@@ -91,13 +91,56 @@ class Comparison(Contract):
     more_merges: Probability
 
 
+class ReplicationCount(Contract):
+    """Runs per assumption/scenario; an engine-truncated run contributes no outcome values."""
+
+    assumption: str
+    scenario: str
+    requested: int = Field(gt=0, strict=True)
+    usable: int = Field(ge=0, strict=True)
+    engine_truncated: int = Field(ge=0, strict=True)
+
+    @model_validator(mode="after")
+    def check_total(self) -> Self:
+        if self.usable + self.engine_truncated != self.requested:
+            raise ValueError("usable and engine-truncated counts must sum to requested")
+        return self
+
+
 class Summary(Contract):
     evidence: Evidence
     requested_replications: int = Field(gt=0, strict=True)
     comparison_incomplete: bool
     limitations: list[str]
+    replication_counts: list[ReplicationCount]
     rows: list[SummaryRow]
     comparisons: list[Comparison]
+
+    @model_validator(mode="after")
+    def check_replication_counts(self) -> Self:
+        usable: dict[tuple[str, str], int] = {}
+        for count in self.replication_counts:
+            key = (count.assumption, count.scenario)
+            if key in usable:
+                raise ValueError("duplicate replication counts")
+            if count.requested != self.requested_replications:
+                raise ValueError("replication counts must match requested replications")
+            usable[key] = count.usable
+        if any(count.engine_truncated for count in self.replication_counts) and not self.comparison_incomplete:
+            raise ValueError("engine truncation requires an incomplete comparison")
+        defined = [((row.assumption, row.scenario), row.summary.defined) for row in self.rows]
+        defined.extend(
+            ((pair.assumption, side), stats.defined)
+            for pair in self.comparisons
+            for side in (pair.scenario, "baseline")
+            for stats in (pair.absolute, pair.relative)
+        )
+        for key, outcomes in defined:
+            if key not in usable:
+                raise ValueError("missing replication counts")
+            if outcomes > usable[key]:
+                raise ValueError("defined outcomes exceed usable replications")
+        return self
 
     @model_validator(mode="after")
     def check_summaries(self) -> Self:
@@ -157,6 +200,29 @@ def _probability(probability: Probability) -> str:
     )
 
 
+def _replication_counts(summary: Summary) -> str:
+    truncated = sum(count.engine_truncated for count in summary.replication_counts)
+    runs = sum(count.requested for count in summary.replication_counts)
+    ranking = (
+        f"Policy ranking disabled: {truncated} of {runs} runs engine-truncated, "
+        "which marks the whole comparison incomplete."
+        if truncated
+        else "No policy ranking is produced."
+    )
+    return (
+        f"{ranking}\n\n"
+        "Replication counts per assumption/scenario. An engine-truncated run contributes no outcome values, "
+        "including merges before truncation; zero usable runs leave outcomes undefined, never zero.\n\n"
+        "| Assumption | Scenario | Requested | Usable | Engine-truncated |\n"
+        "| --- | --- | --- | --- | --- |\n"
+        + "\n".join(
+            f"| {markdown(count.assumption)} | {markdown(count.scenario)} | "
+            f"{count.requested} | {count.usable} | {count.engine_truncated} |"
+            for count in summary.replication_counts
+        )
+    )
+
+
 def render_report(results: Path) -> str:
     """Read only summary.json. Never import a runner, fetch data or simulate."""
     with (results / "summary.json").open("rb") as source:
@@ -171,7 +237,7 @@ def render_report(results: Path) -> str:
         "How do declared workload and review-capacity scenarios change conditional review-system outcomes?\n\n"
         f"Validation: {summary.evidence.validation_status}. "
         f"Requested replications per assumption/scenario: {summary.requested_replications}. "
-        f"Comparison incomplete: {str(summary.comparison_incomplete).lower()}. No policy ranking is produced.",
+        f"Comparison incomplete: {str(summary.comparison_incomplete).lower()}. {_replication_counts(summary)}",
         f"## Scenario comparison — {label}\n\n"
         "Load-response metrics: run-level median [central 90% range], not pooled PR observations. "
         "Undefined runs are excluded explicitly; null is not zero.\n\n"

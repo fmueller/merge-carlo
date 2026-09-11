@@ -13,7 +13,7 @@ Last updated: 2026-09-11.
 | M0 | Packaging, pinned toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Domain contracts, duty calendars and deterministic FIFO engine | Complete |
 | M2 | Keyed randomness, revisions, abandonment, demand/capacity scenarios and bypass | Complete |
-| M3 | Replication runner, metrics, artifacts, report and synthetic demo | Limited: truncation reporting and real-data CLI remain |
+| M3 | Replication runner, metrics, artifacts, report and synthetic demo | Limited: real-data CLI remains |
 | M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment deferred to v0.2.0 |
 | M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
 | M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | In progress |
@@ -63,8 +63,10 @@ collection tests exercise reconciliation, interrupted/partial collections,
 credential-safe errors and inspection of projected data. Generated experiment
 reports carry their evidence status and model limitations, preserve null
 unsupported safety fields, and are rendered from saved artifacts without
-rerunning simulation. Comparison-wide truncation counts and gating are not
-complete until T-037 lands.
+rerunning simulation. Saved summaries and reports expose requested, usable and
+engine-truncated replication counts per assumption/scenario; any truncation
+marks the whole comparison incomplete and the reader rejects inconsistent
+counts (T-037).
 
 ## Limited or unverified
 
@@ -107,9 +109,9 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-037
-comparison truncation propagation, T-039 persisted experiment CLI wiring, and
-T-043 host-independent timezone and SQLite URI mutation kills. Their presence means v0.1.0 should not be
+The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-039
+persisted experiment CLI wiring, and T-043 host-independent timezone and SQLite
+URI mutation kills. Their presence means v0.1.0 should not be
 described as fully complete or published.
 
 Three tasks are deferred to the inactive v0.2.0 draft spec:

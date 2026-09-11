@@ -1,13 +1,13 @@
 ---
 id: T-037-comparison-truncation-reporting
 title: Propagate engine truncation through comparison artifacts and reports
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#experiment-runner-and-reporting
 dependencies:
     - T-007-revision-loops
     - T-014-experiment-artifacts
-updated_at: "2026-09-10T13:37:54Z"
+updated_at: "2026-09-11T15:14:44Z"
 ---
 
 # T-037-comparison-truncation-reporting Propagate engine truncation through comparison artifacts and reports
@@ -47,3 +47,4 @@ semantics to its experiment-runner-and-reporting outputs; it adds no new model.
 
 Filed through Taskrail during T-007; not implemented in that task. Coordinate
 with T-012/T-013/T-014 rather than introducing a second aggregation pipeline.
+- 2026-09-11T15:14:44Z: verification pass

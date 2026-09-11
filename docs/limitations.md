@@ -105,8 +105,11 @@ consumed service, without inventing abandonment or horizon censoring.
 `summarize_replications` excludes the entire truncated run, including earlier
 merges, exposes `engine_truncated_count`, marks the comparison incomplete and
 disables policy ranking. With no usable replications its outcome counts are
-`None`, not zero. Its pooled merge/closed-without-merge/unresolved counts are a Python API primitive;
-CLI artifacts, comparison-wide propagation and additional validity gates remain
+`None`, not zero. Its pooled merge/closed-without-merge/unresolved counts are a Python API primitive.
+Experiment artifacts carry the same gate comparison-wide: `summary.json` and the
+report expose requested, usable and engine-truncated counts per
+assumption/scenario, and any truncation marks the whole comparison incomplete
+(see [artifacts](artifacts.md)). CLI wiring and additional validity gates remain
 downstream work. Passing this truncation gate alone does not justify ranking.
 
 The run is half-open: arrivals at or beyond the horizon are excluded and a

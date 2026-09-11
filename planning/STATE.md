@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-11T13:21:30Z"
+updated_at: "2026-09-11T15:14:44Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -9,7 +9,7 @@ status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
 next_action: Select the next eligible task
-last_verification_result: pass for T-042-cli-help-ci-styling at 2026-09-11T12:57:42Z
+last_verification_result: pass for T-037-comparison-truncation-reporting at 2026-09-11T15:14:44Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -35,7 +35,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-042-cli-help-ci-styling at 2026-09-11T12:57:42Z
+- pass for T-037-comparison-truncation-reporting at 2026-09-11T15:14:44Z
 
 ## Next Action
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 6
+- todo: 5
 - in_progress: 0
-- completed: 36
+- completed: 37
 - blocked: 1
 - cancelled: 0

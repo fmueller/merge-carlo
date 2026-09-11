@@ -15,7 +15,7 @@ from typing import TextIO
 from pydantic import TypeAdapter
 
 from merge_carlo import __version__
-from merge_carlo.reporting import Comparison, Summary, SummaryRow, render_report, wilson
+from merge_carlo.reporting import Comparison, ReplicationCount, Summary, SummaryRow, render_report, wilson
 from merge_carlo.reporting import Evidence as Evidence
 from merge_carlo.simulation.arrivals import AdditiveAI
 from merge_carlo.simulation.metrics import HorizonShare, Metric, MetricDictionary, summarize_metrics
@@ -197,6 +197,16 @@ def _bundle(experiment: Experiment, evidence: Evidence, stage: Path) -> None:
         requested_replications=experiment.replications,
         comparison_incomplete=run.comparison_incomplete,
         limitations=sorted(limitations),
+        replication_counts=[
+            ReplicationCount(
+                assumption=assumption,
+                scenario=scenario,
+                requested=experiment.replications,
+                usable=counts.valid_replications,
+                engine_truncated=counts.engine_truncated_count,
+            )
+            for (assumption, scenario), counts in sorted(run.summaries.items())
+        ],
         rows=rows,
         comparisons=comparisons,
     )

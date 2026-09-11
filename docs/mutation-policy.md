@@ -69,8 +69,9 @@ production code is not restructured to suit the tool.
   `@classmethod`. Upstream main still skips them (boxed/mutmut#387 is open).
   In v0.1.0 this leaves out:
   - Pydantic `@model_validator` and `@field_validator` methods, including the
-    artifact validators `Probability.check_probability` and
-    `Summary.check_summaries` in `merge_carlo.reporting` (T-040), and the
+    artifact validators `Probability.check_probability`,
+    `Summary.check_summaries` (T-040), `ReplicationCount.check_total` and
+    `Summary.check_replication_counts` (T-037) in `merge_carlo.reporting`, and the
     validators in `configuration`, `calibration`, `inspection`, `store`, and
     `validation`;
   - the Typer `@app.callback` and every `@app.command` body in

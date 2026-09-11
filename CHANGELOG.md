@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Comparison-wide engine truncation reporting: experiment `summary.json` now
+  records requested, usable and engine-truncated replication counts per
+  assumption/scenario, and the report shows them in its first section with
+  policy ranking disabled whenever any run truncated. Saved summaries with
+  counts that do not sum, missing or duplicate counts, more defined outcomes
+  than usable runs, or truncation in a complete comparison are rejected.
 - Release mutation gate evidence in `docs/mutation-policy.md`: the full gate's
   per-module table and runtime, and every surviving engine, scenario runner,
   and metric mutant recorded as equivalent or message-only with its reason.

@@ -4,7 +4,14 @@
 
 How do declared workload and review-capacity scenarios change conditional review-system outcomes?
 
-Validation: not_performed. Requested replications per assumption/scenario: 10. Comparison incomplete: true. No policy ranking is produced.
+Validation: not_performed. Requested replications per assumption/scenario: 10. Comparison incomplete: true. Policy ranking disabled: 2 of 20 runs engine-truncated, which marks the whole comparison incomplete.
+
+Replication counts per assumption/scenario. An engine-truncated run contributes no outcome values, including merges before truncation; zero usable runs leave outcomes undefined, never zero.
+
+| Assumption | Scenario | Requested | Usable | Engine-truncated |
+| --- | --- | --- | --- | --- |
+| low | baseline | 10 | 10 | 0 |
+| low | load | 10 | 8 | 2 |
 
 ## Scenario comparison — SYNTHETIC
 

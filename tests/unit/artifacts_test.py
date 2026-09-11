@@ -65,7 +65,11 @@ def test_publish_complete_reproducible_bundle(tmp_path: Path, monkeypatch: pytes
     monkeypatch.setattr("merge_carlo.simulation.runner.run_experiment", forbidden)
     monkeypatch.setattr("merge_carlo.simulation.engine.run_fifo", forbidden)
     monkeypatch.setattr("socket.socket", forbidden)
-    assert render_report(out) == (out / "report.md").read_text()
+    report = render_report(out)
+    assert report == (out / "report.md").read_text()
+    assert "Comparison incomplete: false. No policy ranking is produced.\n\n" in report
+    assert "| fast | replacement | 2 | 2 | 0 |" in report
+    assert "Policy ranking disabled" not in report
 
 
 def test_refuse_nonempty_and_rollback_failed_run(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -147,7 +151,14 @@ def test_aggregate_levels_pairs_and_truncation(tmp_path: Path) -> None:
     assert next(p for p in pairs if p["assumption"] == "slow")["relative"]["reason"] == "zero_baseline"
     assert next(p for p in pairs if p["assumption"] == "truncated")["absolute"]["reason"] == "engine_truncated"
     assert (out / "traces.jsonl").read_bytes() == b""
-    assert "Comparison incomplete: true" in render_report(out)
+    counts = {(c.assumption, c.scenario): (c.usable, c.engine_truncated) for c in summary.replication_counts}
+    assert counts["fast", "bypass"] == (2, 0)
+    assert counts["truncated", "baseline"] == (0, 2)
+    assert counts["truncated", "bypass"] == (2, 0)  # bypass skips the looping review
+    report = render_report(out)
+    assert "Comparison incomplete: true" in report
+    assert "| truncated | baseline | 2 | 0 | 2 |" in report
+    assert "| fast | baseline | 2 | 2 | 0 |" in report
 
 
 def test_overwrite_empty_baseline_only_and_escaped_exports(tmp_path: Path) -> None:
@@ -237,6 +248,70 @@ def test_golden_bundle_contract(tmp_path: Path) -> None:
     templates = json.loads(expected["resolved-scenarios.json"])["experiment"]["templates"]
     canonical = json.dumps(templates, sort_keys=True, ensure_ascii=True, separators=(",", ":")) + "\n"
     assert manifest["dataset_content_hash"] == hashlib.sha256(canonical.encode()).hexdigest()
+
+
+def truncated_scenario_experiment() -> Experiment:
+    # Seed 42: only the load scenario's second replication exhausts verification attempts.
+    loops = RevisionLoops(
+        author_response_seconds=60, verification_failure_probability=0.05, max_verification_attempts=1
+    )
+    return replace(experiment(), assumptions=(AssumptionSet("fragile", 10, loops),), trace_replications=(1,))
+
+
+def test_scenario_only_truncation_gates_comparison_and_keeps_diagnostics(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    out = tmp_path / "out"
+    write_experiment(truncated_scenario_experiment(), evidence(), out)
+    summary = Summary.model_validate_json((out / "summary.json").read_bytes())
+    counts = {c.scenario: (c.assumption, c.requested, c.usable, c.engine_truncated) for c in summary.replication_counts}
+    assert counts == {
+        "baseline": ("fragile", 2, 2, 0),
+        "bypass": ("fragile", 2, 2, 0),
+        "load": ("fragile", 2, 1, 1),
+    }
+    assert summary.comparison_incomplete
+    rows = {(r.assumption, r.scenario, r.metric): r.summary for r in summary.rows}
+    assert rows["fragile", "load", "all_work.merges"].defined == 1
+    assert rows["fragile", "bypass", "all_work.merges"].defined == 2
+    comparisons = {r.scenario: r for r in summary.comparisons}
+    assert comparisons["load"].absolute.defined == 1
+    assert comparisons["load"].more_merges.trials == 1
+    assert comparisons["bypass"].absolute.defined == 2
+    replications = [json.loads(line) for line in (out / "replications.jsonl").read_text().splitlines()]
+    truncated = next(r for r in replications if r["scenario"] == "load" and r["replication"] == 1)
+    assert truncated["result"] == {"merges": None, "engine_truncated": True, "metrics": None}
+    traces = [json.loads(line) for line in (out / "traces.jsonl").read_text().splitlines()]
+    diagnostic = next(t for t in traces if t["scenario"] == "load")["diagnostics"][1]
+    assert diagnostic["engine_truncated"] is True
+    assert diagnostic["metrics"] is None
+    assert sum(p["state"] == "merged" for p in diagnostic["pull_requests"]) == 3  # earlier merges stay diagnostic
+    assert sum(r["active_seconds"] for r in diagnostic["reviewers"]) > 0
+    report = (out / "report.md").read_text()
+    assert report == (Path(__file__).parent / "fixtures" / "experiment-truncated-report.md").read_text()
+
+    def forbidden(*args: object, **kwargs: object) -> None:
+        raise AssertionError("reporting must not execute simulation or network")
+
+    monkeypatch.setattr("merge_carlo.simulation.runner.run_experiment", forbidden)
+    monkeypatch.setattr("merge_carlo.artifacts.run_experiment", forbidden)
+    monkeypatch.setattr("merge_carlo.simulation.engine.run_fifo", forbidden)
+    monkeypatch.setattr("socket.socket", forbidden)
+    assert render_report(out) == report
+
+
+def test_all_truncated_runs_have_undefined_outcomes(tmp_path: Path) -> None:
+    loop = AssumptionSet("loop", 10, RevisionLoops(max_review_visits=1, first_change_probability=1))
+    write_experiment(replace(experiment(), assumptions=(loop,), scenarios=()), evidence(), tmp_path / "out")
+    summary = Summary.model_validate_json((tmp_path / "out" / "summary.json").read_bytes())
+    assert [(c.scenario, c.usable, c.engine_truncated) for c in summary.replication_counts] == [("baseline", 0, 2)]
+    assert summary.comparison_incomplete
+    assert all(row.summary.defined == 0 and row.summary.median.value is None for row in summary.rows)
+    assert all(row.event_probability is None or row.event_probability.trials == 0 for row in summary.rows)
+    assert summary.comparisons[0].more_merges.estimate.value is None
+    report = render_report(tmp_path / "out")
+    assert "| loop | baseline | 2 | 0 | 2 |" in report
+    assert "Policy ranking disabled: 2 of 2 runs engine-truncated" in report
 
 
 def test_record_dst_elapsed_bounds(tmp_path: Path) -> None:
