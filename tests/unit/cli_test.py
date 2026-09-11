@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 
 import httpx
@@ -26,10 +27,12 @@ def test_version_option_prints_the_package_version(runner: CliRunner) -> None:
 @pytest.mark.unit
 def test_help_describes_the_tool(runner: CliRunner) -> None:
     result = runner.invoke(app, ["--help"])
+    # Typer forces styled help under GITHUB_ACTIONS, which splits "--json" with ANSI codes.
+    text = re.sub(r"\x1b\[[0-9;]*m", "", result.stdout)
 
     assert result.exit_code == 0
-    assert "review capacity" in result.stdout
-    assert "--json" in result.stdout
+    assert "review capacity" in text
+    assert "--json" in text
 
 
 @pytest.mark.unit
