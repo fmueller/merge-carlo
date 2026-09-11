@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Release mutation gate evidence in `docs/mutation-policy.md`: the full gate's
+  per-module table and runtime, and every surviving engine, scenario runner,
+  and metric mutant recorded as equivalent or message-only with its reason.
+  Behavioral tests now pin the inclusive measurement-window start for
+  first-review latency and exclusive requested-change, bypass eligibility, and
+  bypass audit thresholds.
 - Explicit v0.1.0 mutation discovery limitations: mutmut 3.7.0 does not mutate
   decorated Pydantic validators, Typer command bodies, `@property` methods, or
   dataclass methods, so per-module scores do not cover them. Behavioral tests

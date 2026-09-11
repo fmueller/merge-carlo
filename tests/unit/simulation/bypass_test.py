@@ -100,6 +100,34 @@ def test_keyed_eligibility_and_audits_are_stable_and_independent() -> None:
     assert all(run(0.6, 0.9)[key][0] == value[0] for key, value in expected.items())
 
 
+@pytest.mark.parametrize("eligible_fraction,audit_fraction,flags", [(0.5, 1, (False, False)), (1, 0.5, (True, False))])
+def test_bypass_fraction_thresholds_are_exclusive(
+    eligible_fraction: float, audit_fraction: float, flags: tuple[bool, bool], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from typing import cast
+
+    from numpy.random import Generator
+
+    class Draw:
+        def random(self) -> float:
+            return 0.5
+
+    def stream(seed: int, replication: int, *key: str | int) -> Generator:
+        return cast(Generator, Draw())
+
+    monkeypatch.setattr("merge_carlo.simulation.engine.random_stream", stream)
+    result = run_fifo(
+        (pr("a"),),
+        (),
+        span=span(0, 10),
+        service_seconds=1,
+        bypass=ReviewBypass(eligible_fraction, audit_fraction),
+    )
+    p = result.pull_requests[0]
+    assert (p.bypass_eligible, p.bypass_audited) == flags
+    assert p.review_bypassed is (flags == (True, False))
+
+
 @pytest.mark.parametrize("deadline,horizon,reason", [(7, 20, "abandoned"), (20, 7, "horizon"), (8, 20, "merged")])
 def test_bypass_merge_obeys_competing_boundaries(deadline: float, horizon: float, reason: str) -> None:
     result = run_fifo(

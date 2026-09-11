@@ -7,6 +7,7 @@ from hypothesis import strategies as st
 from merge_carlo.simulation.calendars import UTCInterval
 from merge_carlo.simulation.domain import PullRequest, WorkOrigin
 from merge_carlo.simulation.engine import Abandonment, Reviewer, RevisionLoops, run_fifo, summarize_replications
+from merge_carlo.simulation.metrics import MetricWindow
 
 pytestmark = pytest.mark.unit
 START = datetime(2026, 1, 1, tzinfo=UTC)
@@ -423,10 +424,14 @@ def test_probability_threshold_is_exclusive_and_random_defaults_are_zero(
         span=span(0, 10),
         service_seconds=1,
         loops=RevisionLoops(verification_failure_probability=probability, first_change_probability=probability),
+        measurement=MetricWindow(0, 10, 5, 0),
     )
     p = result.pull_requests[0]
     assert (p.terminal_at, p.revision, p.review_visit_count) == (1, 1, 1)
     assert calls == [(0, 0), (0, 0)]
+    # The measured change count follows the same exclusive threshold as the lifecycle.
+    assert result.metrics is not None
+    assert p.requested_change_count == result.metrics.all_work.requested_changes == 0
 
 
 @pytest.mark.parametrize("field", ["verification_seconds", "author_response_seconds"])

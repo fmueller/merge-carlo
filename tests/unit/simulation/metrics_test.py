@@ -162,6 +162,22 @@ def test_exact_start_arrival_contributes_queue_service_and_changes() -> None:
     assert metrics.merged.share == Metric(0)
 
 
+def test_first_review_completed_exactly_at_window_start_is_measured() -> None:
+    span = UTCInterval(START, START + timedelta(seconds=10))
+    duty = (UTCInterval(START + timedelta(seconds=1), span.end),)
+    result = run_fifo(
+        (PullRequest("carry", "a", WorkOrigin.HUMAN, 0),),
+        (Reviewer("r", duty),),
+        span=span,
+        service_seconds=5,
+        measurement=MetricWindow(6, 10, 1, 0),
+    )
+    assert result.metrics is not None
+    # Review starts at 1 and completes at 6, the inclusive start of the window.
+    assert result.metrics.all_work.first_review_median == Metric(1)
+    assert result.metrics.all_work.first_review_p95 == Metric(1)
+
+
 def test_off_duty_service_and_fractional_window_are_clipped() -> None:
     span = UTCInterval(START, START + timedelta(seconds=20))
     duty = (

@@ -4,7 +4,7 @@ This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-09-10.
+Last updated: 2026-09-11.
 
 ## Milestones
 
@@ -49,6 +49,14 @@ command rather than summarized as an unsupported readiness claim:
 | `mise run test:mutate` | Pass: `merge_carlo.cli` 74/90 (82.2%) | Differential v0.1.0 mutation policy for changed executable source |
 | `mise run check` | Pass | CI-equivalent local gate |
 
+The release mutation gate (T-030) was run separately on 2026-09-11:
+`mise run test:mutate:gate` passed with every one of 22 modules at or above the
+80% floor, including `merge_carlo.simulation.engine` 601/613 (98.0%),
+`merge_carlo.simulation.runner` 172/176 (97.7%), and
+`merge_carlo.simulation.metrics` 278/285 (97.5%). The per-module table, the
+recorded survivors and the runtime are in the
+[mutation policy](mutation-policy.md).
+
 The tests use synthetic inputs and saved or mocked HTTP responses. They verify
 the offline demo is deterministic and does not construct network clients;
 collection tests exercise reconciliation, interrupted/partial collections,
@@ -76,7 +84,8 @@ complete until T-037 lands.
 - Mutation scores cover only the functions mutmut 3.7.0 instruments. Decorated
   Pydantic validators and CLI command bodies are verified by behavioral tests,
   not mutation testing (T-040, T-041); see the
-  [mutation policy](mutation-policy.md).
+  [mutation policy](mutation-policy.md). The full mutation gate passed locally
+  (T-030); its weekly GitHub workflow run has not been observed for that change.
 
 ## Unsupported in v0.1.0
 
@@ -96,9 +105,8 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-030
-release mutation validation, T-037 comparison truncation propagation, and T-039
-persisted experiment CLI wiring. Their presence means v0.1.0 should not be
+The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-037
+comparison truncation propagation, and T-039 persisted experiment CLI wiring. Their presence means v0.1.0 should not be
 described as fully complete or published.
 
 Three tasks are deferred to the inactive v0.2.0 draft spec:
