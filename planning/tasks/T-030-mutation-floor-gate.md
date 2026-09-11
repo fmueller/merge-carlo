@@ -6,6 +6,8 @@ priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-013-metric-dictionary
+    - T-040-artifact-validator-mutations
+    - T-041-cli-command-mutations
 updated_at: "2026-09-09T19:15:25Z"
 ---
 

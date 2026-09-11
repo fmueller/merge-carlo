@@ -3,17 +3,18 @@ id: T-036-reopen-completed-work
 title: Support reopening completed tracked work
 status: todo
 priority: low
-spec_ref: specs/v0.1.0.md#release-hardening
+spec_ref: specs/v0.2.0.md#tracked-work-tooling
 dependencies: []
-updated_at: "2026-09-10T12:34:53Z"
+updated_at: "2026-09-11T10:31:03Z"
 ---
 
 # T-036-reopen-completed-work Support reopening completed tracked work
 
 ## Description
 
-Release applicability: v0.1.0 tracked-work tooling follow-up, not a simulator
-feature or release correctness blocker. Taskrail 0.4.0 cannot reopen completed
+Release applicability: v0.2.0 tracked-work tooling follow-up (moved from v0.1.0
+by maintainer decision on 2026-09-11), not a simulator feature or release
+correctness blocker. Taskrail 0.4.0 cannot reopen completed
 work when the user changes the acceptance decision before commit. During
 T-035, `start` rejected completed as not todo; `block` rejected it as not
 transitionable; `unblock` requires blocked. No status fields were hand-edited.

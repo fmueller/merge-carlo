@@ -14,7 +14,7 @@ Last updated: 2026-09-10.
 | M1 | Domain contracts, duty calendars and deterministic FIFO engine | Complete |
 | M2 | Keyed randomness, revisions, abandonment, demand/capacity scenarios and bypass | Complete |
 | M3 | Replication runner, metrics, artifacts, report and synthetic demo | Limited: truncation reporting and real-data CLI remain |
-| M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment remains |
+| M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment deferred to v0.2.0 |
 | M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
 | M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | In progress |
 
@@ -92,10 +92,19 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-The open tracked tasks after this documentation task are T-020 optional CI
-enrichment, T-029 trusted release publishing, T-030
-release mutation validation, T-033 dataclass mutation discovery, T-036 Taskrail
-reopening support, T-037 comparison truncation propagation, T-039 persisted
-experiment CLI wiring, T-040 artifact-validator mutation discovery, and T-041
-decorated CLI command mutation discovery. Their presence means v0.1.0 should not
-be described as fully complete or published.
+The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-030
+release mutation validation, T-037 comparison truncation propagation, T-039
+persisted experiment CLI wiring, T-040 artifact-validator mutation discovery,
+and T-041 decorated CLI command mutation discovery. Their presence means v0.1.0
+should not be described as fully complete or published.
+
+Three tasks are deferred to the inactive v0.2.0 draft spec:
+
+- T-033 dataclass mutation discovery. mutmut 3.7.0 does not mutate methods of
+  decorated classes, so v0.1.0 per-module mutation scores do not cover
+  `@dataclass` methods such as `DutyCalendar.materialize` or
+  `PullRequest.transition`.
+- T-020 optional CI enrichment. v0.1.0 collection does not gather check-run or
+  commit-status observations, so CI-derived estimates are unavailable.
+- T-036 Taskrail reopening support, a repository tooling follow-up rather than
+  simulator behavior.

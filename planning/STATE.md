@@ -1,13 +1,14 @@
 ---
 schema_version: 1
-updated_at: "2026-09-11T07:41:35Z"
+updated_at: "2026-09-11T10:31:21Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
 current_task_title: ""
-status_summary: idle
-blockers: []
-next_action: Select the next eligible task
+status_summary: blocked
+blockers:
+    - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
+next_action: 'Start task T-037-comparison-truncation-reporting: Propagate engine truncation through comparison artifacts and reports'
 last_verification_result: pass for T-027-performance-benchmark at 2026-09-11T07:41:35Z
 relevant_artifacts: []
 continuation_notes:
@@ -26,11 +27,11 @@ continuation_notes:
 
 ## Status
 
-- idle
+- blocked
 
 ## Blockers
 
-- None
+- T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.
 
 ## Last Verification
 
@@ -38,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Select the next eligible task
+- Start task T-037-comparison-truncation-reporting: Propagate engine truncation through comparison artifacts and reports
 
 ## Relevant Artifacts
 
@@ -50,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 9
+- todo: 8
 - in_progress: 0
 - completed: 32
-- blocked: 0
+- blocked: 1
 - cancelled: 0

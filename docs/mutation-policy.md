@@ -51,5 +51,7 @@ the old failed run must not be rewritten as a historical pass.
 T-035 removes T-005's numerical-floor blocker. T-034 resolves the separate
 differential accounting problem described above. T-005 must reconcile both
 changes and rerun its actual verification before claiming a clean gate.
-T-033 (dataclass mutation discovery) and T-030 (release mutation validation)
-also remain applicable to v0.1.0. None is implemented by T-035.
+T-030 (release mutation validation) also remains applicable to v0.1.0. T-033
+(dataclass mutation discovery) is deferred to v0.2.0: mutmut 3.7.0 skips
+decorated class bodies, so v0.1.0 per-module scores do not cover `@dataclass`
+methods. None is implemented by T-035.
