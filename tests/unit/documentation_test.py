@@ -36,6 +36,21 @@ def test_release_docs_cover_console_contract_and_report_limitations() -> None:
 
 
 @pytest.mark.unit
+def test_mutation_discovery_limitations_are_explicit() -> None:
+    policy = (ROOT / "docs" / "mutation-policy.md").read_text(encoding="utf-8")
+    limitations = (ROOT / "docs" / "limitations.md").read_text(encoding="utf-8")
+
+    heading = "## Discovery limitations in v0.1.0"
+    assert heading in policy
+    section = policy.split(heading, 1)[1].split("\n## ", 1)[0]
+    for undiscovered in ("check_probability", "check_summaries", "@app.command", "@app.callback", "@property"):
+        assert undiscovered in section
+    assert "boxed/mutmut#387" in section
+    assert "not mutation-covered" in section
+    assert "mutation-policy.md" in limitations
+
+
+@pytest.mark.unit
 def test_performance_benchmark_is_recorded_without_a_runtime_promise() -> None:
     performance = (ROOT / "docs" / "performance.md").read_text(encoding="utf-8")
     status = (ROOT / "docs" / "implementation-status.md").read_text(encoding="utf-8")

@@ -1,12 +1,12 @@
 ---
 id: T-041-cli-command-mutations
 title: Cover decorated CLI commands in mutation testing
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-015-offline-demo
-updated_at: "2026-09-10T17:23:17Z"
+updated_at: "2026-09-11T10:58:54Z"
 ---
 
 # T-041-cli-command-mutations Cover decorated CLI commands in mutation testing
@@ -42,3 +42,28 @@ CLI code solely for the mutation tool. This is not T-038's result-parser issue.
 
 Filed, not implemented, during T-015. Scope is release-hardening verification,
 not another demo feature or a change to the mutation floor.
+
+Resolution (2026-09-11, maintainer decision): documented scoped alternative for
+v0.1.0. mutmut 3.7.0 skips decorated functions
+(`mutmut/mutation/file_mutation.py:286-291`), upstream main still does, and
+boxed/mutmut#387 is open, so Typer command bodies cannot be discovered without
+restructuring the CLI. The limitation is recorded in `docs/mutation-policy.md`
+("Discovery limitations in v0.1.0"), `docs/limitations.md`, and
+`docs/implementation-status.md`, and locked by
+`tests/unit/documentation_test.py::test_mutation_discovery_limitations_are_explicit`.
+
+Scoped run: `uv run mutmut run "merge_carlo.reporting.*" "merge_carlo.cli.*"`
+(12.8 s wall). `merge_carlo.cli` 74/90 (82.2%), guard verdict `ok`; mutated
+functions `_emit`, `_print_version`, `JsonTyperGroup.main`. The instrumented
+`mutants/src/merge_carlo/cli.py` has trampolines only for those three, none for
+the `main` callback or the `schema`, `demo`, `collect`, `inspect`, and `validate`
+commands. Since T-015, the module has gained enough discovered helper mutants for
+a verdict; that verdict still does not cover the command bodies.
+
+Behavioral tests are retained unchanged: option forwarding and synthetic
+labeling (`tests/integration/demo_test.py::test_offline_demo_reproduces_complete_synthetic_output`),
+no credentials, HTTP client, or socket (same test), invalid options exit 2
+without writing (`test_invalid_demo_options_do_not_write`), existing-output
+preservation (`test_demo_preserves_existing_output`), and exit codes 2, 3, and 4
+across `schema`, `collect`, and `validate` in `tests/unit/cli_test.py`.
+- 2026-09-11T10:58:54Z: verification pass

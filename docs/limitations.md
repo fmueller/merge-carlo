@@ -29,7 +29,9 @@ real-data validation remain unverified. Fixture-backed tests establish local
 behavior, including explicit partial collection, but cannot establish GitHub API
 compatibility or dataset fitness on a real repository. The final release mutation
 gate is remaining tracked work; no release readiness claim follows from its
-absence. The [performance benchmark](performance.md) records one synthetic
+absence. Mutation scores cover only the functions mutmut instruments: decorated
+validators, CLI command bodies, `@property` methods, and dataclass methods are
+not mutation-covered (see the [mutation policy](mutation-policy.md)). The [performance benchmark](performance.md) records one synthetic
 workload on one machine and supports no universal runtime, memory, or
 scalability claim; summary statistics retain per-replication metric scalars, so
 memory grows with the replication count even though rows stream.

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Explicit v0.1.0 mutation discovery limitations: mutmut 3.7.0 does not mutate
+  decorated Pydantic validators, Typer command bodies, `@property` methods, or
+  dataclass methods, so per-module scores do not cover them. Behavioral tests
+  are the documented alternative, now including zero-trial probability and
+  summary null-reason rejection.
 - A reproducible performance benchmark, `uv run python -m merge_carlo.benchmark`,
   that runs the synthetic demo workload sequentially and prints its parameters,
   hardware, dependency versions, wall time, peak RSS, engine event count, and

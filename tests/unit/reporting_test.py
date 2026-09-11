@@ -126,6 +126,49 @@ def test_reject_invalid_saved_probability(field: str, value: object) -> None:
 @pytest.mark.parametrize(
     "field,value",
     [
+        ("low", 0.0),
+        ("high", 1.0),
+        ("estimate", {"value": 0.0, "reason": None}),
+        ("estimate", {"value": None, "reason": "engine_truncated"}),
+    ],
+)
+def test_reject_defined_zero_trial_probability(field: str, value: object) -> None:
+    data = {
+        "successes": 0,
+        "trials": 0,
+        "estimate": {"value": None, "reason": "no_defined_replications"},
+        "low": None,
+        "high": None,
+    }
+    Probability.model_validate(data)
+    data[field] = value
+    with pytest.raises(ValidationError, match="zero trials require undefined probability and bounds"):
+        Probability.model_validate(data)
+
+
+@pytest.mark.parametrize(
+    "defined,field,value,message",
+    [
+        (False, "median", {"value": 3}, "undefined summary requires null values and reasons"),
+        (False, "low", {"value": None, "reason": "engine_truncated"}, "undefined summary requires null values"),
+        (True, "high", {"value": 9, "reason": "no_defined_replications"}, "invalid summary quantiles"),
+    ],
+)
+def test_reject_inconsistent_summary_null_reasons(
+    tmp_path: Path, defined: bool, field: str, value: object, message: str
+) -> None:
+    data = fixture().model_dump(mode="json")
+    Summary.model_validate(data)
+    summary = data["rows"][0]["summary"] if defined else data["comparisons"][0]["absolute"]
+    summary[field] = value
+    (tmp_path / "summary.json").write_text(json.dumps(data))
+    with pytest.raises(ValidationError, match=message):
+        render_report(tmp_path)
+
+
+@pytest.mark.parametrize(
+    "field,value",
+    [
         ("defined", -1),
         ("excluded", 9),
         ("total", 11),

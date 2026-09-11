@@ -55,3 +55,50 @@ T-030 (release mutation validation) also remains applicable to v0.1.0. T-033
 (dataclass mutation discovery) is deferred to v0.2.0: mutmut 3.7.0 skips
 decorated class bodies, so v0.1.0 per-module scores do not cover `@dataclass`
 methods. None is implemented by T-035.
+
+## Discovery limitations in v0.1.0
+
+The pinned mutmut 3.7.0 does not generate mutants for every function. A
+per-module score describes only the functions mutmut instruments; code it skips
+is not mutation-covered, whatever that module's percentage. Skipped functions
+never enter the denominator, so nothing is excluded after the fact, and
+production code is not restructured to suit the tool.
+
+- Decorated functions and methods are skipped, except a lone `@staticmethod` or
+  `@classmethod`. Upstream main still skips them (boxed/mutmut#387 is open).
+  In v0.1.0 this leaves out:
+  - Pydantic `@model_validator` and `@field_validator` methods, including the
+    artifact validators `Probability.check_probability` and
+    `Summary.check_summaries` in `merge_carlo.reporting` (T-040), and the
+    validators in `configuration`, `calibration`, `inspection`, `store`, and
+    `validation`;
+  - the Typer `@app.callback` and every `@app.command` body in
+    `merge_carlo.cli`: `schema`, `demo`, `collect`, `inspect`, and `validate`
+    (T-041);
+  - `@property` methods such as `UTCInterval.seconds` and
+    `PullRequest.terminal`.
+- Methods of decorated classes, including every `@dataclass` body, are skipped.
+  That discovery work (T-033) is deferred to v0.2.0.
+
+The scoped alternative for T-040 and T-041 is behavioral testing, not a
+mutation score:
+
+- `tests/unit/reporting_test.py` rejects invalid probability counts and bounds,
+  zero-trial probabilities with defined values or bounds, denominator
+  mismatches, nonfinite or unordered quantiles, inconsistent replication totals,
+  and inconsistent null values or reasons.
+- `tests/unit/cli_test.py` and `tests/integration/demo_test.py` cover option
+  forwarding, exit codes `2`, `3`, and `4`, a demo that uses no credentials,
+  HTTP client, or socket, SYNTHETIC output labeling, and preservation of
+  existing output.
+
+Scoped run on 2026-09-11, before the two added reporting tests:
+`uv run mutmut run "merge_carlo.reporting.*" "merge_carlo.cli.*"` took 12.8 s
+of wall time, and the guard reported both modules above the 80% floor.
+
+| Module | Killed/total | Verdict | Mutated functions |
+| --- | --- | --- | --- |
+| `merge_carlo.reporting` | 231/243 (95.1%) | ok | `markdown`, `_number`, `_probability`, `_range`, `render_report`, `wilson` |
+| `merge_carlo.cli` | 74/90 (82.2%) | ok | `_emit`, `_print_version`, `JsonTyperGroup.main` |
+
+Neither score covers the validators or command bodies listed above.

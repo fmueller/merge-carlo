@@ -73,6 +73,10 @@ complete until T-037 lands.
   not arbitrary Python, NumPy, timezone-database, library, or hardware versions.
 - Pseudonymized repository metadata can remain identifiable and must only be
   collected and shared with authorization.
+- Mutation scores cover only the functions mutmut 3.7.0 instruments. Decorated
+  Pydantic validators and CLI command bodies are verified by behavioral tests,
+  not mutation testing (T-040, T-041); see the
+  [mutation policy](mutation-policy.md).
 
 ## Unsupported in v0.1.0
 
@@ -93,10 +97,9 @@ experiment report for the complete qualifications.
 ## Remaining v0.1.0 work
 
 The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-030
-release mutation validation, T-037 comparison truncation propagation, T-039
-persisted experiment CLI wiring, T-040 artifact-validator mutation discovery,
-and T-041 decorated CLI command mutation discovery. Their presence means v0.1.0
-should not be described as fully complete or published.
+release mutation validation, T-037 comparison truncation propagation, and T-039
+persisted experiment CLI wiring. Their presence means v0.1.0 should not be
+described as fully complete or published.
 
 Three tasks are deferred to the inactive v0.2.0 draft spec:
 
