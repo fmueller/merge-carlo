@@ -12,6 +12,7 @@ dependencies:
     - T-039-experiment-cli
     - T-040-artifact-validator-mutations
     - T-041-cli-command-mutations
+    - T-043-host-independent-mutation-kills
 updated_at: "2026-09-09T19:03:12Z"
 ---
 
