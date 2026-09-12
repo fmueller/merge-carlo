@@ -10,6 +10,11 @@ updated_at: "2026-09-11T23:24:44Z"
 
 # T-045-configure-opencode-for-private-z-ai-workflows Configure OpenCode for private Z.AI workflows
 
+> Historical implementation and verification record. Superseded by T-046:
+> OpenCode now belongs to the optional private global `/opencode` User Skill,
+> not repository setup or CI. The commands and pins below describe the original
+> implementation and are no longer current contributor instructions.
+
 ## Description
 
 Install and configure OpenCode reproducibly for the Z.AI Coding Plan without

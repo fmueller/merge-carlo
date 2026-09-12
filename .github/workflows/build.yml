@@ -52,8 +52,6 @@ jobs:
         run: bash scripts/check-mutation-floor-test.sh
       - name: Check the orb setup contract
         run: bash scripts/check-orb-setup-test.sh
-      - name: Check the OpenCode setup contract
-        run: bash scripts/check-opencode-setup-test.sh
 
   unit-tests:
     name: Unit Tests (Python ${{ matrix.python-version }})

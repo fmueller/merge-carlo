@@ -9,9 +9,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Reproducible orb-local OpenCode 1.18.30 setup for the Z.AI Coding Plan, with
-  secret-safe launch profiles for GLM-5.3 and GLM-5.3-Flash reasoning levels
-  and runtime-only discovery of the signed-in user's private Amp skills.
 - Comparison-wide engine truncation reporting: experiment `summary.json` now
   records requested, usable and engine-truncated replication counts per
   assumption/scenario, and the report shows them in its first section with
@@ -125,6 +122,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- OpenCode is optional personal tooling through the private global `/opencode`
+  User Skill, rather than a repository-managed dependency. Setup, resume, and
+  CI no longer install, configure, or synchronize it.
 - Count mutmut's Unicode-mangled class methods alongside top-level mutants in
   full and differential per-module mutation efficacy reports.
 - Scope differential mutation verdicts to changed modules, rejecting missing

@@ -1,10 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-readonly REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-
-# Amp materializes private User Skills only after authenticated session startup.
-# Invocation repeats this sync and fails closed if the inventory is unavailable.
-if ! python3 "$REPO_ROOT/scripts/sync-opencode-skills.py" --quiet; then
-  printf 'OpenCode User Skill sync deferred until invocation\n' >&2
-fi
+# merge-carlo has no services, tunnels, or authentication to repair on wake.
+printf 'merge-carlo requires no resume-time setup\n'

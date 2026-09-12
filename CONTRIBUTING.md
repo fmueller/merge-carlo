@@ -45,6 +45,13 @@ uv sync --locked --dev
 lefthook install
 ```
 
+OpenCode is optional personal tooling, not a repository dependency. Amp users
+with the private global `/opencode` User Skill can invoke it from this checkout;
+the skill owns installation, configuration, authentication, and runtime skill
+discovery. Repository setup, resume, and CI do not install or invoke OpenCode.
+Do not copy personal skills, credentials, or generated runtime state into the
+repository. Contributors without that private skill need only the setup above.
+
 ## Before you open a pull request
 
 - Run `mise run check`. It mirrors the CI checks step for step.
