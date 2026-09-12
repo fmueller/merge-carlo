@@ -1,11 +1,11 @@
 ---
 id: T-046-remove-repository-local-opencode-integration
 title: Remove repository-local OpenCode integration
-status: in_progress
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies: []
-updated_at: "2026-09-12T14:03:31Z"
+updated_at: "2026-09-12T14:07:48Z"
 ---
 
 # T-046-remove-repository-local-opencode-integration Remove repository-local OpenCode integration
@@ -50,8 +50,16 @@ unrelated setup, CI, toolchain, and tracked work.
   skill files or generated private runtime paths.
 - Independent read-only OpenCode review found no security or correctness defects.
   It requested complete verification notes; the setup, full-check, inference,
-  and privacy evidence above resolves that documentation gap. Remote push and
-  main CI verification are post-commit checks, to be reported after they settle.
+  and privacy evidence above resolves that documentation gap. A fresh independent
+  disposition review confirmed the finding resolved.
+- The phase-1 publisher confirmed that the loaded launcher's content hash
+  matches the final published private global skill baseline.
+- The [cleanup commit](https://github.com/fmueller/merge-carlo/commit/283fc0800f07b8c7f6b329af725957977a26cd9c)
+  was pushed directly to main and its remote SHA confirmed. Both
+  [Build](https://github.com/fmueller/merge-carlo/actions/runs/34698246504)
+  (including Python 3.12, 3.13, and 3.14) and
+  [CodeQL](https://github.com/fmueller/merge-carlo/actions/runs/34698246195)
+  completed successfully. No cleanup-caused CI fixes were needed.
 
 ## Implementation Notes
 
@@ -61,3 +69,5 @@ unrelated setup, CI, toolchain, and tracked work.
   later changes to reconcile. The simulator, dependency lock, setup bootstrap,
   hook policy, and unrelated workflow behavior remain unchanged.
 - 2026-09-12T14:03:31Z: verification pass
+- 2026-09-12T14:07:48Z: verification pass
+- 2026-09-12T14:07:48Z: Removed repository-local OpenCode; final global replacement and successful main CI verified.
