@@ -8,6 +8,8 @@ from merge_carlo.simulation.calendars import UTCInterval, _local_to_utc, _zone
 from merge_carlo.simulation.domain import PullRequest, WorkOrigin
 from merge_carlo.simulation.randomness import random_stream
 
+_MAX_ADDITIVE_FRACTION = 1_000
+
 
 @dataclass(frozen=True, slots=True)
 class AdditiveAI:
@@ -16,8 +18,12 @@ class AdditiveAI:
     fraction: float
 
     def __post_init__(self) -> None:
-        if not math.isfinite(self.fraction) or self.fraction < 0:
-            raise ValueError("additive fraction must be finite and nonnegative")
+        if (
+            isinstance(self.fraction, bool)
+            or not math.isfinite(self.fraction)
+            or not 0 <= self.fraction <= _MAX_ADDITIVE_FRACTION
+        ):
+            raise ValueError("additive fraction must be finite and between zero and 1000")
 
 
 @dataclass(frozen=True, slots=True)

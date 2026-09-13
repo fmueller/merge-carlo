@@ -28,10 +28,10 @@ language models, and no part of merge-carlo calls one.
 Pre-alpha. The v0.1.0 scope is frozen in
 [`specs/v0.1.0.md`](specs/v0.1.0.md). The offline synthetic demo, read-only
 cohort collection, inspection, Python model calibration, held-out descriptive
-validation, schema export, and a recorded
-[performance benchmark](docs/performance.md) are implemented. The persisted
-real-data `calibrate`, `simulate`, and `report` command path, final mutation
-gate, and release publishing remain tracked work. Track exact progress
+validation, schema export, persisted experiment simulation/reporting, and a
+recorded [performance benchmark](docs/performance.md) are implemented. The
+real-data `calibrate` command, final mutation gate, and release publishing
+remain tracked work. Track exact progress
 in [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 
@@ -137,15 +137,22 @@ observed mature-cohort outcomes, and replication outcomes from replaying exact
 held-out arrival timestamps with only known-at-arrival attributes. See
 [`docs/validation.md`](docs/validation.md).
 
-The remaining real-data commands are planned, **not yet available**:
+Calibration remains a Python API; once it has written `model.json`, the persisted
+simulation and report commands are available:
 
 ```bash
 uv run merge-carlo calibrate --dataset data/repository.sqlite --train-until 2026-07-01 \
                              --assumptions configs/team-assumptions.yaml --out models/repository
 uv run merge-carlo simulate  --model models/repository/model.json --scenarios configs/scenarios.yaml --out out/experiment
 uv run merge-carlo report    --results out/experiment --validation out/validation/validation.json \
-                             --out out/experiment/report.md
+                             --out out/experiment/report.md --overwrite
 ```
+
+The scenario YAML's optional `execution` section declares the local observation
+start, horizon and warm-up, seed, replications, reviewer calendars, and named
+reviewers. Its resulting UTC bounds and additive/replacement demand semantics
+are persisted in `resolved-scenarios.json`; the report command only reads the
+saved result and validation artifacts.
 
 Exit codes: `0` success, `2` invalid input, `3` source or access failure,
 `4` a requested validation gate failed.

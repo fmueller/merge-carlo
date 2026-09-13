@@ -42,8 +42,8 @@ def test_export_is_deterministic_and_documents_effort_composition(tmp_path: Path
 
     assert (first / "assumptions.schema.json").read_bytes() == (second / "assumptions.schema.json").read_bytes()
     assert {path.name: hashlib.sha256(path.read_bytes()).hexdigest() for path in first.iterdir()} == {
-        "assumptions.schema.json": "95efb5f78573385b50d7238277f130231e95701349a792391b3b4d696b7d5523",
-        "scenarios.schema.json": "fd3cc02baa579fd8e17ef88a7bbd7aba5793bdf9e058d386e52f73de783a3dc5",
+        "assumptions.schema.json": "eacc2772ae6f47cd73d3df4f93e31799dee46b572e639caad2d9590b74a09012",
+        "scenarios.schema.json": "3ca7b087d460c9ac08e3352ab495fa0b3e2481ccb39bc145c411a5937bb75d09",
     }
     schema = json.loads((first / "assumptions.schema.json").read_text(encoding="utf-8"))
     multiplier = schema["$defs"]["AssumptionSetConfig"]["properties"]["effort_multiplier"]
@@ -89,6 +89,23 @@ def test_configuration_rejects_unknown_keys_and_unsafe_yaml(loader: object, tmp_
     with pytest.raises(ValueError, match="invalid configuration"):
         loader(unsafe)
     assert not marker.exists()
+
+
+def test_scenario_rejects_unbounded_additive_demand(tmp_path: Path) -> None:
+    path = tmp_path / "scenarios.yaml"
+    path.write_text(
+        """schema_version: 1
+scenarios:
+  - name: excessive
+    demand:
+      kind: additive_ai
+      fraction: 1000000000
+""",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(ValueError, match="invalid configuration"):
+        load_scenario_config(path)
 
 
 def test_calendar_times_reject_offsets_and_absences_normalize_fixed_offsets(tmp_path: Path) -> None:

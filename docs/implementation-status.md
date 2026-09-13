@@ -4,7 +4,7 @@ This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-09-11.
+Last updated: 2026-09-13.
 
 ## Milestones
 
@@ -13,14 +13,15 @@ Last updated: 2026-09-11.
 | M0 | Packaging, pinned toolchain, CI, commit policy, spec and backlog | Complete |
 | M1 | Domain contracts, duty calendars and deterministic FIFO engine | Complete |
 | M2 | Keyed randomness, revisions, abandonment, demand/capacity scenarios and bypass | Complete |
-| M3 | Replication runner, metrics, artifacts, report and synthetic demo | Limited: real-data CLI remains |
+| M3 | Replication runner, metrics, artifacts, report and synthetic demo | Complete; persisted simulate/report CLI added |
 | M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment deferred to v0.2.0 |
 | M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
 | M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | In progress |
 
 ## Implemented command surface
 
-`merge-carlo` exposes `schema`, `demo`, `collect`, `inspect`, and `validate`, plus
+`merge-carlo` exposes `schema`, `demo`, `collect`, `inspect`, `validate`,
+`simulate`, and `report`, plus
 `--help`, `--version`, and global `--json` console output. Every implemented
 command has option help. Human errors are concise and machine mode emits one
 JSON object per operational result or error with `status`, `exit_code`, and
@@ -109,10 +110,9 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-The open tracked v0.1.0 tasks are T-029 trusted release publishing, T-039
-persisted experiment CLI wiring, and T-043 host-independent timezone and SQLite
-URI mutation kills. Their presence means v0.1.0 should not be
-described as fully complete or published.
+The open tracked v0.1.0 tasks are T-029 trusted release publishing and T-043
+host-independent timezone and SQLite URI mutation kills. Their presence means
+v0.1.0 should not be described as fully complete or published.
 
 Three tasks are deferred to the inactive v0.2.0 draft spec:
 

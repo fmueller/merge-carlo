@@ -1,4 +1,4 @@
-"""Command-line entry point; real-data pipeline commands land with their milestones."""
+"""Command-line entry point for the offline collection and experiment workflow."""
 
 import json
 import sys
@@ -15,6 +15,8 @@ from merge_carlo.attribution import AttributionConfig
 from merge_carlo.cohort import SourceError, collect_cohort
 from merge_carlo.configuration import export_schemas
 from merge_carlo.demo import demo_experiment
+from merge_carlo.experiment import report as render_saved_report
+from merge_carlo.experiment import simulate as run_simulation
 from merge_carlo.github import GitHubTransport, TransportLimits
 from merge_carlo.inspection import InspectionError, write_inspection
 from merge_carlo.store import ProjectedStore, WorkspaceKey
@@ -116,6 +118,40 @@ def demo(
         raise typer.Exit(code=2) from exc
     _emit(ctx, f"SYNTHETIC demo: {out / 'report.md'}")
     _emit(ctx, "Only the base assumption set was run. Full sensitivity has not been run.")
+
+
+@app.command()
+def simulate(
+    ctx: typer.Context,
+    model: Annotated[Path, typer.Option(help="Versioned calibrated model.json artifact.")],
+    scenarios: Annotated[Path, typer.Option(help="Versioned scenario and execution YAML.")],
+    out: Annotated[Path, typer.Option(help="Empty or absent directory for experiment artifacts.")],
+    overwrite: Annotated[bool, typer.Option(help="Replace an existing experiment bundle explicitly.")] = False,
+) -> None:
+    """Run a persisted, offline experiment from model and scenario artifacts."""
+    try:
+        run_simulation(model, scenarios, out, overwrite=overwrite)
+    except (OSError, ValueError) as exc:
+        _emit(ctx, f"Cannot simulate: {exc}", 2)
+        raise typer.Exit(code=2) from exc
+    _emit(ctx, f"Experiment: {out / 'report.md'}")
+
+
+@app.command()
+def report(
+    ctx: typer.Context,
+    results: Annotated[Path, typer.Option(help="Saved experiment artifact directory.")],
+    validation: Annotated[Path, typer.Option(help="Saved validation.json artifact.")],
+    out: Annotated[Path, typer.Option(help="Report Markdown file to write atomically.")],
+    overwrite: Annotated[bool, typer.Option(help="Replace an existing report file explicitly.")] = False,
+) -> None:
+    """Render saved experiment and validation artifacts without simulation."""
+    try:
+        render_saved_report(results, validation, out, overwrite=overwrite)
+    except (OSError, ValueError) as exc:
+        _emit(ctx, f"Cannot report: {exc}", 2)
+        raise typer.Exit(code=2) from exc
+    _emit(ctx, f"Report: {out}")
 
 
 @app.command()

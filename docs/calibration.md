@@ -5,7 +5,8 @@ explicit active-review-effort assumptions and de-identified dataset coverage.
 It returns a versioned model, a calibration record, and the inputs needed to
 render a deterministic model card. `write_calibration` publishes `model.json`,
 `calibration.json`, and `model-card.md` together into an empty or absent
-directory. CLI wiring remains downstream work.
+directory. The persisted `simulate` command consumes the resulting `model.json`; model
+calibration itself remains a Python API in v0.1.0.
 
 Active review effort is required for every declared work-origin cohort. It is
 never inferred from first-review or ready-to-merge elapsed time. Supported

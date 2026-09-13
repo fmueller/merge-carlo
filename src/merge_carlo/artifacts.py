@@ -7,21 +7,50 @@ import platform
 import shutil
 import tempfile
 from collections import defaultdict
-from dataclasses import fields
+from dataclasses import dataclass, fields
 from importlib.metadata import version
 from pathlib import Path
-from typing import TextIO
+from typing import Literal, TextIO
 
 from pydantic import TypeAdapter
 
 from merge_carlo import __version__
-from merge_carlo.reporting import Comparison, ReplicationCount, Summary, SummaryRow, render_report, wilson
+from merge_carlo.reporting import Comparison, ReplicationCount, Summary, SummaryRow, render_report, wilson, write_report
 from merge_carlo.reporting import Evidence as Evidence
 from merge_carlo.simulation.arrivals import AdditiveAI
 from merge_carlo.simulation.metrics import HorizonShare, Metric, MetricDictionary, summarize_metrics
 from merge_carlo.simulation.runner import Experiment, run_experiment
 
 DEPENDENCY_NAMES = ("numpy", "simpy", "pydantic", "httpx", "pyyaml", "typer")
+
+
+@dataclass(frozen=True, slots=True)
+class ArtifactLineage:
+    """Upstream model and dataset identity carried into experiment artifacts."""
+
+    dataset_content_hash: str
+    model_content_hash: str
+    model_version: str
+    parameter_provenance: dict[str, str]
+    readiness_policy: str
+    evidence_status: str
+
+    def __post_init__(self) -> None:
+        for name, value in (("dataset", self.dataset_content_hash), ("model", self.model_content_hash)):
+            if len(value) != 64 or any(character not in "0123456789abcdef" for character in value):
+                raise ValueError(f"invalid {name} content hash")
+        if not self.model_version or not self.readiness_policy or not self.evidence_status:
+            raise ValueError("artifact lineage metadata must not be empty")
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "dataset_content_hash": self.dataset_content_hash,
+            "model_content_hash": self.model_content_hash,
+            "model_version": self.model_version,
+            "parameter_provenance": dict(sorted(self.parameter_provenance.items())),
+            "readiness_policy": self.readiness_policy,
+            "evidence_status": self.evidence_status,
+        }
 
 
 def _json(value: object) -> str:
@@ -58,8 +87,11 @@ def _metrics(dictionary: MetricDictionary | None) -> dict[str, Metric]:
     return values
 
 
-def _bundle(experiment: Experiment, evidence: Evidence, stage: Path) -> None:
+def _bundle(experiment: Experiment, evidence: Evidence, stage: Path, lineage: ArtifactLineage | None = None) -> None:
     resolved = TypeAdapter(Experiment).dump_python(experiment, mode="json")
+    for assumption in resolved["assumptions"]:
+        if assumption.get("service_distribution") is None:
+            del assumption["service_distribution"]
     configuration = {
         "schema_version": 1,
         "synthetic": evidence.synthetic,
@@ -75,32 +107,35 @@ def _bundle(experiment: Experiment, evidence: Evidence, stage: Path) -> None:
             if scenario.demand is not None
         },
     }
+    if lineage is not None:
+        configuration["source_lineage"] = lineage.as_dict()
     _write(stage / "resolved-scenarios.json", configuration)
-    _write(
-        stage / "model-card.json",
-        {
-            "schema_version": 1,
-            "model_version": "fifo-v0.1",
-            "evidence": evidence.model_dump(mode="json"),
-            "parameter_basis": {
-                "templates": "synthetic" if evidence.synthetic else evidence.template_basis,
-                "assumptions": "assumed",
-                "scenarios": "assumed",
-                "calendars": "assumed",
-                "reviewer_calendars": "assumed",
-                "bounds": "assumed",
-                "fixed_horizon_seconds": "assumed",
-                "backlog_threshold": "assumed",
-                "root_seed": "assumed",
-                "replications": "assumed",
-            },
-            "coverage": {"training_weeks": len({week.week_start for week in experiment.templates})},
-            "unsupported": {
-                name: {"value": None, "reason": "unsupported_in_v0_1"}
-                for name in ("defect_escape_rate", "security_risk_change", "policy_safety")
-            },
+    card = {
+        "schema_version": 1,
+        "model_version": "fifo-v0.1",
+        "evidence": evidence.model_dump(mode="json"),
+        "parameter_basis": {
+            "templates": "synthetic" if evidence.synthetic else evidence.template_basis,
+            "assumptions": "assumed",
+            "scenarios": "assumed",
+            "calendars": "assumed",
+            "reviewer_calendars": "assumed",
+            "bounds": "assumed",
+            "fixed_horizon_seconds": "assumed",
+            "backlog_threshold": "assumed",
+            "root_seed": "assumed",
+            "replications": "assumed",
         },
-    )
+        "coverage": {"training_weeks": len({week.week_start for week in experiment.templates})},
+        "unsupported": {
+            name: {"value": None, "reason": "unsupported_in_v0_1"}
+            for name in ("defect_escape_rate", "security_risk_change", "policy_safety")
+        },
+    }
+    if lineage is not None:
+        card["parameter_provenance"] = dict(sorted(lineage.parameter_provenance.items()))
+        card["source_lineage"] = lineage.as_dict()
+    _write(stage / "model-card.json", card)
     values: dict[tuple[str, str, str], list[Metric]] = defaultdict(list)
     deltas: dict[tuple[str, str], tuple[list[Metric], list[Metric]]] = {}
     limitations: set[str] = set()
@@ -250,26 +285,43 @@ def _bundle(experiment: Experiment, evidence: Evidence, stage: Path) -> None:
     for path in sorted(stage.iterdir()):
         with path.open("rb") as source:
             content_hashes[path.name] = hashlib.file_digest(source, "sha256").hexdigest()
-    _write(
-        stage / "manifest.json",
-        {
-            **evidence.model_dump(mode="json"),
-            "application_version": __version__,
-            "model_version": "fifo-v0.1",
-            "timezone": experiment.timezone,
-            "root_seed": experiment.root_seed,
-            "rng_scheme": (
-                "SHA-256 canonical ASCII JSON string keys / SeedSequence / PCG64; scenario-independent latent keys"
-            ),
-            "dependency_versions": {name: version(name) for name in DEPENDENCY_NAMES},
-            "python_version": platform.python_version(),
-            "content_hashes": content_hashes,
-            "dataset_content_hash": hashlib.sha256(_json(resolved["templates"]).encode("utf-8")).hexdigest(),
-        },
-    )
+    manifest: dict[str, object] = {
+        **evidence.model_dump(mode="json"),
+        "application_version": __version__,
+        "model_version": "fifo-v0.1",
+        "timezone": experiment.timezone,
+        "root_seed": experiment.root_seed,
+        "rng_scheme": (
+            "SHA-256 canonical ASCII JSON string keys / SeedSequence / PCG64; scenario-independent latent keys"
+        ),
+        "dependency_versions": {name: version(name) for name in DEPENDENCY_NAMES},
+        "python_version": platform.python_version(),
+        "content_hashes": content_hashes,
+        "dataset_content_hash": hashlib.sha256(_json(resolved["templates"]).encode("utf-8")).hexdigest(),
+    }
+    if lineage is not None:
+        manifest.update(
+            {
+                "source_model_content_hash": lineage.model_content_hash,
+                "source_model_version": lineage.model_version,
+                "source_readiness_policy": lineage.readiness_policy,
+                "source_evidence_status": lineage.evidence_status,
+                "source_dataset_content_hash": lineage.dataset_content_hash,
+                "template_content_hash": manifest["dataset_content_hash"],
+                "dataset_content_hash": lineage.dataset_content_hash,
+            }
+        )
+    _write(stage / "manifest.json", manifest)
 
 
-def write_experiment(experiment: Experiment, evidence: Evidence, out: Path, *, overwrite: bool = False) -> None:
+def write_experiment(
+    experiment: Experiment,
+    evidence: Evidence,
+    out: Path,
+    *,
+    overwrite: bool = False,
+    lineage: ArtifactLineage | None = None,
+) -> None:
     """Publish only a complete bundle; explicit overwrite stages before moving old data.
 
     Single-writer local API. An overwrite has a brief directory-name gap, but
@@ -283,7 +335,7 @@ def write_experiment(experiment: Experiment, evidence: Evidence, out: Path, *, o
     stage = Path(tempfile.mkdtemp(prefix=f".{out.name}-", dir=out.parent))
     backup = stage.with_name(stage.name + "-previous")
     try:
-        _bundle(experiment, evidence, stage)
+        _bundle(experiment, evidence, stage, lineage)
         # Backup must be outside the published directory.
         if out.exists():
             out.rename(backup)
@@ -298,3 +350,48 @@ def write_experiment(experiment: Experiment, evidence: Evidence, out: Path, *, o
             shutil.rmtree(stage)
     if backup.exists():
         shutil.rmtree(backup)
+
+
+def rewrite_report_in_bundle(
+    results: Path,
+    text: str,
+    *,
+    overwrite: bool = False,
+    validation_status: Literal["not_performed", "pass", "fail", "insufficient_evidence"] | None = None,
+) -> None:
+    """Replace an in-bundle report while keeping its manifest hash current."""
+    if results.is_symlink() or not results.is_dir():
+        raise ValueError("results must be a directory, not a symlink or file")
+    report = results / "report.md"
+    if report.exists() and not overwrite:
+        raise FileExistsError("nonempty report output; explicitly request overwrite")
+    results.parent.mkdir(parents=True, exist_ok=True)
+    staging_root = Path(tempfile.mkdtemp(prefix=f".{results.name}-report-", dir=results.parent))
+    stage = staging_root / "bundle"
+    backup = staging_root / "previous"
+    try:
+        shutil.copytree(results, stage)
+        write_report(text, stage / "report.md", overwrite=True)
+        manifest_path = stage / "manifest.json"
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        if (
+            not isinstance(manifest, dict)
+            or type(manifest.get("schema_version")) is not int
+            or manifest["schema_version"] != 1
+            or not isinstance(manifest.get("content_hashes"), dict)
+        ):
+            raise ValueError("invalid results manifest contract")
+        hashes = manifest["content_hashes"]
+        hashes["report.md"] = hashlib.sha256((stage / "report.md").read_bytes()).hexdigest()
+        if validation_status is not None:
+            manifest["validation_status"] = validation_status
+        _write(manifest_path, manifest)
+        results.rename(backup)
+        try:
+            stage.rename(results)
+        except OSError:
+            backup.rename(results)
+            raise
+    finally:
+        if staging_root.exists():
+            shutil.rmtree(staging_root)

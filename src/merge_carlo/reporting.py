@@ -1,6 +1,8 @@
 """Versioned aggregate contracts and deterministic, artifact-only reporting."""
 
 import math
+import os
+import tempfile
 from pathlib import Path
 from typing import Literal, Self
 
@@ -223,13 +225,21 @@ def _replication_counts(summary: Summary) -> str:
     )
 
 
-def render_report(results: Path) -> str:
+def render_report(
+    results: Path,
+    *,
+    validation_status: Literal["not_performed", "pass", "fail", "insufficient_evidence"] | None = None,
+) -> str:
     """Read only summary.json. Never import a runner, fetch data or simulate."""
     with (results / "summary.json").open("rb") as source:
         payload = source.read(_MAX_SUMMARY_BYTES + 1)
     if len(payload) > _MAX_SUMMARY_BYTES:
         raise ValueError("summary exceeds 16 MiB")
     summary = Summary.model_validate_json(payload)
+    if validation_status is not None:
+        summary = summary.model_copy(
+            update={"evidence": summary.evidence.model_copy(update={"validation_status": validation_status})}
+        )
     label = "SYNTHETIC" if summary.evidence.synthetic else "CONDITIONAL MODEL OUTPUT"
     sections = [
         f"# Experiment report — {label}",
@@ -297,3 +307,25 @@ def render_report(results: Path) -> str:
             for section in sections
         ]
     return "\n\n".join(sections) + "\n"
+
+
+def write_report(text: str, out: Path, *, overwrite: bool = False) -> None:
+    """Atomically write one rendered report with explicit file overwrite."""
+    if out.is_symlink() or (out.exists() and out.is_dir()):
+        raise ValueError("report output must be a file, not a directory or symlink")
+    if out.exists() and not overwrite:
+        raise FileExistsError("nonempty report output; explicitly request overwrite")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{out.name}-", dir=out.parent)
+    stage = Path(temporary)
+    try:
+        with os.fdopen(descriptor, "w", encoding="utf-8") as stream:
+            stream.write(text)
+        if overwrite:
+            stage.replace(out)
+        else:
+            os.link(stage, out)
+            stage.unlink()
+    finally:
+        if stage.exists():
+            stage.unlink()

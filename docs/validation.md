@@ -45,7 +45,11 @@ forecasting is not supported. `validation.json` and `report.md` retain the exact
 observed and simulated point estimates, observed and per-replication cohort
 sizes, variability intervals, absolute errors, tolerances, and gate decisions.
 The frozen model/capacity content and exact arrival list have separate canonical
-SHA-256 bindings in the result and report.
+SHA-256 bindings in the result and report. The model binding is required for
+experiment reports; the all-zero default is an unbound sentinel and is rejected.
+It binds the frozen replay model and reviewer duty, not the calibrated source
+model artifact, so report lineage joins it to simulation results through the
+shared model version and dataset content hash.
 
 The same report also shows an elapsed-delay resampling benchmark beside the
 mechanistic FIFO description for all four historical comparisons. Each

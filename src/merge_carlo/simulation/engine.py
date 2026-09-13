@@ -7,6 +7,7 @@ then dispatch by reviewer ID. Inputs are fresh READY proposals, not saved runs.
 
 import heapq
 import math
+from collections.abc import Mapping
 from dataclasses import dataclass, replace
 from fractions import Fraction
 
@@ -167,7 +168,7 @@ def run_fifo(
     reviewers: tuple[Reviewer, ...],
     *,
     span: UTCInterval,
-    service_seconds: float,
+    service_seconds: float | Mapping[str, float],
     loops: RevisionLoops | None = None,
     abandonment: Abandonment | None = None,
     bypass: ReviewBypass | None = None,
@@ -194,11 +195,21 @@ def run_fifo(
         raise ValueError("coordination delay must be finite and nonnegative")
     if root_seed < 0 or replication < 0:
         raise ValueError("root seed and replication must be non-negative")
-    if not math.isfinite(service_seconds) or service_seconds < 1:
-        raise ValueError("constant service must be finite and at least one second")
-    service_seconds = math.ceil(service_seconds)
     if len({p.pr_id for p in proposals}) != len(proposals):
         raise ValueError("pull request identifiers must be unique")
+    if isinstance(service_seconds, Mapping):
+        if set(service_seconds) != {p.pr_id for p in proposals}:
+            raise ValueError("per-proposal service must cover exactly the supplied proposals")
+        service_by_pr = {}
+        for pr_id, value in service_seconds.items():
+            if isinstance(value, bool) or not math.isfinite(value) or value < 1:
+                raise ValueError("service must be finite and at least one second")
+            service_by_pr[pr_id] = math.ceil(value)
+    else:
+        if isinstance(service_seconds, bool) or not math.isfinite(service_seconds) or service_seconds < 1:
+            raise ValueError("constant service must be finite and at least one second")
+        constant_service = math.ceil(service_seconds)
+        service_by_pr = {p.pr_id: constant_service for p in proposals}
     if len({r.reviewer_id for r in reviewers}) != len(reviewers):
         raise ValueError("reviewer identifiers must be unique")
     for p in proposals:
@@ -290,7 +301,7 @@ def run_fifo(
                 if p.terminal:
                     del assigned[reviewer_id]
                     continue
-                if service_used[pr_id] >= service_seconds:
+                if service_used[pr_id] >= service_by_pr[pr_id]:
                     probability = (
                         loops.first_change_probability if p.review_visit_count == 1 else loops.repeat_change_probability
                     )
@@ -380,7 +391,7 @@ def run_fifo(
                     states[candidate.pr_id] = candidate.transition(Event.REVIEW_STARTED, at=float(now))
                     assigned[r.reviewer_id] = candidate.pr_id
                     service_used[candidate.pr_id] = Fraction(0)
-                remaining = service_seconds - service_used[assigned[r.reviewer_id]]
+                remaining = service_by_pr[assigned[r.reviewer_id]] - service_used[assigned[r.reviewer_id]]
                 heapq.heappush(events, min(duty_end, now + remaining))
         merged = sum(p.state is PullRequestState.MERGED for p in states.values())
         closed = sum(p.state is PullRequestState.CLOSED_WITHOUT_MERGE for p in states.values())
@@ -412,7 +423,7 @@ def run_fifo(
             )
         ),
         engine_truncated,
-        float(sum(p.review_bypassed for p in states.values()) * service_seconds),
+        float(sum(service_by_pr[p.pr_id] for p in states.values() if p.review_bypassed)),
         meter.finish(
             tuple(states.values()),
             float(

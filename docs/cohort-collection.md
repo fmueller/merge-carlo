@@ -89,5 +89,5 @@ can legitimately change the content hash even if the API fields do not change.
 
 All verification uses synthetic HTTP fixtures. Live GitHub collection has not
 been tested. Inspection is available through the CLI and calibration through a
-Python API; the persisted real-data calibration/simulation/report CLI path is
-still pending.
+Python API. The persisted `simulate` and `report` commands consume the resulting
+model and scenario artifacts; a real-data `calibrate` CLI remains out of scope.

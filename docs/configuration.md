@@ -40,3 +40,40 @@ reassigns an assumed fraction of known-human arrivals without changing unknown
 or non-AI automation origins. Scenarios may also replace named duty calendars,
 declare reviewer absences, or configure hypothetical review bypass. These are
 inputs to the model, not measured team behavior or policy recommendations.
+Additive demand fractions are finite and bounded at `1000`; the runner also
+accounts for their amplified proposal counts in its estimated-work limit before
+constructing a schedule.
+
+## Persisted execution
+
+The scenario document may include an `execution` section for the persisted
+`simulate` command:
+
+```yaml
+execution:
+  observation_start: "2026-09-07T00:00:00"
+  horizon_days: 7
+  warmup_days: 7
+  root_seed: 42
+  replications: 200
+  calendars:
+    - name: review-duty
+      timezone: Europe/Berlin
+      windows:
+        - name: weekday-morning
+          weekday: 0
+          start: "09:00:00"
+          end: "17:00:00"
+  reviewers:
+    - name: reviewer
+      calendar: review-duty
+```
+
+`observation_start` is a naive local time in the calibrated model timezone;
+the command rejects offset-bearing values rather than guessing. The runner
+records the resulting UTC bounds and elapsed seconds. `root_seed`, replication
+counts, sampled trace indexes, fixed-horizon seconds, and backlog threshold are
+also versioned inputs. A scenario calendar replaces the named base calendar;
+an absence names one of the declared reviewers. Missing execution metadata uses
+conservative defaults for compatibility, but production runs should declare
+capacity explicitly.

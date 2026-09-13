@@ -395,7 +395,10 @@ def load_validation_evidence(path: Path) -> HeldOutEvidence:
         data = json.loads(payload)
     except (json.JSONDecodeError, UnicodeDecodeError):
         raise ValueError("invalid validation evidence") from None
-    if not isinstance(data, dict) or data.pop("schema_version", None) != 1:
+    if not isinstance(data, dict):
+        raise ValueError("unsupported validation evidence schema")
+    schema_version = data.pop("schema_version", None)
+    if type(schema_version) is not int or schema_version != 1:
         raise ValueError("unsupported validation evidence schema")
     try:
         request = TypeAdapter(ValidationInput).validate_json(json.dumps(data), strict=True)

@@ -15,6 +15,13 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_valida
 from merge_carlo.calibration import DurationDistribution
 
 _MAX_CONFIG_BYTES = 1_000_000
+_MAX_REPLICATIONS = 10_000
+_MAX_HORIZON_DAYS = 3_650
+_MAX_TRACE_REPLICATIONS = 1_000
+_MAX_CALENDARS = 1_000
+_MAX_REVIEWERS = 10_000
+_MAX_SCENARIOS = 1_000
+_MAX_ADDITIVE_FRACTION = 1_000
 _EFFORT_COMPOSITION = (
     "Effective service is ceil(sampled active-service seconds × effort_multiplier), with a minimum of one second. "
     "The multiplier is an explicit sensitivity assumption, not an observed productivity effect."
@@ -37,7 +44,7 @@ class RevisionLoopsConfig(_ConfigModel):
 
 class AbandonmentConfig(_ConfigModel):
     probability: float = Field(ge=0, le=1, allow_inf_nan=False)
-    elapsed_seconds: tuple[float, ...] = Field(min_length=1)
+    elapsed_seconds: tuple[float, ...] = Field(min_length=1, max_length=100_000)
 
     @model_validator(mode="after")
     def finite_positive_durations(self) -> Self:
@@ -62,7 +69,7 @@ class AssumptionSetConfig(_ConfigModel):
 
 class AssumptionConfig(_ConfigModel):
     schema_version: Literal[1]
-    assumptions: tuple[AssumptionSetConfig, ...] = Field(min_length=1)
+    assumptions: tuple[AssumptionSetConfig, ...] = Field(min_length=1, max_length=1_000)
 
     @model_validator(mode="after")
     def unique_names(self) -> Self:
@@ -74,7 +81,7 @@ class AssumptionConfig(_ConfigModel):
 
 class AdditiveDemandConfig(_ConfigModel):
     kind: Literal["additive_ai"]
-    fraction: float = Field(ge=0, allow_inf_nan=False)
+    fraction: float = Field(strict=True, ge=0, le=_MAX_ADDITIVE_FRACTION, allow_inf_nan=False)
 
 
 class ReplacementDemandConfig(_ConfigModel):
@@ -118,8 +125,8 @@ class AbsenceConfig(_ConfigModel):
 class CalendarConfig(_ConfigModel):
     name: str = Field(min_length=1)
     timezone: str = Field(min_length=1)
-    windows: tuple[WeeklyWindowConfig, ...]
-    absences: tuple[AbsenceConfig, ...] = ()
+    windows: tuple[WeeklyWindowConfig, ...] = Field(max_length=1_000)
+    absences: tuple[AbsenceConfig, ...] = Field(default=(), max_length=100_000)
 
     @model_validator(mode="after")
     def valid_calendar(self) -> Self:
@@ -138,6 +145,42 @@ class ReviewerAbsencesConfig(_ConfigModel):
     absences: tuple[AbsenceConfig, ...] = Field(min_length=1)
 
 
+class ReviewerConfig(_ConfigModel):
+    name: str = Field(min_length=1)
+    calendar: str = Field(min_length=1)
+
+
+class ExecutionConfig(_ConfigModel):
+    """Persisted run inputs needed to reproduce a calibrated experiment."""
+
+    observation_start: datetime | None = None
+    horizon_days: int = Field(default=7, strict=True, ge=1, le=_MAX_HORIZON_DAYS)
+    warmup_days: int = Field(default=7, strict=True, ge=0, le=_MAX_HORIZON_DAYS)
+    root_seed: int = Field(default=42, strict=True, ge=0)
+    replications: int = Field(default=200, strict=True, ge=1, le=_MAX_REPLICATIONS)
+    trace_replications: tuple[int, ...] = Field(default=(), max_length=_MAX_TRACE_REPLICATIONS)
+    fixed_horizon_seconds: float = Field(default=86_400, gt=0, le=31_536_000, allow_inf_nan=False)
+    backlog_threshold: int = Field(default=0, strict=True, ge=0, le=1_000_000_000)
+    calendars: tuple[CalendarConfig, ...] = Field(default=(), max_length=_MAX_CALENDARS)
+    reviewers: tuple[ReviewerConfig, ...] = Field(default=(), max_length=_MAX_REVIEWERS)
+
+    @model_validator(mode="after")
+    def valid_execution(self) -> Self:
+        if self.observation_start is not None and self.observation_start.tzinfo is not None:
+            raise ValueError("observation_start must be a naive local datetime")
+        calendar_names = tuple(calendar.name for calendar in self.calendars)
+        reviewer_names = tuple(reviewer.name for reviewer in self.reviewers)
+        if len(set(calendar_names)) != len(calendar_names):
+            raise ValueError("execution calendar names must be unique")
+        if len(set(reviewer_names)) != len(reviewer_names):
+            raise ValueError("execution reviewer names must be unique")
+        if self.reviewers and any(reviewer.calendar not in calendar_names for reviewer in self.reviewers):
+            raise ValueError("execution reviewers must reference declared calendars")
+        if any(type(index) is not int or not 0 <= index < self.replications for index in self.trace_replications):
+            raise ValueError("trace replication indexes must be within the execution")
+        return self
+
+
 class ReviewBypassConfig(_ConfigModel):
     eligible_fraction: float | None = Field(default=None, ge=0, le=1, allow_inf_nan=False)
     audit_fraction: float = Field(ge=0, le=1, allow_inf_nan=False)
@@ -146,8 +189,8 @@ class ReviewBypassConfig(_ConfigModel):
 class ScenarioEntryConfig(_ConfigModel):
     name: str = Field(min_length=1)
     demand: DemandConfig | None = None
-    calendars: tuple[CalendarConfig, ...] = ()
-    absences: tuple[ReviewerAbsencesConfig, ...] = ()
+    calendars: tuple[CalendarConfig, ...] = Field(default=(), max_length=_MAX_CALENDARS)
+    absences: tuple[ReviewerAbsencesConfig, ...] = Field(default=(), max_length=_MAX_REVIEWERS)
     bypass: ReviewBypassConfig | None = None
 
     @model_validator(mode="after")
@@ -163,7 +206,8 @@ class ScenarioEntryConfig(_ConfigModel):
 
 class ScenarioConfig(_ConfigModel):
     schema_version: Literal[1]
-    scenarios: tuple[ScenarioEntryConfig, ...]
+    execution: ExecutionConfig | None = None
+    scenarios: tuple[ScenarioEntryConfig, ...] = Field(max_length=_MAX_SCENARIOS)
 
     @model_validator(mode="after")
     def unique_nonbaseline_names(self) -> Self:
@@ -179,7 +223,10 @@ def _load_config[ConfigT: BaseModel](path: Path, model: type[ConfigT]) -> Config
             raw = stream.read(_MAX_CONFIG_BYTES + 1)
         if len(raw) > _MAX_CONFIG_BYTES:
             raise ValueError
-        return model.model_validate(yaml.safe_load(raw.decode("utf-8")))
+        value = yaml.safe_load(raw.decode("utf-8"))
+        if not isinstance(value, dict) or type(value.get("schema_version")) is not int or value["schema_version"] != 1:
+            raise ValueError
+        return model.model_validate(value)
     except (OSError, UnicodeError, yaml.YAMLError, ValidationError, ValueError):
         raise ValueError("invalid configuration") from None
 

@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Persisted `simulate` and artifact-only `report` CLI commands, with source
+  model/dataset lineage, parameter provenance, reproducible UTC execution
+  bounds, sampled active-effort distributions, bounded input contracts
+  (including additive-demand amplification), and explicit overwrite protection.
 - Comparison-wide engine truncation reporting: experiment `summary.json` now
   records requested, usable and engine-truncated replication counts per
   assumption/scenario, and the report shows them in its first section with

@@ -241,6 +241,22 @@ def test_invalid_experiment(field: str, value: object) -> None:
         replace(experiment(), **{field: value})  # type: ignore[arg-type]
 
 
+def test_experiment_bounds_direct_resource_inputs() -> None:
+    base = experiment()
+    with pytest.raises(ValueError, match="resource limit"):
+        replace(base, calendars=tuple((str(index), DutyCalendar("UTC", ())) for index in range(1_001)))
+    with pytest.raises(ValueError, match="resource limit"):
+        replace(base, scenarios=tuple(Scenario(str(index)) for index in range(1_001)))
+    with pytest.raises(ValueError, match="fixed horizon"):
+        replace(base, fixed_horizon_seconds=31_536_001)
+    with pytest.raises(ValueError, match="estimated simulation work"):
+        replace(
+            base,
+            replications=10_000,
+            scenarios=(Scenario("huge", demand=AdditiveAI(1_000)),),
+        )
+
+
 @pytest.mark.parametrize("duration", [0, -1, float("nan"), float("inf"), True, False])
 def test_invalid_service(duration: float) -> None:
     with pytest.raises(ValueError):

@@ -9,12 +9,67 @@ import math
 from collections.abc import Iterator, Mapping
 from dataclasses import dataclass
 from types import MappingProxyType
+from typing import Literal
 
 from merge_carlo.simulation.arrivals import AdditiveAI, ReplacementAI, WeekTemplate, generate_proposals
 from merge_carlo.simulation.calendars import DutyCalendar, LocalAbsence, RunBounds, UTCInterval
 from merge_carlo.simulation.capacity import materialize_reviewers
 from merge_carlo.simulation.engine import Abandonment, FIFOResult, ReviewBypass, RevisionLoops, run_fifo
 from merge_carlo.simulation.metrics import MetricWindow, RunMetrics
+from merge_carlo.simulation.randomness import random_stream
+
+_MAX_REPLICATIONS = 10_000
+_MAX_TEMPLATES = 1_000
+_MAX_ARRIVALS = 1_000_000
+_MAX_TRACE_REPLICATIONS = 1_000
+_MAX_CALENDARS = 1_000
+_MAX_REVIEWERS = 10_000
+_MAX_SCENARIOS = 1_000
+_MAX_ASSUMPTIONS = 1_000
+_MAX_RUN_SECONDS = 3_650 * 86_400
+_MAX_FIXED_HORIZON_SECONDS = 31_536_000
+_MAX_SIMULATION_WORK = 10_000_000
+
+
+@dataclass(frozen=True, slots=True)
+class ServiceDistribution:
+    """Assumed active effort sampled once per proposal and replication."""
+
+    kind: Literal["constant", "lognormal", "empirical"]
+    parameters: tuple[float, ...]
+
+    def __post_init__(self) -> None:
+        if self.kind == "constant" and len(self.parameters) == 1:
+            valid = math.isfinite(self.parameters[0]) and self.parameters[0] > 0
+        elif self.kind == "lognormal" and len(self.parameters) == 2:
+            valid = (
+                math.isfinite(self.parameters[0])
+                and self.parameters[0] > 0
+                and math.isfinite(self.parameters[1])
+                and self.parameters[1] >= 0
+            )
+        elif self.kind == "empirical" and 0 < len(self.parameters) <= 100_000:
+            valid = all(math.isfinite(value) and value > 0 for value in self.parameters)
+        else:
+            valid = False
+        if not valid:
+            raise ValueError("invalid active-service distribution")
+
+    @property
+    def reference_seconds(self) -> float:
+        return float(max(1, math.ceil(self.parameters[0])))
+
+    def sample(self, root_seed: int, replication: int, proposal_id: str) -> float:
+        stream = random_stream(root_seed, replication, proposal_id, "review-effort")
+        if self.kind == "constant":
+            value = self.parameters[0]
+        elif self.kind == "lognormal":
+            value = float(stream.lognormal(math.log(self.parameters[0]), self.parameters[1]))
+        else:
+            value = self.parameters[int(stream.integers(len(self.parameters)))]
+        if not math.isfinite(value) or value <= 0:
+            raise ValueError("sampled active service must be finite and positive")
+        return max(1, math.ceil(value))
 
 
 @dataclass(frozen=True, slots=True)
@@ -26,6 +81,7 @@ class AssumptionSet:
     loops: RevisionLoops = RevisionLoops()
     abandonment: Abandonment | None = None
     coordination_seconds: float = 0
+    service_distribution: ServiceDistribution | None = None
 
     def __post_init__(self) -> None:
         if (
@@ -74,12 +130,25 @@ class Experiment:
     backlog_threshold: int = 0
 
     def __post_init__(self) -> None:
+        if (
+            isinstance(self.fixed_horizon_seconds, bool)
+            or not math.isfinite(self.fixed_horizon_seconds)
+            or not 0 < self.fixed_horizon_seconds <= _MAX_FIXED_HORIZON_SECONDS
+        ):
+            raise ValueError("fixed horizon must be finite and between zero and one year")
+        if self.bounds.warmup_seconds + self.bounds.observation.seconds > _MAX_RUN_SECONDS:
+            raise ValueError("experiment horizon exceeds the resource limit")
         MetricWindow(0, self.bounds.observation.seconds, self.fixed_horizon_seconds, self.backlog_threshold)
         if type(self.root_seed) is not int or self.root_seed < 0:
             raise ValueError("root seed must be a nonnegative integer")
-        if type(self.replications) is not int or self.replications < 1:
-            raise ValueError("replications must be a positive integer")
-        if not self.assumptions:
+        if type(self.replications) is not int or not 1 <= self.replications <= _MAX_REPLICATIONS:
+            raise ValueError("replications must be a positive integer between one and 10000")
+        if (
+            len(self.templates) > _MAX_TEMPLATES
+            or sum(len(template.arrivals) for template in self.templates) > _MAX_ARRIVALS
+        ):
+            raise ValueError("experiment inputs exceed the resource limit")
+        if not self.assumptions or len(self.assumptions) > _MAX_ASSUMPTIONS:
             raise ValueError("at least one assumption set is required")
         if self.bounds.warmup_start.utcoffset() != self.bounds.observation.start.utcoffset():
             raise ValueError("warm-up start must be UTC")
@@ -87,13 +156,34 @@ class Experiment:
             raise ValueError("warm-up must precede measurement")
         _unique(tuple(a.name for a in self.assumptions))
         _unique(("baseline", *(s.name for s in self.scenarios)))
+        if (
+            len(self.calendars) > _MAX_CALENDARS
+            or len(self.reviewer_calendars) > _MAX_REVIEWERS
+            or len(self.scenarios) > _MAX_SCENARIOS
+        ):
+            raise ValueError("experiment inputs exceed the resource limit")
         for entries in (self.calendars, self.reviewer_calendars):
             _unique(tuple(name for name, _ in entries))
         for scenario in self.scenarios:
+            if len(scenario.calendars) > _MAX_CALENDARS or len(scenario.absences) > _MAX_REVIEWERS:
+                raise ValueError("scenario inputs exceed the resource limit")
             _unique(tuple(name for name, _ in scenario.calendars))
             _unique(tuple(name for name, _ in scenario.absences))
-        if any(type(n) is not int or not 0 <= n < self.replications for n in self.trace_replications):
+        if len(self.trace_replications) > _MAX_TRACE_REPLICATIONS or any(
+            type(n) is not int or not 0 <= n < self.replications for n in self.trace_replications
+        ):
             raise ValueError("trace replication indexes must be within the experiment")
+        max_arrivals_per_week = max((len(template.arrivals) for template in self.templates), default=0)
+        weeks = math.ceil((self.bounds.warmup_seconds + self.bounds.observation.seconds) / (7 * 86_400)) + 1
+        scenario_arrivals = [float(max_arrivals_per_week)]
+        for scenario in self.scenarios:
+            arrivals = float(max_arrivals_per_week)
+            if isinstance(scenario.demand, AdditiveAI):
+                arrivals += math.ceil(scenario.demand.fraction * max_arrivals_per_week)
+            scenario_arrivals.append(arrivals)
+        estimated_work = sum(scenario_arrivals) * weeks * len(self.assumptions) * self.replications
+        if estimated_work > _MAX_SIMULATION_WORK:
+            raise ValueError("estimated simulation work exceeds the resource limit")
 
 
 @dataclass(frozen=True, slots=True)
@@ -185,7 +275,16 @@ class ExperimentRun(Iterator[PairedRow]):
                 schedule.proposals,
                 reviewers,
                 span=span,
-                service_seconds=assumption.service_seconds,
+                service_seconds=(
+                    {
+                        proposal.pr_id: assumption.service_distribution.sample(
+                            experiment.root_seed, replication, proposal.pr_id
+                        )
+                        for proposal in schedule.proposals
+                    }
+                    if assumption.service_distribution is not None
+                    else assumption.service_seconds
+                ),
                 loops=assumption.loops,
                 abandonment=assumption.abandonment,
                 bypass=scenario.bypass,

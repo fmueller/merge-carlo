@@ -10,7 +10,8 @@ The [cohort collector](cohort-collection.md) exposes `collect --resume` using th
 [read-only transport](github-transport.md) and
 [projected SQLite store](projected-store.md). Inspection is available through the
 CLI; frozen-cutoff features and calibration are available through Python APIs,
-but a real-data calibration CLI is not implemented.
+and persisted `simulate`/`report` consume their saved artifacts. A real-data
+calibration CLI is not implemented.
 Enumeration is not a point-in-time GitHub transaction; later
 snapshots cannot establish earlier draft, size or review state. The conservative
 historical reader excludes such snapshots. Optional CI is not requested.
@@ -72,8 +73,9 @@ intervention validity, or turn a historical gate into an auto-approval claim.
 ## Workflow class
 
 The implemented deterministic `simulation.engine.run_fifo` slice accepts fresh
-READY proposals and a declared constant service duration (at least one second,
-rounded up). Readiness is elapsed seconds from a supplied UTC span's start.
+READY proposals and either a declared constant service duration or one sampled
+duration per proposal (at least one second, rounded up). Readiness is elapsed
+seconds from a supplied UTC span's start.
 Reviewers supply sorted, disjoint UTC duty intervals, normally materialized by
 `DutyCalendar`. Inputs are not mutated and output ordering is stable by ID.
 `RevisionLoops` supplies assumed constant elapsed verification and author-response
@@ -109,8 +111,8 @@ disables policy ranking. With no usable replications its outcome counts are
 Experiment artifacts carry the same gate comparison-wide: `summary.json` and the
 report expose requested, usable and engine-truncated counts per
 assumption/scenario, and any truncation marks the whole comparison incomplete
-(see [artifacts](artifacts.md)). CLI wiring and additional validity gates remain
-downstream work. Passing this truncation gate alone does not justify ranking.
+(see [artifacts](artifacts.md)). Additional validity gates remain downstream
+work. Passing this truncation gate alone does not justify ranking.
 
 The run is half-open: arrivals at or beyond the horizon are excluded and a
 completion exactly at the horizon is censored, with all preceding active
@@ -128,7 +130,8 @@ in-progress and unresolved counts; closed outcomes balance the conservation
 ledger rather than disappearing from reporting. Reviewer accounting separates
 active seconds from clipped duty seconds.
 Internal event arithmetic is exact; public times and durations remain floats.
-This is a Python API, not yet a CLI experiment or a reporting artifact contract.
+The runner remains a Python API, while the persisted `simulate` and `report`
+commands resolve and render its versioned artifacts without network access.
 
 v0.1.0 models a **CI-before-review, one-required-review** workflow with a single
 central FIFO queue. It does not reproduce repositories that review in parallel
@@ -183,7 +186,8 @@ only bounded current-run state and count summaries, unless the consumer chooses
 to accumulate rows. Measurement dictionaries are included on each valid row.
 The [artifact API](artifacts.md) streams rows and sampled diagnostics, retains
 only scalar values for exact summary quantiles, and renders saved summaries
-without simulation or network access. CLI wiring remains v0.1.0 work.
+without simulation or network access. The persisted report command uses the same
+artifact-only reader.
 
 ### Measurement dictionary
 
@@ -267,7 +271,8 @@ IDs use the target Monday and source tuple position, independent of scenario
 ordering and horizon length. Readiness is elapsed seconds from the run start.
 Latent service draws remain the downstream caller's responsibility using these
 IDs and the keyed stream factory; no observed delay becomes effort.
-This is a Python API, not a persisted model or CLI calibration command.
+Calibration remains a Python API and does not yet have a CLI command. Its
+persisted `model.json` output is the validated input to `simulate`.
 
 `generate_proposals(..., scenario=AdditiveAI(fraction))` adds assumed AI
 demand: for each full sampled week, the count is floor(fraction × baseline
@@ -279,12 +284,15 @@ This pooled template choice is an assumption, not observed AI arrival behavior.
 `ReplacementAI(fraction)` instead reassigns known-human origins below a stable
 per-proposal threshold. It preserves IDs, authors, timestamps and latent keys;
 unknown, existing AI and non-AI automation origins are unchanged. Origin is the
-service-cohort selector, not a claim about an author's identity. The current
-engine still uses a shared constant service duration for all cohorts.
+service-cohort selector, not a claim about an author's identity. The persisted
+experiment bridge samples the declared human active-effort distribution once per
+proposal and replication with a shared proposal-keyed draw across paired
+scenarios. The same human distribution currently applies to every origin cohort;
+cohort-specific effort assumptions remain out of scope.
 The returned `ProposalSchedule.cohort_mix` exposes realized counts for every
 origin after clipping, including zeros, rather than equating the replacement
 probability with the resulting AI share. CLI result serialization and
-cohort-specific effort distributions remain downstream v0.1.0 work.
+cohort-specific effort distributions remain outside the v0.1.0 contract.
 
 Purpose-keyed streams provide deterministic pseudorandom draws, not a proof of
 statistical independence or cryptographic randomness. Reproducibility assumes
@@ -322,7 +330,8 @@ paired baseline effort saved and does not invent counterfactual repeat visits.
 Truncated runs are rejected. `render_bypass_report(summary)` renders these
 aggregates and the qualifications below without rerunning the simulation.
 These are whole-run Python API diagnostics; measurement windows, mature-cohort
-metrics and persisted CLI reports remain T-012 through T-014 work in v0.1.0.
+metrics and persisted CLI reports are now covered by the experiment workflow;
+the calibration and release gates remain separate.
 
 The simulated bypass scenario reduces modeled human-review demand and increases
 unreviewed merges. The model does not estimate escaped defects and does not

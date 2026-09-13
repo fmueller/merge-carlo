@@ -16,9 +16,27 @@ write_experiment(
 text = render_report(Path("out/experiment"))
 ```
 
-This is not CLI wiring: `simulate` and `report` remain unimplemented commands.
-Evidence status is caller-declared. `not_performed` is the validation default;
+The persisted workflow is:
+
+```bash
+merge-carlo simulate --model models/repository/model.json \
+  --scenarios configs/scenarios.yaml --out out/experiment
+merge-carlo report --results out/experiment \
+  --validation out/validation/validation.json \
+  --out out/experiment/report.md --overwrite
+```
+
+`simulate` validates the model and scenario contracts, resolves the immutable
+runner inputs, and carries model/dataset hashes and parameter provenance into
+the bundle. `report` reads only saved summaries, manifests, and validation
+results; it never reruns a simulation or accesses the network. Evidence status
+is caller-declared. `not_performed` is the validation default;
 implementation tests do not imply historical or intervention validation.
+The validation result's `model_content_hash` binds its frozen replay model and
+reviewer duty; it is distinct from the calibrated source-model hash in the
+experiment manifest. The report therefore requires a nonzero, well-formed
+validation binding and matches the shared model version and dataset hash rather
+than comparing hashes from those different contracts.
 For non-synthetic training templates, declare `template_basis` as `observed`,
 `derived`, `proxy` or `assumed` (the conservative default). Synthetic experiments
 always label their templates synthetic. Service, behavior, interventions and
@@ -30,7 +48,7 @@ No objects are pickled. Artifacts are:
 
 | Artifact | Content |
 | --- | --- |
-| `manifest.json` | Application/model/schema versions, seed/keyed PCG64 scheme, timezone, dependency/Python versions, evidence status and SHA-256 hashes |
+| `manifest.json` | Application/model/schema versions, seed/keyed PCG64 scheme, timezone, dependency/Python versions, evidence status, SHA-256 hashes, and source model/dataset lineage |
 | `resolved-scenarios.json` | Entire resolved experiment, including baseline inputs, UTC bounds and elapsed durations; `demand_kinds` distinguishes additive from replacement transforms |
 | `model-card.json` | Parameter-group provenance, distinct training-week count and unsupported risk/safety quantities |
 | `replications.jsonl` | Streamed baseline/scenario metric pairs, identities, truncation flags and limitations |
@@ -45,8 +63,10 @@ itself. `dataset_content_hash` currently identifies the canonical serialized
 training templates, not a SQLite file or an upstream collected dataset. Templates
 must be normalized by the caller; template arrival order is part of proposal
 identity. A future dataset pipeline must supply its own normalized source lineage.
-Resolved dataclass JSON is an export contract, not yet an automatic replay loader;
-reconstruct the `Experiment` using the exported values and demand kinds to rerun.
+Resolved dataclass JSON is an audit record. To reproduce a run without manual
+dataclass reconstruction, rerun `simulate` from the same persisted `model.json`
+and scenario YAML; `demand_kinds` records whether each intervention was
+additive or replacement and the bundle records exact UTC bounds.
 
 Summaries retain scalar metric values for exact run-level quantiles; they do not
 pool individual PR latencies or retain all replication/trace objects. Baselines
