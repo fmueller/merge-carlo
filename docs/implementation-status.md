@@ -4,7 +4,7 @@ This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-09-13.
+Last updated: 2026-09-14.
 
 ## Milestones
 
@@ -16,7 +16,7 @@ Last updated: 2026-09-13.
 | M3 | Replication runner, metrics, artifacts, report and synthetic demo | Complete; persisted simulate/report CLI added |
 | M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment deferred to v0.2.0 |
 | M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
-| M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | In progress |
+| M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | Implemented; external publication pending trusted-publisher setup |
 
 ## Implemented command surface
 
@@ -57,6 +57,15 @@ The release mutation gate (T-030) was run separately on 2026-09-11:
 `merge_carlo.simulation.metrics` 278/285 (97.5%). The per-module table, the
 recorded survivors and the runtime are in the
 [mutation policy](mutation-policy.md).
+
+The release workflows use separate build and publish jobs. They build with
+`uv build`, check metadata with `twine check`, verify a SHA-256 manifest after
+artifact transfer, and publish without a stored token through PyPI trusted
+publishing. The PyPI and TestPyPI jobs receive `id-token: write` only at the
+publish boundary. The local contract test, dry-run build, metadata check, and
+workflow inspection pass; no TestPyPI or PyPI upload is claimed until the
+publishers and protected environments are configured as documented in
+[`releasing.md`](releasing.md).
 
 The tests use synthetic inputs and saved or mocked HTTP responses. They verify
 the offline demo is deterministic and does not construct network clients;
@@ -110,9 +119,11 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-The open tracked v0.1.0 tasks are T-029 trusted release publishing and T-043
-host-independent timezone and SQLite URI mutation kills. Their presence means
-v0.1.0 should not be described as fully complete or published.
+No open in-spec implementation task remains after T-029 is finalized. The
+v0.1.0 tag and package publication are external release operations: they remain
+unclaimed until the TestPyPI rehearsal succeeds, the PyPI/TestPyPI trusted
+publishers and protected environments are configured, and the published
+artifacts are verified.
 
 Three tasks are deferred to the inactive v0.2.0 draft spec:
 

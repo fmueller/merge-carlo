@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-09-14
+
 ### Added
 
 - Persisted `simulate` and artifact-only `report` CLI commands, with source
@@ -138,4 +140,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   v0.1.0 by explicit maintainer decision. Raw mutation results, survivors,
   per-module accounting, and the ten-mutant minimum remain unchanged.
 
-[Unreleased]: https://github.com/fmueller/merge-carlo/compare/main...HEAD
+### Evidence status
+
+- **Live GitHub integration has not been run.** No authorized dataset was
+  collected for this release, so live collection, real-team calibration, and
+  real-data validation remain unverified.
+- The offline demo, fixture-backed collection behavior, strict checks, type
+  checks, lint, and release mutation gate were verified in the locked reference
+  environment. Mutation results are test-efficacy evidence for discovered
+  functions, not evidence of real-world model validity.
+- The performance record covers one synthetic workload on one machine and does
+  not make a universal runtime, memory, or scalability claim.
+
+[Unreleased]: https://github.com/fmueller/merge-carlo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0

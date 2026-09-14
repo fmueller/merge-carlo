@@ -1,0 +1,127 @@
+name: Publish test index
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing release tag to publish to TestPyPI
+        required: true
+        default: v0.1.0
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: testpypi-${{ inputs.tag }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: Build and validate TestPyPI distributions
+    runs-on: ubuntu-latest
+    env:
+      RELEASE_TAG: ${{ inputs.tag }}
+    steps:
+      - name: Check out the release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: refs/tags/${{ inputs.tag }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify tag, source identity, and package version
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import os
+          import re
+          import subprocess
+          import tomllib
+
+          tag = os.environ["RELEASE_TAG"]
+          if re.fullmatch(r"v\d+\.\d+\.\d+", tag) is None:
+              raise SystemExit(f"invalid release tag: {tag!r}")
+          tag_commit = subprocess.check_output(
+              ["git", "rev-parse", "--verify", f"refs/tags/{tag}^{{commit}}"], text=True
+          ).strip()
+          main_refs = subprocess.check_output(
+              ["git", "ls-remote", "origin", "refs/heads/main"], text=True
+          ).split()
+          if not main_refs or tag_commit != main_refs[0]:
+              raise SystemExit("release tag must point at the current origin/main commit")
+          source = subprocess.check_output(["git", "show", f"refs/tags/{tag}:pyproject.toml"])
+          version = tomllib.loads(source.decode("utf-8"))["project"]["version"]
+          if tag != f"v{version}":
+              raise SystemExit(f"release tag {tag} does not match package version {version}")
+          if tag_commit != subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip():
+              raise SystemExit("the checkout is not the requested release tag")
+          PY
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@94527f2e458b27549849d47d273a16bec83a01e9 # v7
+        with:
+          enable-cache: true
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7
+        with:
+          python-version-file: ".python-version"
+
+      - name: Install locked dependencies
+        run: uv sync --locked --dev
+
+      - name: Build distributions
+        run: |
+          set -euo pipefail
+          rm -rf dist SHA256SUMS
+          uv build
+          test -n "$(find dist -maxdepth 1 -type f -name '*.whl' -print -quit)"
+          test -n "$(find dist -maxdepth 1 -type f -name '*.tar.gz' -print -quit)"
+
+      - name: Check distribution metadata
+        run: uv run twine check dist/*
+
+      - name: Record distribution checksums
+        run: sha256sum dist/* > SHA256SUMS
+
+      - name: Store the reviewed distributions
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: test-index-dists-${{ github.run_id }}
+          path: |
+            dist/
+            SHA256SUMS
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish distributions to TestPyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/merge-carlo
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - name: Retrieve the reviewed distributions
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
+        with:
+          name: test-index-dists-${{ github.run_id }}
+          path: release-bundle
+
+      - name: Verify the distribution checksums
+        run: |
+          set -euo pipefail
+          test -f release-bundle/SHA256SUMS
+          (cd release-bundle && sha256sum --check SHA256SUMS)
+
+      - name: Publish package distributions to TestPyPI
+        uses: pypa/gh-action-pypi-publish@a892a5a61159132606e93a2fa6f4358831b04d26 # v1.14.2
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          packages-dir: release-bundle/dist
+          print-hash: true
+          attestations: true

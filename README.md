@@ -30,8 +30,10 @@ Pre-alpha. The v0.1.0 scope is frozen in
 cohort collection, inspection, Python model calibration, held-out descriptive
 validation, schema export, persisted experiment simulation/reporting, and a
 recorded [performance benchmark](docs/performance.md) are implemented. The
-real-data `calibrate` command, final mutation gate, and release publishing
-remain tracked work. Track exact progress
+real-data `calibrate` command remains out of scope, and the final mutation gate
+and release workflows are implemented. Trusted PyPI/TestPyPI setup and actual
+publication still require the separately configured publishers and maintainer
+approval; see [`docs/releasing.md`](docs/releasing.md). Track exact progress
 in [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 
