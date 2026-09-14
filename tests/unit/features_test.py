@@ -1,5 +1,6 @@
 """Frozen-cutoff empirical feature extraction from projected observations."""
 
+from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime, timedelta
 
@@ -161,13 +162,13 @@ def fixture() -> dict[str, object]:
     }
 
 
-def build(data: dict[str, object] | None = None) -> FeatureSet:
+def build(data: dict[str, object] | None = None, *, timezone: str = "UTC") -> FeatureSet:
     return build_features(
         data or fixture(),
         dataset_content_hash="a" * 64,
         readiness_policy="strict",
         cutoff=CUTOFF,
-        timezone="UTC",
+        timezone=timezone,
         outcome_horizon=HORIZON,
         declared_human_reviewers=frozenset({"human-1"}),
     )
@@ -243,6 +244,18 @@ def test_post_cutoff_source_and_snapshot_attributes_cannot_leak() -> None:
     assert changed.pull_requests[0] == baseline.pull_requests[1]
     assert changed.week_templates[0].arrivals == ()
     assert (changed.requested_change_prevalence.numerator, changed.requested_change_prevalence.denominator) == (0, 0)
+
+
+def test_week_template_offsets_use_the_declared_timezone_not_the_host_timezone(
+    pin_host_timezone: Callable[[str], None],
+) -> None:
+    pin_host_timezone("Europe/Berlin")
+
+    result = build(timezone="America/New_York")
+
+    assert [(arrival.offset, arrival.author_id) for arrival in result.week_templates[0].arrivals] == [
+        (timedelta(hours=4), "author-1")
+    ]
 
 
 @pytest.mark.parametrize("late_evidence", ["pull", "reviews"])

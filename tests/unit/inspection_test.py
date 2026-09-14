@@ -4,6 +4,7 @@ import json
 import sqlite3
 from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -264,6 +265,29 @@ def test_inspect_reads_one_snapshot_during_replacement(tmp_path: Path, monkeypat
         "pull_requests": 3,
         "reviews": 1,
     }
+
+
+def test_inspection_uses_an_explicit_read_only_uri_independent_of_sqlite_defaults(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    dataset = _dataset(tmp_path)
+    real_connect = sqlite3.connect
+    expected_database = dataset.resolve().as_uri() + "?mode=ro"
+
+    def connect(database: Any, **kwargs: Any) -> sqlite3.Connection:
+        assert database == expected_database
+        assert kwargs.get("uri") is True
+        connection = cast(sqlite3.Connection, real_connect(database, **kwargs))
+        with pytest.raises(sqlite3.OperationalError, match="readonly"):
+            connection.execute("CREATE TABLE forbidden (value INTEGER)")
+        return connection
+
+    monkeypatch.setattr(inspection_module, "_connect", connect)
+
+    report = inspect_dataset(dataset)
+
+    counts = cast(dict[str, object], report["counts"])
+    assert counts["pull_requests"] == 3
 
 
 @pytest.mark.parametrize(

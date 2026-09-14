@@ -7,6 +7,7 @@ import sqlite3
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 from pathlib import Path
+from typing import Any, cast
 from uuid import UUID
 
 import pytest
@@ -58,6 +59,37 @@ def test_migration_reopen_foreign_keys_and_future_version(tmp_path: Path, key: W
         db.execute("INSERT INTO schema_migrations VALUES (2)")
     with pytest.raises(StoreError, match="unsupported schema"):
         ProjectedStore(path, key)
+
+
+def test_existing_only_reopen_uses_an_explicit_uri_and_never_creates_missing_store(
+    tmp_path: Path, key: WorkspaceKey, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "observations.sqlite"
+    with ProjectedStore(path, key):
+        pass
+
+    real_connect = sqlite3.connect
+    calls: list[tuple[Any, Any]] = []
+
+    def connect(database: Any, **kwargs: Any) -> sqlite3.Connection:
+        calls.append((database, kwargs.get("uri")))
+        assert kwargs.get("uri") is True
+        return cast(sqlite3.Connection, real_connect(database, **kwargs))
+
+    monkeypatch.setattr(sqlite3, "connect", connect)
+
+    with ProjectedStore(path, key, existing_only=True):
+        pass
+
+    missing = tmp_path / "missing.sqlite"
+    with pytest.raises(StoreError, match="cannot open projected store"):
+        ProjectedStore(missing, key, existing_only=True)
+
+    assert calls == [
+        (path.resolve().as_uri() + "?mode=rw", True),
+        (missing.resolve().as_uri() + "?mode=rw", True),
+    ]
+    assert not missing.exists()
 
 
 def test_projection_export_and_privacy(tmp_path: Path, key: WorkspaceKey) -> None:

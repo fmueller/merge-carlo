@@ -10,6 +10,7 @@ from merge_carlo.simulation.calendars import (
     LocalAbsence,
     UTCInterval,
     WeeklyWindow,
+    _local_to_utc,
     materialize_run_bounds,
 )
 
@@ -31,6 +32,14 @@ def test_weekly_windows_keep_local_hours_across_dst(start: str, expected: list[t
     calendar = DutyCalendar("Europe/Berlin", (WeeklyWindow("Sunday", 6, time(9), time(17)),))
 
     assert calendar.materialize(bounds.observation) == tuple(UTCInterval(utc(a), utc(b)) for a, b in expected)
+
+
+@pytest.mark.unit
+def test_local_to_utc_returns_a_canonical_utc_datetime() -> None:
+    result = _local_to_utc(datetime(2026, 1, 1, 9), ZoneInfo("America/New_York"))
+
+    assert result == datetime(2026, 1, 1, 14, tzinfo=UTC)
+    assert result.tzinfo is UTC
 
 
 @pytest.mark.unit

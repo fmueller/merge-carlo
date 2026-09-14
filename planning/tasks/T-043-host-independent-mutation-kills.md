@@ -1,11 +1,11 @@
 ---
 id: T-043-host-independent-mutation-kills
 title: Make timezone and SQLite URI mutation kills independent of the host
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies: []
-updated_at: "2026-09-11T13:21:30Z"
+updated_at: "2026-09-14T00:48:33Z"
 ---
 
 # T-043-host-independent-mutation-kills Make timezone and SQLite URI mutation kills independent of the host
@@ -58,3 +58,4 @@ Hardening"), and neither should depend on where tests run.
 ## Implementation Notes
 
 Filed from T-030's CI verification. Not started.
+- 2026-09-14T00:48:29Z: verification pass

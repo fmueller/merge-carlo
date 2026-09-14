@@ -650,6 +650,16 @@ def test_replay_accepts_boundaries_and_normalizes_timezone() -> None:
     assert result.in_sample_diagnostic is False
 
 
+def test_replay_normalizes_all_utc_boundaries_under_a_pinned_host_timezone(
+    pin_host_timezone: Callable[[str], None],
+) -> None:
+    pin_host_timezone("Europe/Berlin")
+
+    result = replay_held_out(replay_input())
+
+    assert len(result.replay_replications) == 3
+
+
 def test_report_is_the_complete_deterministic_evidence_record() -> None:
     result = run_validation(evidence())
 

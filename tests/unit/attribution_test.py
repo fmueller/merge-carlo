@@ -1,5 +1,6 @@
 """Readiness and work-origin resolution from projected GitHub observations."""
 
+from collections.abc import Callable
 from datetime import datetime
 from pathlib import Path
 
@@ -40,6 +41,20 @@ def test_strict_readiness_uses_observed_event_not_latest_non_draft_snapshot() ->
     assert (unknown["ready_at"], unknown["readiness_basis"]) == (None, "unknown")
     assert unknown["readiness_policy"] == "strict"
     assert (unknown["fit_eligible"], unknown["fit_exclusion_reason"]) == (False, "unknown_readiness")
+
+
+def test_readiness_timestamps_are_serialized_in_utc_not_the_host_timezone(
+    pin_host_timezone: Callable[[str], None],
+) -> None:
+    pin_host_timezone("Europe/Berlin")
+
+    result = resolve_attribution(
+        pull(),
+        [event(2, "ready_for_review", "2026-01-01T05:00:00+05:00")],
+        AttributionConfig(),
+    )
+
+    assert result["ready_at"] == "2026-01-01T00:00:00Z"
 
 
 def test_supported_reconstruction_requires_creation_snapshot_evidence() -> None:
