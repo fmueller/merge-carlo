@@ -89,6 +89,14 @@ def test_release_metadata_has_a_dated_versioned_section_and_evidence_status() ->
 
 
 @pytest.mark.unit
+def test_mutation_runner_copies_repository_files_used_by_the_suite() -> None:
+    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    also_copy = set(project["tool"]["mutmut"]["also_copy"])
+
+    assert {"README.md", "CHANGELOG.md", ".github/", "docs/", "examples/"} <= also_copy
+
+
+@pytest.mark.unit
 def test_release_workflows_are_tokenless_and_gate_the_versioned_artifact() -> None:
     release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
     test_index = (ROOT / ".github" / "workflows" / "test-index.yml").read_text(encoding="utf-8")

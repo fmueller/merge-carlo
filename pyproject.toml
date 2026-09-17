@@ -96,7 +96,7 @@ warn_unused_ignores = true
 source_paths = ["src/merge_carlo/"]
 # The runner copies the project into a scratch directory, so anything the suite
 # reads at test time has to come along.
-also_copy = ["pyproject.toml", "examples/"]
+also_copy = ["pyproject.toml", "examples/", "README.md", "CHANGELOG.md", ".github/", "docs/"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
