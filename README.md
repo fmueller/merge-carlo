@@ -194,7 +194,7 @@ read [`AGENTS.md`](AGENTS.md) first.
 - [`specs/v0.1.0.md`](specs/v0.1.0.md) — the normative v0.1.0 scope boundary.
 - [`docs/limitations.md`](docs/limitations.md) — what the model cannot establish.
 - [`docs/implementation-status.md`](docs/implementation-status.md) — what is built and what is unverified.
-- [`docs/non-blocking-continuous-reviews.md`](docs/non-blocking-continuous-reviews.md) — case-study notes and future workflow framing.
+- [`docs/research/`](docs/research/) — research notes, case studies, references, and future workflow framing.
 - [`docs/brand.md`](docs/brand.md) — the two marks, where each one is used, and the palette.
 - `specs/` — versioned specs; `planning/` — tracked work.
 

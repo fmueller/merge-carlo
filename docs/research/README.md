@@ -1,25 +1,34 @@
-# Research notes
+# Research
 
-This folder records the literature review behind the v0.2.0 quality-adjusted
-workflow proposal. The notes are an engineering synthesis, not a systematic
-review or a claim that the cited results generalize to every repository.
+This folder collects research notes, case studies, and references that inform
+merge-carlo's model boundaries and future workflow experiments. The notes are
+engineering syntheses, not systematic reviews or claims that cited results
+generalize to every repository.
 
-## Reading order
+## Workflow and review systems
 
-1. [Defect rate and defect prediction](defect-rate-and-prediction.md)
-2. [Agentic engineering and AI coding quality](agentic-engineering-and-quality.md)
-3. [References and study notes](references.md)
+- [Non-blocking continuous reviews](non-blocking-continuous-reviews.md) — a
+  case study and future workflow-model framing.
+
+## Quality and defect prediction
+
+- [Defect rate and defect prediction](defect-rate-and-prediction.md) — evidence
+  on LOC, churn, defect labels, and validation.
+- [Agentic engineering and AI coding quality](agentic-engineering-and-quality.md)
+  — evidence on AI-generated changes, review, and post-merge signals.
+
+## References
+
+- [References and study notes](references.md) — bibliographic links and source
+  qualifications.
 
 ## Use in merge-carlo
 
-The research supports using changed-code size as an exposure measure alongside
-relative churn, task type, CI/test evidence, review behavior, and repository-
-specific baselines. It does not support a universal defects-per-line constant,
-a fixed AI defect multiplier, or an individual contributor quality score.
-
-The current v0.2.0 specification therefore starts with a quality evidence and
-data contract. Descriptive signals must remain separate from confirmed defects,
-and observational associations must not be presented as intervention effects.
+The research supports explicit exposure, provenance, uncertainty, and
+observation-window rules. It does not support universal defects-per-line
+constants, fixed AI multipliers, individual contributor quality scores, or
+causal conclusions from observational associations. Specific implications are
+anchored in the relevant versioned specification or workflow note.
 
 ## Attribution and permitted use
 
@@ -35,4 +44,4 @@ while preserving author, venue, DOI, and URL attribution. It is a documentation
 practice, not legal advice; publisher terms govern any later reuse of the source
 material.
 
-Research checked: 2026-09-17.
+Last reviewed: 2026-09-17.
