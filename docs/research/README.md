@@ -9,6 +9,8 @@ generalize to every repository.
 
 - [Non-blocking continuous reviews](non-blocking-continuous-reviews.md) — a
   case study and future workflow-model framing.
+- [Merge-carlo on Helm](merge-carlo-helm-findings.md) — a real-data pipeline
+  exercise, proper holdout results, and model-fit implications.
 
 ## Quality and defect prediction
 
