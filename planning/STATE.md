@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-18T20:54:46Z"
+updated_at: "2026-09-18T20:58:09Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: Resolve blocker on T-033-dataclass-mutation-coverage
+next_action: No active-spec task is ready
 last_verification_result: pass for T-050-expose-structural-fit-limits-in-real-data-validation at 2026-09-18T20:54:37Z
 relevant_artifacts: []
 continuation_notes:
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-033-dataclass-mutation-coverage
+- No active-spec task is ready
 
 ## Relevant Artifacts
 
