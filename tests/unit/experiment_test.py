@@ -178,6 +178,12 @@ def validation(model_hash: str) -> ValidationResult:
         initialization_discrepancy=Estimate(value=0, low=0, high=0, sample_size=1),
         absolute_backlog_forecast_supported=False,
         unsupported={"policy_safety": Unavailable(None, "unsupported_in_v0_1")},
+        structural_fit_limitations=(
+            "multiple_required_approvals",
+            "reviewer_routing",
+            "merge_queues",
+            "full_branch_protection",
+        ),
     )
 
 
@@ -780,6 +786,11 @@ def test_report_renders_saved_results_with_validation_and_atomic_overwrite(
     assert written.exit_code == 0, written.output
     assert "CONDITIONAL MODEL OUTPUT" in report.read_text()
     assert "Validation: pass" in report.read_text()
+    combined_report = report.read_text()
+    assert "## Fit diagnostics" in combined_report
+    assert "Protocol: `held_out`" in combined_report
+    assert "multiple required approvals" in combined_report
+    assert "structural-fit limitations to investigate, not measured causes" in combined_report
 
     report.write_text("keep", encoding="utf-8")
     refused = runner.invoke(

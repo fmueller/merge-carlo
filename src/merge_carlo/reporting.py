@@ -229,8 +229,9 @@ def render_report(
     results: Path,
     *,
     validation_status: Literal["not_performed", "pass", "fail", "insufficient_evidence"] | None = None,
+    validation_diagnostics: str | None = None,
 ) -> str:
-    """Read only summary.json. Never import a runner, fetch data or simulate."""
+    """Read only saved artifacts. Never import a runner, fetch data or simulate."""
     with (results / "summary.json").open("rb") as source:
         payload = source.read(_MAX_SUMMARY_BYTES + 1)
     if len(payload) > _MAX_SUMMARY_BYTES:
@@ -301,6 +302,8 @@ def render_report(
         "Reproducibility is limited to the locked reference environment, not arbitrary library versions or hardware. "
         "Metadata may remain identifiable; share only authorized data.",
     ]
+    if validation_diagnostics is not None:
+        sections.insert(2, validation_diagnostics)
     if {row.assumption for row in summary.rows} == {"base"}:
         sections = [
             section + "\n\nOnly the base assumption set was run. Full sensitivity has not been run."

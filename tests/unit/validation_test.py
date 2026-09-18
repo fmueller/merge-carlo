@@ -18,6 +18,7 @@ from merge_carlo.validation import (
     DelayBenchmark,
     DelayBenchmarkReplication,
     ElapsedDelayObservation,
+    Estimate,
     FrozenReplayModel,
     HeldOutEvidence,
     ObservedOutcomes,
@@ -25,6 +26,7 @@ from merge_carlo.validation import (
     ReplayDuty,
     ReplayOutcomes,
     ValidationInput,
+    ValidationResult,
     ValidationThresholds,
     load_validation_evidence,
     render_validation_report,
@@ -311,6 +313,36 @@ def test_failed_tolerance_and_material_initialization_discrepancy_fail_declared_
     assert "Absolute backlog forecasting: not supported" in render_validation_report(result)
 
 
+def test_failed_mechanistic_fit_exposes_structural_limits_without_causal_claims() -> None:
+    sample = evidence(reviewed=0.95, merged=0.85)
+    result = run_validation(
+        replace(
+            sample, replay_replications=tuple(replace(row, initial_backlog=10) for row in sample.replay_replications)
+        )
+    )
+
+    report = render_validation_report(result)
+
+    assert "## Fit diagnostics" in report
+    assert "Protocol: `held_out`" in report
+    assert "Evidence flags: none" in report
+    assert "| reviewed_within_48_hours_share | 0.95" in report
+    assert "| merged_within_7_days_share | 0.85" in report
+    assert "### Benchmark comparison" in report
+    assert "### Initialization discrepancy" in report
+    assert "Observed: 4 [4, 4]; n=1" in report
+    assert "simulated: 10 [10, 10]; n=3" in report
+    for limitation in (
+        "multiple required approvals",
+        "reviewer routing",
+        "merge queues",
+        "full branch protection",
+    ):
+        assert limitation in report
+    assert "structural-fit limitations to investigate, not measured causes" in report
+    assert "does not establish causal validation, productivity, safety, defect, or policy conclusions" in report
+
+
 def test_small_mature_cohort_is_insufficient_evidence_not_fail() -> None:
     result = run_validation(evidence(observed_count=10))
 
@@ -386,7 +418,38 @@ def test_overlap_is_rejected_unless_explicitly_in_sample() -> None:
 
     diagnostic = run_validation(replace(overlapping, in_sample_diagnostic=True))
     assert diagnostic.protocol == "in_sample_diagnostic"
-    assert "not held-out evidence" in render_validation_report(diagnostic)
+    report = render_validation_report(diagnostic)
+    assert "status: `in-sample diagnostic pass`" in report
+    assert "not held-out evidence" in report
+    assert "same validation arrivals" in report
+    assert "same held-out arrivals" not in report
+
+
+def test_fit_diagnostics_preserves_persisted_initialization_discrepancy_without_gate() -> None:
+    result = run_validation(evidence()).model_copy(
+        update={
+            "gates": (),
+            "initialization_discrepancy": Estimate(value=6, low=6, high=6, sample_size=1),
+            "absolute_backlog_forecast_supported": False,
+        }
+    )
+
+    report = render_validation_report(result)
+
+    assert "Persisted discrepancy: 6 [6, 6]; n=1" in report
+    assert "No initialization discrepancy is available" not in report
+
+
+def test_validation_result_requires_all_structural_fit_limitations() -> None:
+    payload = run_validation(evidence()).model_dump(mode="json")
+    payload["structural_fit_limitations"] = ["reviewer_routing"]
+
+    with pytest.raises(ValueError, match="must list exactly the supported v0.1 structural-fit limitations"):
+        ValidationResult.model_validate(payload)
+
+    payload.pop("structural_fit_limitations")
+    with pytest.raises(ValueError, match="structural_fit_limitations"):
+        ValidationResult.model_validate(payload)
 
 
 def test_versioned_input_rejects_unknown_keys(tmp_path: Path) -> None:
@@ -428,12 +491,16 @@ def test_versioned_input_rejects_scalar_type_coercion(
 
 
 def test_report_escapes_untrusted_model_version() -> None:
-    result = run_validation(replace(evidence(), model_version="bad`\n# forged [link](https://example.com) |"))
+    poison = "bad`\n# forged [link](https://example.com) |"
+    result = run_validation(replace(evidence(), model_version=poison)).model_copy(
+        update={"evidence_flags": (poison,), "benchmark_observations_content_hash": poison}
+    )
 
     report = render_validation_report(result)
 
     assert "\n# forged" not in report
     assert "[link](" not in report
+    assert "bad&#96;&#10;&#35; forged &#91;link&#93;&#40;https://example&#46;com&#41; &#124;" in report
 
 
 def test_loader_replays_exact_arrivals_and_binds_model_and_arrival_content(tmp_path: Path) -> None:
@@ -667,7 +734,7 @@ def test_report_is_the_complete_deterministic_evidence_record() -> None:
 
     assert (
         hashlib.sha256(report.encode()).hexdigest()
-        == "37a59964a4706374ab31abca717037d5948dd7330784c465c7529c58fcb6cb04"
+        == "fe00ce6c7f3837cd7e8ce7fcacbec4160bac583af9eb9e3350098da72b777ca0"
     )
 
 

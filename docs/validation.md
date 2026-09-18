@@ -67,6 +67,21 @@ when the elapsed-delay reference describes the held-out baseline better than the
 mechanistic model. Both replication intervals remain visible; the label is not an
 inferential claim that the difference is statistically distinguishable.
 
+## Fit diagnostics
+
+Validation and combined experiment reports include one deterministic `Fit
+diagnostics` section. It retains the `held_out` versus `in_sample_diagnostic`
+protocol, evidence flags, observed and simulated gate estimates with cohort
+sizes, the elapsed-delay benchmark comparison, and the observed/simulated
+initialization discrepancy. A failed descriptive gate is shown as a fit
+discrepancy, not as an engine diagnosis or a productivity, safety, defect, or
+policy conclusion.
+
+The section names v0.1 workflow semantics that are not modeled—multiple required
+approvals, reviewer routing, merge queues, and full branch protection—as
+structural-fit limitations to investigate. They are not measured causes, and
+the report does not silently treat them as favorable zero behavior.
+
 Too few mature pull requests, too few replay replications, or no simulated
 first-review completions produces `insufficient_evidence`, never pass or fail.
 A failed exploratory run still writes its artifacts and exits zero with a

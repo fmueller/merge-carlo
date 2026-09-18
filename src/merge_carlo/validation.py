@@ -32,6 +32,25 @@ type ValidationMetric = Literal[
     "weekly_merge_count",
     "initialization_backlog",
 ]
+type StructuralFitLimitation = Literal[
+    "multiple_required_approvals",
+    "reviewer_routing",
+    "merge_queues",
+    "full_branch_protection",
+]
+
+_STRUCTURAL_FIT_LIMITATIONS: tuple[StructuralFitLimitation, ...] = (
+    "multiple_required_approvals",
+    "reviewer_routing",
+    "merge_queues",
+    "full_branch_protection",
+)
+_STRUCTURAL_FIT_LIMITATION_LABELS: dict[StructuralFitLimitation, str] = {
+    "multiple_required_approvals": "multiple required approvals",
+    "reviewer_routing": "reviewer routing",
+    "merge_queues": "merge queues",
+    "full_branch_protection": "full branch protection",
+}
 
 
 @dataclass(frozen=True, slots=True, config=ConfigDict(extra="forbid"))
@@ -343,6 +362,13 @@ class ValidationResult(_ResultModel):
     initialization_discrepancy: Estimate
     absolute_backlog_forecast_supported: bool
     unsupported: dict[str, Unavailable]
+    structural_fit_limitations: tuple[StructuralFitLimitation, ...]
+
+    @model_validator(mode="after")
+    def check_structural_fit_limitations(self) -> Self:
+        if self.structural_fit_limitations != _STRUCTURAL_FIT_LIMITATIONS:
+            raise ValueError("must list exactly the supported v0.1 structural-fit limitations")
+        return self
 
 
 def _validate_count(value: int, name: str) -> None:
@@ -884,6 +910,7 @@ def run_validation(evidence: HeldOutEvidence) -> ValidationResult:
             name: Unavailable(None, "unsupported_in_v0_1")
             for name in ("defect_escape_rate", "security_risk_change", "policy_safety")
         },
+        structural_fit_limitations=_STRUCTURAL_FIT_LIMITATIONS,
     )
 
 
@@ -895,10 +922,12 @@ def _estimate(value: Estimate) -> str:
     return f"{_number(value.value)} [{_number(value.low)}, {_number(value.high)}]; n={value.sample_size}"
 
 
-def render_validation_report(result: ValidationResult) -> str:
-    """Render exact estimates, cohort sizes, variability, and claim limits."""
+def render_fit_diagnostics(result: ValidationResult) -> str:
+    """Render the compact fit evidence and structural limits shared by reports."""
     evidence_label = (
-        f"held-out descriptive {result.status}" if result.protocol == "held_out" else "in-sample diagnostic"
+        f"held-out descriptive {result.status}"
+        if result.protocol == "held_out"
+        else f"in-sample diagnostic {result.status}"
     )
     protocol_warning = (
         "This interval is explicitly an in-sample diagnostic and is not held-out evidence."
@@ -913,8 +942,16 @@ def render_validation_report(result: ValidationResult) -> str:
         f"{'not evaluated' if gate.passed is None else str(gate.passed).lower()} |"
         for gate in result.gates
     )
-    flags = ", ".join(result.evidence_flags) if result.evidence_flags else "none"
-    backlog = "supported by this descriptive gate" if result.absolute_backlog_forecast_supported else "not supported"
+    gate_table = (
+        "| Metric | Observed estimate [variability]; cohort | Simulated median [5%, 95%]; replications | "
+        "Cohort sizes | Absolute error | Tolerance | Gate |\n"
+        "| --- | --- | --- | --- | ---: | ---: | --- |\n"
+        f"{gates}"
+        if gates
+        else "No declared gate values are available."
+    )
+    flags = ", ".join(markdown(flag) for flag in result.evidence_flags) if result.evidence_flags else "none"
+    arrival_label = "held-out arrivals" if result.protocol == "held_out" else "validation arrivals"
     comparison = "\n".join(
         f"| {row.metric} | {_estimate(row.observed)} | {_estimate(row.mechanistic)} | "
         f"{_estimate(row.elapsed_delay_benchmark)} | {_number(row.mechanistic_absolute_error)} | "
@@ -925,32 +962,76 @@ def render_validation_report(result: ValidationResult) -> str:
         f"merged={row.merged}, closed_without_merge={row.closed_without_merge}, not_completed={row.not_completed}"
         for row in result.benchmark_completion_categories
     )
-    return (
-        "# Historical descriptive validation\n\n"
-        f"Status: `{evidence_label}`. Protocol: `{result.protocol}`. {protocol_warning}\n\n"
-        f"Model: `{markdown(result.model_version)}`; model content hash: `{result.model_content_hash}`; "
-        f"replay arrivals content hash: `{result.replay_arrivals_content_hash}`; dataset content hash: "
-        f"`{result.dataset_content_hash}`. "
-        f"Training cutoff: `{result.training_cutoff.isoformat()}`. Validation interval: "
-        f"`{result.validation_interval_start.isoformat()}` to `{result.validation_interval_end.isoformat()}`.\n\n"
-        f"Mature observed cohort: {result.observed_mature_pull_requests}. Replay replications: "
-        f"{result.replay_replications}. Evidence flags: {flags}.\n\n"
-        "| Metric | Observed estimate [variability]; cohort | Simulated median [5%, 95%]; replications | "
-        "Cohort sizes | Absolute error | Tolerance | Gate |\n"
-        "| --- | --- | --- | --- | ---: | ---: | --- |\n"
-        f"{gates}\n\n"
-        "## Elapsed-delay resampling benchmark\n\n"
-        "This benchmark is a descriptive reference, not an intervention model. No capacity queue is added; joint "
-        "historical review delay and completion-category records are resampled directly onto the same held-out "
-        "arrivals and evaluated with the same cohort and horizon definitions.\n\n"
-        f"Benchmark observations content hash: `{result.benchmark_observations_content_hash}`. Sampled completion "
-        f"categories by replication: {categories}.\n\n"
+    comparison_table = (
         "| Metric | Observed | Mechanistic median | Elapsed-delay median | Mechanistic absolute error | "
         "Benchmark absolute error | Lower point-estimate error |\n"
         "| --- | --- | --- | --- | ---: | ---: | --- |\n"
-        f"{comparison}\n\n"
-        f"Initialization discrepancy: {_estimate(result.initialization_discrepancy)}. "
-        f"Absolute backlog forecasting: {backlog}. Warm-up from empty does not guarantee steady state.\n\n"
+        f"{comparison}"
+        if comparison
+        else "No benchmark comparison values are available."
+    )
+    initialization = next(
+        (gate for gate in result.gates if gate.metric == "initialization_backlog"),
+        None,
+    )
+    backlog_forecast = (
+        "supported by this descriptive gate" if result.absolute_backlog_forecast_supported else "not supported"
+    )
+    if initialization is None:
+        initialization_text = (
+            f"Persisted discrepancy: {_estimate(result.initialization_discrepancy)}. "
+            f"Absolute backlog forecasting: {backlog_forecast}."
+        )
+    else:
+        initialization_text = (
+            f"Observed: {_estimate(initialization.observed)}; simulated: {_estimate(initialization.simulated)}; "
+            f"absolute error: {_number(initialization.absolute_error)}; "
+            f"tolerance: {_number(initialization.tolerance)}; "
+            f"gate: {'not evaluated' if initialization.passed is None else str(initialization.passed).lower()}. "
+            f"Absolute backlog forecasting: {backlog_forecast}."
+        )
+    limitations = "\n".join(
+        f"- `{limitation}` — {_STRUCTURAL_FIT_LIMITATION_LABELS[limitation]}; unsupported in v0.1 and a "
+        "structural-fit limitation to investigate, not a measured cause."
+        for limitation in result.structural_fit_limitations
+    )
+    return (
+        "## Fit diagnostics\n\n"
+        f"Protocol: `{result.protocol}`; status: `{evidence_label}`. {protocol_warning}\n\n"
+        f"Mature observed cohort: {result.observed_mature_pull_requests}. Replay replications: "
+        f"{result.replay_replications}. Evidence flags: {flags}.\n\n"
+        f"{gate_table}\n\n"
+        "### Benchmark comparison\n\n"
+        "Elapsed-delay resampling benchmark: this is a descriptive reference, not an intervention model. "
+        "No capacity queue is added; joint "
+        f"historical review delay and completion-category records are resampled directly onto the same {arrival_label} "
+        "and evaluated with the same cohort and horizon definitions.\n\n"
+        f"Benchmark observations content hash: `{markdown(result.benchmark_observations_content_hash)}`. "
+        "Sampled completion "
+        f"categories by replication: {categories}.\n\n"
+        f"{comparison_table}\n\n"
+        "### Initialization discrepancy\n\n"
+        f"{initialization_text} Warm-up from empty does not guarantee steady state.\n\n"
+        "### Structural-fit limitations\n\n"
+        "The v0.1 workflow is a CI-before-review, one-required-review central FIFO model. "
+        "The following unsupported semantics are structural-fit limitations to investigate, not measured causes:\n\n"
+        f"{limitations}\n\n"
+        "A failed descriptive gate or initialization mismatch identifies a fit discrepancy; it does not establish "
+        "causal validation, productivity, safety, defect, or policy conclusions, and it does not diagnose an engine "
+        "bug."
+    )
+
+
+def render_validation_report(result: ValidationResult) -> str:
+    """Render exact estimates, fit limits, and claim limits."""
+    return (
+        "# Historical descriptive validation\n\n"
+        f"Model: `{markdown(result.model_version)}`; model content hash: `{markdown(result.model_content_hash)}`; "
+        f"replay arrivals content hash: `{markdown(result.replay_arrivals_content_hash)}`; dataset content hash: "
+        f"`{markdown(result.dataset_content_hash)}`. "
+        f"Training cutoff: `{result.training_cutoff.isoformat()}`. Validation interval: "
+        f"`{result.validation_interval_start.isoformat()}` to `{result.validation_interval_end.isoformat()}`.\n\n"
+        f"{render_fit_diagnostics(result)}\n\n"
         "This is historical descriptive validation only. It does not establish causal validation, intervention "
         "validity, or productivity gains and does not establish that auto-approval is safe. `defect_escape_rate`, "
         "`security_risk_change`, "

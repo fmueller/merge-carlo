@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Added deterministic fit diagnostics to validation and combined reports,
+  including observed/simulated gates, benchmark comparisons, initialization
+  discrepancy, evidence flags, and explicit unsupported v0.1 workflow limits.
 - Corrected the v0.1 documentation to use the Python calibration API and the
   supported persisted `simulate`/`validate`/`report` command workflow.
 

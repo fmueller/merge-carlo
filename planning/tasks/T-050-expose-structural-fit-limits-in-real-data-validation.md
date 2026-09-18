@@ -1,12 +1,12 @@
 ---
 id: T-050-expose-structural-fit-limits-in-real-data-validation
 title: Expose structural fit limits in real-data validation
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies:
     - T-024-held-out-validation
-updated_at: "2026-09-17T21:08:21Z"
+updated_at: "2026-09-18T20:54:46Z"
 ---
 
 # T-050-expose-structural-fit-limits-in-real-data-validation Expose structural fit limits in real-data validation
@@ -43,3 +43,21 @@ causal claims.
   unchanged.
 
 ## Implementation Notes
+
+- Added deterministic fit diagnostics to validation and saved combined reports:
+  protocol/status, evidence flags, observed/simulated gates and cohorts,
+  elapsed-delay comparison, initialization discrepancy, and the four explicit
+  v0.1 structural-fit limitations. Reports retain conservative non-causal,
+  non-productivity, non-safety, non-defect, and non-policy wording.
+- Structural-limit metadata is required in the persisted result contract and
+  must equal the complete ordered v0.1 set; omitted, partial, empty, and
+  reordered values are rejected. Saved combined reports consume the validation
+  artifact and do not rerun simulation.
+- Verification: focused validation/experiment tests passed (55); `mise run
+  check` passed (691 tests plus policy/setup guards); differential mutation
+  passed with `experiment` 610/689 (88.5%), `reporting` 294/322 (91.3%), and
+  `validation` 1050/1268 (82.8%). Ruff, format, mypy, and `git diff --check`
+  passed. Independent General, Python, and ML/domain reviews were completed;
+  all accepted findings were fixed with regression tests and final disposition
+  verification found no deferred findings.
+- 2026-09-18T20:54:37Z: verification pass

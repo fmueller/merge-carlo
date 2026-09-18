@@ -24,7 +24,7 @@ from merge_carlo.simulation.arrivals import AdditiveAI, ReplacementAI
 from merge_carlo.simulation.calendars import DutyCalendar, LocalAbsence, WeeklyWindow, materialize_run_bounds
 from merge_carlo.simulation.engine import ReviewBypass
 from merge_carlo.simulation.runner import AssumptionSet, Experiment, Scenario, ServiceDistribution
-from merge_carlo.validation import ValidationResult
+from merge_carlo.validation import ValidationResult, render_fit_diagnostics
 
 _MAX_JSON_BYTES = 16 * 1024 * 1024
 _MAX_MODEL_TEMPLATES = 1_000
@@ -351,7 +351,11 @@ def report(results: Path, validation: Path, out: Path, *, overwrite: bool = Fals
     """Render saved results and validation without running the simulation."""
     evidence = _validation(validation)
     _check_lineage(results, evidence)
-    text = render_report(results, validation_status=evidence.status)
+    text = render_report(
+        results,
+        validation_status=evidence.status,
+        validation_diagnostics=render_fit_diagnostics(evidence),
+    )
     if out.is_symlink():
         raise ValueError("report output must not be a symlink")
     if out.resolve(strict=False) == (results / "report.md").resolve(strict=False):

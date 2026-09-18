@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-18T20:09:50Z"
+updated_at: "2026-09-18T20:54:46Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: 'Start task T-050-expose-structural-fit-limits-in-real-data-validation: Expose structural fit limits in real-data validation'
-last_verification_result: pass for T-049-correct-calibration-workflow-documentation at 2026-09-18T20:09:36Z
+next_action: Resolve blocker on T-033-dataclass-mutation-coverage
+last_verification_result: pass for T-050-expose-structural-fit-limits-in-real-data-validation at 2026-09-18T20:54:37Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-049-correct-calibration-workflow-documentation at 2026-09-18T20:09:36Z
+- pass for T-050-expose-structural-fit-limits-in-real-data-validation at 2026-09-18T20:54:37Z
 
 ## Next Action
 
-- Start task T-050-expose-structural-fit-limits-in-real-data-validation: Expose structural fit limits in real-data validation
+- Resolve blocker on T-033-dataclass-mutation-coverage
 
 ## Relevant Artifacts
 
@@ -51,8 +51,8 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 5
+- todo: 4
 - in_progress: 0
-- completed: 45
+- completed: 46
 - blocked: 1
 - cancelled: 0
