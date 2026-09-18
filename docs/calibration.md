@@ -5,8 +5,68 @@ explicit active-review-effort assumptions and de-identified dataset coverage.
 It returns a versioned model, a calibration record, and the inputs needed to
 render a deterministic model card. `write_calibration` publishes `model.json`,
 `calibration.json`, and `model-card.md` together into an empty or absent
-directory. The persisted `simulate` command consumes the resulting `model.json`; model
-calibration itself remains a Python API in v0.1.0.
+directory. The persisted `simulate` command consumes the resulting `model.json`;
+model calibration itself remains a Python API in v0.1.0, not a CLI command.
+
+After `collect` and `inspect`, the exported projected dataset, a data-only
+coverage record, explicit human-reviewer identifiers, and active-effort
+assumptions are the calibration inputs. This is a complete API boundary; the
+coverage and assumption files below are named inputs prepared by the caller:
+
+```python
+import json
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+from merge_carlo.calibration import (
+    CalibrationCoverage,
+    calibrate_model,
+    load_assumptions,
+    write_calibration,
+)
+from merge_carlo.features import build_features
+from merge_carlo.store import ProjectedStore, WorkspaceKey
+
+dataset_path = Path("data/cohort/dataset.sqlite")
+workspace_path = Path("/private/path/merge-carlo-key")
+coverage_path = Path("data/cohort/calibration-coverage.json")
+assumptions_path = Path("configs/calibration-assumptions.json")
+reviewers_path = Path("configs/human-reviewers.json")
+
+with ProjectedStore(dataset_path, WorkspaceKey(workspace_path), existing_only=True) as store:
+    extraction = store.manifests()[0]
+    dataset = store.export(extraction.id)
+    dataset_hash = store.content_hash(extraction.id)
+
+coverage = CalibrationCoverage.model_validate_json(coverage_path.read_bytes())
+if coverage.dataset_content_hash != dataset_hash:
+    raise ValueError("coverage does not match the exported dataset")
+assumptions = load_assumptions(json.loads(assumptions_path.read_text(encoding="utf-8")))
+features = build_features(
+    dataset,
+    dataset_content_hash=dataset_hash,
+    readiness_policy=coverage.readiness_policy,
+    cutoff=datetime(2026, 7, 1, tzinfo=UTC),
+    timezone="Europe/Berlin",
+    outcome_horizon=timedelta(days=7),
+    declared_human_reviewers=frozenset(json.loads(reviewers_path.read_text(encoding="utf-8"))),
+)
+result = calibrate_model(features, assumptions, coverage)
+write_calibration(result, Path("models/repository"))
+```
+
+The output directory contains `model.json`, `calibration.json`, and
+`model-card.md`. The model artifact is then consumed by the persisted
+`simulate` command, and `report` reads only saved experiment and validation
+artifacts:
+
+```bash
+uv run merge-carlo simulate --model models/repository/model.json \
+  --scenarios configs/scenarios.yaml --out out/experiment
+uv run merge-carlo report --results out/experiment \
+  --validation out/validation/validation.json \
+  --out out/experiment/report.md --overwrite
+```
 
 Active review effort is required for every declared work-origin cohort. It is
 never inferred from first-review or ready-to-merge elapsed time. Supported

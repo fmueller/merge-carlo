@@ -30,10 +30,11 @@ Pre-alpha. The v0.1.0 scope is frozen in
 cohort collection, inspection, Python model calibration, held-out descriptive
 validation, schema export, persisted experiment simulation/reporting, and a
 recorded [performance benchmark](docs/performance.md) are implemented. The
-real-data `calibrate` command remains out of scope, and the final mutation gate
-and release workflows are implemented. Trusted PyPI/TestPyPI setup and actual
-publication still require the separately configured publishers and maintainer
-approval; see [`docs/releasing.md`](docs/releasing.md). Track exact progress
+calibration remains a Python API; a real-data `calibrate` CLI remains out of
+scope. The final mutation gate and release workflows are implemented. Trusted
+PyPI/TestPyPI setup and actual publication still require the separately
+configured publishers and maintainer approval; see
+[`docs/releasing.md`](docs/releasing.md). Track exact progress
 in [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 
@@ -123,7 +124,7 @@ coverage, missingness, censoring, attribution, fit exclusions, and extraction
 limitations:
 
 ```bash
-uv run merge-carlo inspect   --dataset data/repository.sqlite --out out/inspection
+uv run merge-carlo inspect   --dataset data/cohort/dataset.sqlite --out out/inspection
 ```
 
 Apply descriptive gates to a prepared, versioned held-out replay evidence file.
@@ -139,15 +140,67 @@ observed mature-cohort outcomes, and replication outcomes from replaying exact
 held-out arrival timestamps with only known-at-arrival attributes. See
 [`docs/validation.md`](docs/validation.md).
 
-Calibration remains a Python API; once it has written `model.json`, the persisted
-simulation and report commands are available:
+Calibration is a Python API, not a CLI subcommand. `collect` writes the
+projected SQLite dataset and `inspect` writes its coverage report; the feature
+and calibration boundary consumes a canonical `ProjectedStore.export()` plus
+data-only coverage, reviewer, and effort-assumption inputs. The following
+example reads those named inputs and writes the three model artifacts; the same
+API boundary is documented in [`docs/calibration.md`](docs/calibration.md):
+
+```python
+import json
+from datetime import UTC, datetime, timedelta
+from pathlib import Path
+
+from merge_carlo.calibration import (
+    CalibrationCoverage,
+    calibrate_model,
+    load_assumptions,
+    write_calibration,
+)
+from merge_carlo.features import build_features
+from merge_carlo.store import ProjectedStore, WorkspaceKey
+
+dataset_path = Path("data/cohort/dataset.sqlite")
+workspace_path = Path("/private/path/merge-carlo-key")
+coverage_path = Path("data/cohort/calibration-coverage.json")
+assumptions_path = Path("configs/calibration-assumptions.json")
+reviewers_path = Path("configs/human-reviewers.json")
+
+with ProjectedStore(dataset_path, WorkspaceKey(workspace_path), existing_only=True) as store:
+    extraction = store.manifests()[0]
+    dataset = store.export(extraction.id)
+    dataset_hash = store.content_hash(extraction.id)
+
+coverage = CalibrationCoverage.model_validate_json(coverage_path.read_bytes())
+if coverage.dataset_content_hash != dataset_hash:
+    raise ValueError("coverage does not match the exported dataset")
+assumptions = load_assumptions(json.loads(assumptions_path.read_text(encoding="utf-8")))
+features = build_features(
+    dataset,
+    dataset_content_hash=dataset_hash,
+    readiness_policy=coverage.readiness_policy,
+    cutoff=datetime(2026, 7, 1, tzinfo=UTC),
+    timezone="Europe/Berlin",
+    outcome_horizon=timedelta(days=7),
+    declared_human_reviewers=frozenset(json.loads(reviewers_path.read_text(encoding="utf-8"))),
+)
+result = calibrate_model(features, assumptions, coverage)
+write_calibration(result, Path("models/repository"))
+```
+
+This writes `models/repository/model.json`, `calibration.json`, and
+`model-card.md`. The coverage, reviewer, and assumption inputs are operator
+supplied data-only artifacts; active review effort remains an explicit
+assumption and is never inferred from elapsed review delay. With a prepared
+held-out evidence file, continue with the persisted commands:
 
 ```bash
-uv run merge-carlo calibrate --dataset data/repository.sqlite --train-until 2026-07-01 \
-                             --assumptions configs/team-assumptions.yaml --out models/repository
-uv run merge-carlo simulate  --model models/repository/model.json --scenarios configs/scenarios.yaml --out out/experiment
-uv run merge-carlo report    --results out/experiment --validation out/validation/validation.json \
-                             --out out/experiment/report.md --overwrite
+uv run merge-carlo simulate --model models/repository/model.json \
+  --scenarios configs/scenarios.yaml --out out/experiment
+uv run merge-carlo report --results out/experiment \
+  --validation out/validation/validation.json \
+  --out out/experiment/report.md --overwrite
 ```
 
 The scenario YAML's optional `execution` section declares the local observation

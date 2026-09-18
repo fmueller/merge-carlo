@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+- Corrected the v0.1 documentation to use the Python calibration API and the
+  supported persisted `simulate`/`validate`/`report` command workflow.
+
 ## [0.1.0] - 2026-09-14
 
 ### Added

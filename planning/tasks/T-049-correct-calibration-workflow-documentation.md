@@ -1,11 +1,11 @@
 ---
 id: T-049-correct-calibration-workflow-documentation
 title: Correct v0.1 calibration workflow documentation
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies: []
-updated_at: "2026-09-17T21:08:15Z"
+updated_at: "2026-09-18T20:09:43Z"
 ---
 
 # T-049-correct-calibration-workflow-documentation Correct v0.1 calibration workflow documentation
@@ -35,3 +35,6 @@ expanding the v0.1 CLI contract.
 - Run the documented offline sequence and the CLI help check.
 
 ## Implementation Notes
+
+- 2026-09-18T20:09:36Z: verification pass
+- 2026-09-18T20:09:43Z: Implemented and verified the corrected Python calibration documentation and persisted offline workflow; no v0.1 follow-up required.
