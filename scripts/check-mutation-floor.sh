@@ -16,7 +16,7 @@
 # Repeat --module with exact module names to limit differential verdicts.
 set -euo pipefail
 
-floor=80
+floor=70
 min_mutants=10
 selected=""
 

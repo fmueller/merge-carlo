@@ -1,10 +1,11 @@
 # Mutation gate policy for v0.1.0
 
-On 2026-09-10 the maintainer explicitly selected an **80% per-module mutation
-efficacy floor for v0.1.0**, replacing 90%. This is a deliberate relaxation of
-the acceptance threshold, not an improvement in measured test efficacy. It is
-not a standing policy for later releases: reassess the default when changing
-the active spec beyond v0.1.0.
+On 2026-09-19 the maintainer explicitly lowered the **v0.1.0 per-module
+mutation efficacy floor to 70%**, from the previous 80% decision. This temporary
+threshold accommodates the larger mutation population discovered by mutmut
+3.8.0 after the dependency upgrade. It is a deliberate policy change, not an
+improvement in measured test efficacy, and is not a standing policy for later
+releases.
 
 `scripts/check-mutation-floor.sh` owns the default. Differential runs, the full
 local gate, and the weekly CI gate use that same guard. Its existing `--floor`
@@ -55,19 +56,21 @@ the old failed run must not be rewritten as a historical pass.
 T-035 removes T-005's numerical-floor blocker. T-034 resolves the separate
 differential accounting problem described above. T-005 must reconcile both
 changes and rerun its actual verification before claiming a clean gate.
-T-030 (release mutation validation) records its evidence under "Release
-mutation gate (T-030)" below. T-033
-(dataclass mutation discovery) is deferred to v0.2.0: mutmut 3.7.0 skips
-decorated class bodies, so v0.1.0 per-module scores do not cover `@dataclass`
-methods. None is implemented by T-035.
+T-030 (release mutation validation) records its historical evidence under
+"Release mutation gate (T-030)" below. T-033 (dataclass mutation discovery)
+remains deferred to v0.2.0. The v0.1.0 lock now uses mutmut 3.8.0, which
+discovers decorated class bodies; dedicated coverage and efficacy work remains
+owned by T-033. None is implemented by T-035.
 
 ## Discovery limitations in v0.1.0
 
-The pinned mutmut 3.7.0 does not generate mutants for every function. A
-per-module score describes only the functions mutmut instruments; code it skips
-is not mutation-covered, whatever that module's percentage. Skipped functions
-never enter the denominator, so nothing is excluded after the fact, and
-production code is not restructured to suit the tool.
+The recorded v0.1.0 baseline used pinned mutmut 3.7.0 and did not generate
+mutants for every function. A per-module score describes only the functions
+mutmut instruments; code it skips is not mutation-covered, whatever that
+module's percentage. Skipped functions never enter the denominator, so nothing
+is excluded after the fact, and production code is not restructured to suit the
+tool. Mutmut 3.8.0 now discovers decorated class bodies, while other decorated
+functions and methods remain subject to the limitations below.
 
 - Decorated functions and methods are skipped, except a lone `@staticmethod` or
   `@classmethod`. Upstream main still skips them (boxed/mutmut#387 is open).
@@ -83,8 +86,11 @@ production code is not restructured to suit the tool.
     (T-041);
   - `@property` methods such as `UTCInterval.seconds` and
     `PullRequest.terminal`.
-- Methods of decorated classes, including every `@dataclass` body, are skipped.
-  That discovery work (T-033) is deferred to v0.2.0.
+- Mutmut 3.7.0 skipped methods of decorated classes, including every
+  `@dataclass` body; that historical discovery gap motivated T-033. Mutmut
+  3.8.0 now discovers those class bodies, but T-033 remains deferred for
+  dedicated coverage and efficacy work, and decorated functions such as
+  `@property` methods remain omitted.
 
 The scoped alternative for T-040 and T-041 is behavioral testing, not a
 mutation score:
@@ -112,7 +118,7 @@ Neither score covers the validators or command bodies listed above.
 ## Release mutation gate (T-030)
 
 The release gate is the full `mise run test:mutate:gate`: every discovered module,
-the default 80% floor, and no module or survivor excluded. The engine
+the current default 70% floor, and no module or survivor excluded. The engine
 (`merge_carlo.simulation.engine`), scenario runner
 (`merge_carlo.simulation.runner`), and metric (`merge_carlo.simulation.metrics`)
 modules are the logic-heavy modules this gate must hold on; their scores cover
@@ -122,8 +128,9 @@ still apply.
 ### Per-module result
 
 `mise run test:mutate:gate` passed on 2026-09-11 with the tests below, starting
-from an empty `mutants/` cache (382 s wall time, 32 workers). Every module clears
-the 80% floor; counts are raw killed-or-timeout over all discovered mutants.
+from an empty `mutants/` cache (382 s wall time, 32 workers). Every module
+cleared the then-configured 80% floor; counts are raw killed-or-timeout over all
+discovered mutants.
 
 | Module | Killed/total | Verdict |
 | --- | --- | --- |

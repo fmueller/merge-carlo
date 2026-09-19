@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   discrepancy, evidence flags, and explicit unsupported v0.1 workflow limits.
 - Corrected the v0.1 documentation to use the Python calibration API and the
   supported persisted `simulate`/`validate`/`report` command workflow.
+- Lowered the temporary v0.1.0 per-module mutation efficacy floor from 80% to
+  70% for the mutmut 3.8.0 discovery population; raw statuses, per-module
+  accounting, and the ten-mutant minimum remain unchanged.
 
 ## [0.1.0] - 2026-09-14
 

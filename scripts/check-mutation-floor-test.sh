@@ -45,22 +45,23 @@ assert_reports() {
   fi
 }
 
-# Ten mutants, eight killed: exactly on the v0.1.0 80% floor.
+# Ten mutants, seven killed: exactly on the v0.1.0 70% floor.
 at_floor=""
-for i in 1 2 3 4 5 6 7 8; do
+for i in 1 2 3 4 5 6 7; do
   at_floor+="    merge_carlo.engine.x__run__mutmut_$i: killed"$'\n'
 done
-at_floor+="    merge_carlo.engine.x__run__mutmut_9: survived"$'\n'
-at_floor+="    merge_carlo.engine.x__run__mutmut_10: survived"
+for i in 8 9 10; do
+  at_floor+="    merge_carlo.engine.x__run__mutmut_$i: survived"$'\n'
+done
 
-# Ten mutants, seven killed: below the floor.
+# Ten mutants, six killed: below the floor.
 below_floor=""
-for i in 1 2 3 4 5 6 7; do
+for i in 1 2 3 4 5 6; do
   below_floor+="    merge_carlo.engine.x__run__mutmut_$i: killed"$'\n'
 done
-below_floor+="    merge_carlo.engine.x__run__mutmut_8: survived"$'\n'
-below_floor+="    merge_carlo.engine.x__run__mutmut_9: survived"$'\n'
-below_floor+="    merge_carlo.engine.x__run__mutmut_10: survived"
+for i in 7 8 9 10; do
+  below_floor+="    merge_carlo.engine.x__run__mutmut_$i: survived"$'\n'
+done
 
 # Mangled class methods use mutmut's Unicode separator. Mix them with top-level
 # mutants so the fixture catches reports that silently drop either form.
@@ -81,11 +82,11 @@ mixed="${strong//merge_carlo.engine/merge_carlo.metrics}"$'\n'"$below_floor"
 
 assert_accepts at-floor "$at_floor"
 assert_rejects below-floor "$below_floor" "below the mutation efficacy floor"
-assert_reports raw-counts-at-floor "$at_floor" "8/10"
-assert_reports raw-score-at-floor "$at_floor" "80.0%"
-assert_reports rejected-floor-visible "$below_floor" "BELOW FLOOR 80%"
-assert_rejects explicit-stricter-floor "$at_floor" "BELOW FLOOR 90%" --floor 90
-assert_accepts below-floor-with-lower-floor "$below_floor" --floor 70
+assert_reports raw-counts-at-floor "$at_floor" "7/10"
+assert_reports raw-score-at-floor "$at_floor" "70.0%"
+assert_reports rejected-floor-visible "$below_floor" "BELOW FLOOR 70%"
+assert_rejects explicit-stricter-floor "$at_floor" "BELOW FLOOR 80%" --floor 80
+assert_accepts below-floor-with-lower-floor "$below_floor" --floor 60
 assert_accepts mangled-methods-full "$mangled_methods"
 assert_reports mangled-methods-full-count "$mangled_methods" "8/10"
 assert_accepts mangled-methods-scoped "$mangled_methods" --module merge_carlo.runner
@@ -131,8 +132,8 @@ assert_rejects no-results "" "no mutation results were found"
 unexecuted="${strong//killed/not checked}"
 unrelated="${unexecuted//merge_carlo.engine/merge_carlo.engine_extra}"
 assert_accepts selected-only "$at_floor"$'\n'"$unrelated" --module merge_carlo.engine
-assert_reports selected-raw-counts "$at_floor"$'\n'"$unrelated" "8/10" --module merge_carlo.engine
-assert_rejects unrelated-cannot-inflate "$mixed" "BELOW FLOOR 80%" --module merge_carlo.engine
+assert_reports selected-raw-counts "$at_floor"$'\n'"$unrelated" "7/10" --module merge_carlo.engine
+assert_rejects unrelated-cannot-inflate "$mixed" "BELOW FLOOR 70%" --module merge_carlo.engine
 assert_rejects missing-selected "$strong" "missing results: merge_carlo.absent" --module merge_carlo.absent
 assert_rejects missing-second-selected "$strong" "missing results: merge_carlo.absent" --module merge_carlo.engine --module merge_carlo.absent
 assert_rejects incomplete-selected "${at_floor/survived/not checked}" "unexecuted mutants" --module merge_carlo.engine

@@ -93,10 +93,11 @@ counts (T-037).
   not arbitrary Python, NumPy, timezone-database, library, or hardware versions.
 - Pseudonymized repository metadata can remain identifiable and must only be
   collected and shared with authorization.
-- Mutation scores cover only the functions mutmut 3.7.0 instruments. Decorated
-  Pydantic validators and CLI command bodies are verified by behavioral tests,
-  not mutation testing (T-040, T-041); see the
-  [mutation policy](mutation-policy.md). The full mutation gate passed locally
+- The recorded release mutation scores used mutmut 3.7.0. The current lock uses
+  mutmut 3.8.0, which discovers decorated class bodies; decorated Pydantic
+  validators and CLI command bodies remain verified by behavioral tests, not
+  mutation testing (T-040, T-041). The current v0.1.0 floor is 70%; see the
+  [mutation policy](mutation-policy.md). The historical full gate passed locally
   and in the GitHub workflow (run 34601538915, T-030). Seven timezone and five
   SQLite URI mutants are killed locally but survive on CI because those tests
   depend on the host (T-043).
