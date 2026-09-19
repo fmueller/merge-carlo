@@ -110,7 +110,6 @@ def test_release_workflows_are_tokenless_and_gate_the_versioned_artifact() -> No
         assert "sha256sum --check" in workflow_text
         assert "username:" not in workflow_text
         assert "password:" not in workflow_text
-        assert "repository-url:" not in workflow_text or "test.pypi.org" in workflow_text
     assert "environment:\n      name: pypi" in release
     assert "environment:\n      name: testpypi" in test_index
     assert "RELEASE_TAG" in release and "RELEASE_TAG" in test_index
@@ -144,6 +143,10 @@ def test_release_workflows_are_tokenless_and_gate_the_versioned_artifact() -> No
         assert "sha256sum --check" in publish_steps[checksum_index]["run"]
         publish_action = publish_steps[publish_index]
         assert re.search(r"pypa/gh-action-pypi-publish@[0-9a-f]{40}", publish_action["uses"])
+        if name == "test-index.yml":
+            assert publish_action["with"]["repository-url"] == "https://test.pypi.org/legacy/"
+        else:
+            assert "repository-url" not in publish_action["with"]
         download_path = download["with"]["path"]
         assert download_path == "release-bundle"
         assert publish_action["with"]["packages-dir"] == f"{download_path}/dist"
