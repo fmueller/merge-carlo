@@ -125,6 +125,7 @@ def test_every_declared_transition_reaches_its_target(
     transitioned = current.transition(event, at=current.last_transition_at + 1.0)
 
     assert transitioned.state is target
+    assert transitioned.last_transition_at == current.last_transition_at + 1.0
 
 
 @pytest.mark.unit
@@ -230,6 +231,28 @@ def test_counts_timestamps_and_service_accounting_span_revisions() -> None:
     assert current.first_review_at == 5.0
     assert current.queue_wait_seconds == 7.0
     assert current.active_review_seconds == 45.0
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("event", [LifecycleEvent.CLOSED, LifecycleEvent.ABANDONED, LifecycleEvent.HORIZON_REACHED])
+def test_termination_accumulates_current_queue_wait_after_an_earlier_review(event: LifecycleEvent) -> None:
+    current = pull_request(ready_at=10.0)
+    current = current.transition(LifecycleEvent.START_VERIFICATION, at=11.0)
+    current = current.transition(LifecycleEvent.VERIFICATION_PASSED, at=13.0)
+    current = current.transition(LifecycleEvent.REVIEW_STARTED, at=18.0)
+    current = current.consume_review_service(7.0)
+    current = current.transition(LifecycleEvent.CHANGES_REQUESTED, at=25.0)
+    current = current.transition(LifecycleEvent.REVISION_SUBMITTED, at=29.0)
+    current = current.transition(LifecycleEvent.VERIFICATION_PASSED, at=31.0)
+
+    terminal = current.transition(event, at=42.0)
+
+    assert terminal.queue_wait_seconds == 16.0  # (18 - 13) + (42 - 31)
+    assert terminal.queue_entered_at is None
+    assert terminal.active_review_seconds == 7.0
+    assert terminal.first_review_at == 18.0
+    assert terminal.terminal_at == 42.0
+    assert current.queue_wait_seconds == 5.0
 
 
 @pytest.mark.unit

@@ -39,6 +39,84 @@ from merge_carlo.validation import (
 pytestmark = pytest.mark.unit
 
 
+@pytest.mark.parametrize("field", ["min_mature_pull_requests", "min_replications"])
+def test_validation_minimum_cohorts_are_positive(field: str) -> None:
+    with pytest.raises(ValueError):
+        replace(ValidationThresholds(), **{field: 0})
+    assert getattr(replace(ValidationThresholds(), **{field: 1}), field) == 1
+
+
+@pytest.mark.parametrize(
+    "build",
+    [
+        lambda value: ValidationThresholds(reviewed_share_tolerance=value),
+        lambda value: ValidationThresholds(merged_share_tolerance=value),
+    ],
+)
+@pytest.mark.parametrize("value", [-0.01, 1.01, float("nan"), float("inf"), -float("inf")])
+def test_share_tolerances_reject_values_outside_finite_unit_interval(
+    build: Callable[[float], ValidationThresholds], value: float
+) -> None:
+    with pytest.raises(ValueError):
+        build(value)
+
+
+@pytest.mark.parametrize("value", [0.0, 1.0])
+def test_share_tolerances_accept_both_closed_interval_boundaries(value: float) -> None:
+    thresholds = ValidationThresholds(reviewed_share_tolerance=value, merged_share_tolerance=value)
+    assert thresholds.reviewed_share_tolerance == thresholds.merged_share_tolerance == value
+
+
+@pytest.mark.parametrize(
+    "build",
+    [
+        lambda value: ValidationThresholds(first_review_median_tolerance_seconds=value),
+        lambda value: ValidationThresholds(weekly_merges_tolerance=value),
+        lambda value: ValidationThresholds(initialization_backlog_tolerance=value),
+    ],
+)
+@pytest.mark.parametrize("value", [-0.01, float("nan"), float("inf"), -float("inf")])
+def test_absolute_tolerances_reject_negative_and_nonfinite_values(
+    build: Callable[[float], ValidationThresholds], value: float
+) -> None:
+    with pytest.raises(ValueError):
+        build(value)
+
+
+def test_zero_absolute_tolerances_support_exact_fit_gates() -> None:
+    thresholds = ValidationThresholds(
+        first_review_median_tolerance_seconds=0, weekly_merges_tolerance=0, initialization_backlog_tolerance=0
+    )
+    assert thresholds.first_review_median_tolerance_seconds == 0
+    assert thresholds.weekly_merges_tolerance == 0
+    assert thresholds.initialization_backlog_tolerance == 0
+
+
+@pytest.mark.parametrize("replayed", [False, True])
+@pytest.mark.parametrize(("reviewed", "successes"), [(True, -1), (True, 4), (False, -1), (False, 6)])
+def test_horizon_successes_cannot_exceed_their_own_cohort(replayed: bool, reviewed: bool, successes: int) -> None:
+    review_successes, merge_successes = (successes, 1) if reviewed else (1, successes)
+    with pytest.raises(ValueError):
+        if replayed:
+            ReplayOutcomes(review_successes, 3, merge_successes, 5, 0.0, 1, (0,), 0)
+        else:
+            ObservedOutcomes(review_successes, 3, merge_successes, 5, (), (0,), 0)
+
+
+def test_observed_zero_successes_are_defined_for_nonempty_cohorts() -> None:
+    result = run_validation(replace(evidence(), observed=ObservedOutcomes(0, 40, 0, 30, (0.0,), (0,), 0)))
+    assert result.gates[0].observed.value == 0
+    assert result.gates[0].observed.sample_size == 40
+    assert result.gates[1].observed.value == 0
+    assert result.gates[1].observed.sample_size == 30
+
+
+@pytest.mark.parametrize("value", [-0.01, float("nan"), float("inf"), -float("inf")])
+def test_replay_first_review_median_must_be_finite_and_nonnegative(value: float) -> None:
+    with pytest.raises(ValueError):
+        ReplayOutcomes(1, 3, 1, 2, value, 1, (1,), 0)
+
+
 def evidence(*, observed_count: int = 40, reviewed: float = 0.75, merged: float = 0.6) -> HeldOutEvidence:
     thresholds = ValidationThresholds(
         min_mature_pull_requests=20,
