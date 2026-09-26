@@ -1,165 +1,43 @@
 # Changelog
 
-All notable changes to this project are documented in this file.
-
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+Notable user-facing changes are recorded here using
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and
+[Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- Added deterministic fit diagnostics to validation and combined reports,
-  including observed/simulated gates, benchmark comparisons, initialization
-  discrepancy, evidence flags, and explicit unsupported v0.1 workflow limits.
-- Corrected the v0.1 documentation to use the Python calibration API and the
-  supported persisted `simulate`/`validate`/`report` command workflow.
-- Lowered the temporary v0.1.0 per-module mutation efficacy floor from 80% to
-  70% for the mutmut 3.8.0 discovery population; raw statuses, per-module
-  accounting, and the ten-mutant minimum remain unchanged.
-
-## [0.1.0] - 2026-09-14
+Initial v0.1.0 development; no release has been published.
 
 ### Added
 
-- Persisted `simulate` and artifact-only `report` CLI commands, with source
-  model/dataset lineage, parameter provenance, reproducible UTC execution
-  bounds, sampled active-effort distributions, bounded input contracts
-  (including additive-demand amplification), and explicit overwrite protection.
-- Comparison-wide engine truncation reporting: experiment `summary.json` now
-  records requested, usable and engine-truncated replication counts per
-  assumption/scenario, and the report shows them in its first section with
-  policy ranking disabled whenever any run truncated. Saved summaries with
-  counts that do not sum, missing or duplicate counts, more defined outcomes
-  than usable runs, or truncation in a complete comparison are rejected.
-- Release mutation gate evidence in `docs/mutation-policy.md`: the full gate's
-  per-module table and runtime, and every surviving engine, scenario runner,
-  and metric mutant recorded as equivalent or message-only with its reason.
-  Behavioral tests now pin the inclusive measurement-window start for
-  first-review latency and exclusive requested-change, bypass eligibility, and
-  bypass audit thresholds.
-- Explicit v0.1.0 mutation discovery limitations: mutmut 3.7.0 does not mutate
-  decorated Pydantic validators, Typer command bodies, `@property` methods, or
-  dataclass methods, so per-module scores do not cover them. Behavioral tests
-  are the documented alternative, now including zero-trial probability and
-  summary null-reason rejection.
-- A reproducible performance benchmark, `uv run python -m merge_carlo.benchmark`,
-  that runs the synthetic demo workload sequentially and prints its parameters,
-  hardware, dependency versions, wall time, peak RSS, engine event count, and
-  output size. Recorded results in `docs/performance.md` make no universal
-  runtime promise.
-- Machine-readable JSON Lines console output through global `--json`, preserving
-  stable process exit codes across success, invalid input, source/access failure,
-  incomplete collection, and strict validation failure.
-- A conservative v0.1.0 implementation and evidence ledger that distinguishes
-  implemented, verified, limited, unsupported, unverified, and remaining work
-  without claiming live GitHub validation or release readiness.
-- Deterministic assumption and scenario JSON Schema export through the
-  `schema` CLI, with strict bounded YAML contracts, safe loading, explicit
-  active-service rounding and effort-multiplier composition, and validated
-  example configurations.
-- An elapsed-delay resampling benchmark in held-out validation, compared beside
-  the mechanistic baseline with shared cohort and horizon accounting, preserved
-  non-completion categories, and explicit descriptive-only interpretation.
-- Offline held-out descriptive validation through a versioned replay-evidence
-  contract and `validate` CLI, with chronological split rejection, configurable
-  pass/fail/insufficient-evidence gates, exact values and cohort variability,
-  initialization discrepancy, and strict exit code 4.
-- Provenance-tagged empirical model calibration through the Python API, with
-  required cohort effort assumptions, strict duration distributions, recorded
-  evidence thresholds, explicit exploratory labeling, deterministic model
-  cards, and atomic model/calibration artifacts.
-- Frozen-cutoff empirical feature construction through the Python API, with
-  complete local-week arrivals, explicit human-review semantics, mature-cohort
-  outcomes, labeled prevalence and completion conditioning, descriptive size
-  snapshots, CI attribution coverage, and temporal leakage checks.
-- Offline `inspect` reports in Markdown and canonical JSON with endpoint
-  completeness, record and date coverage, missingness, censoring, readiness and
-  origin unknown fractions, fit exclusions, and extraction limitations.
-- Conservative readiness resolution and declared work-origin attribution during
-  collection, with explicit proxy policy, provenance, lifecycle fit exclusions,
-  and local YAML actor mappings that never infer AI use from account kind.
-- Read-only `collect` CLI with all-state/open cohort reconciliation, paginated
-  reviews and lifecycle events, explicit partial status, atomic resume and
-  observation-time-gated historical snapshot access.
-- Projected observation SQLite Python API with recorded migrations, foreign-key
-  checks, atomic extraction replacement, private workspace HMAC identities,
-  allowlisted fields and canonical order-independent analytical content hashes.
-- Read-only GitHub transport Python API with same-origin pagination and
-  redirects, bounded requests and payloads, conditional requests, rate-limit
-  handling, explicit collection status and credential-safe diagnostics.
-- One-command offline synthetic demo with reproducible example inputs, the
-  scenario suite, model/results artifacts and a report that labels every major
-  section synthetic and states that only the base assumption set was run.
-- Versioned experiment artifact bundles and artifact-only deterministic Markdown
-  reports through the Python API, with run-level summaries, paired merge deltas,
-  Wilson uncertainty intervals, escaped exports and staged publication.
-- Measurement-window metric dictionaries for operational and new-ready work,
-  with queue integrals, completed-review latency quantiles, mature-cohort shares,
-  clipped utilization, explicit undefined reasons, and run-level summaries.
-- Sequential paired Monte Carlo execution across named assumption sets, with
-  streamed rows, continuous warm-up, separate count summaries, truncation
-  gating, and opt-in sampled engine diagnostics through the Python API.
-- Repository setup: packaging, pinned toolchain, lint, type, and test
-  configuration, continuous integration, commit policy hooks, and the v0.1.0
-  spec with its milestone backlog.
-- A command-line entry point exposing `--version` and `--help`.
-- Typed, immutable pull-request lifecycle contracts with guarded transitions,
-  revision invalidation, terminal outcomes, and review accounting.
-- Timezone-aware duty calendar primitives with weekly windows, dated absences,
-  explicit DST boundary rejection, and local-day horizon and warm-up bounds.
-- A deterministic FIFO review engine with constant active service, stable
-  reviewer selection, no self-review, shift pause/resume, horizon censoring,
-  conservation boundaries, and separate active/duty accounting.
-- Verification and requested-change revision loops with keyed decisions,
-  separate first/repeat change probabilities, elapsed author-response delays,
-  and inclusive safety limits. Truncated runs are excluded from pooled outcome
-  counts and disable the comparison's policy-ranking gate.
-- Exogenous abandonment deadlines sampled at proposal entry from assumed
-  probability and positive elapsed-duration samples. Deadlines win completion
-  ties, cancel future work, release reviewers, and retain consumed service;
-  closed-without-merge outcomes remain in conservation and pooled counts.
-- Stateless purpose-keyed NumPy PCG64 random streams, reproducible by root
-  seed, replication, and ordered proposal/revision/purpose keys.
-- Whole-week arrival resampling with bundled author/origin marks, stable
-  proposal identities, timezone mapping, and an `exploratory_only` flag for
-  fewer than eight complete training weeks.
-- Typed additive and replacement AI arrival overrides, stable shared proposals
-  across load sweeps, and realized cohort counts on proposal schedules.
-- Named review-calendar replacements and reviewer-specific half-open absences,
-  with explicit-offset boundaries and immutable FIFO-ready capacity resolution.
-- Hypothetical review bypass with assumed eligibility or operator labels,
-  independently keyed audits, verification-gated bypass and elapsed merge
-  coordination. Qualified whole-run diagnostics report unreviewed merges and
-  assumed review demand avoided, with unsupported risk and safety fields null.
-- Project marks in `assets/`: a fan logo for the README and social preview,
-  a die favicon and avatar for small sizes, both adapting to light and dark.
-- Amp orb lifecycle scripts that prepare the pinned toolchain and locked
-  development dependencies on fresh remote machines.
+- Run an offline synthetic demo to explore pull-request review workflows
+  without GitHub access or an LLM.
+- Compare reproducible scenarios for arrival volume, AI-origin work, reviewer
+  schedules, absences, and hypothetical review bypass. Model revision loops,
+  verification, and abandonment separately from active review effort.
+- Collect GitHub review history read-only with resumable collection, then
+  inspect data coverage and missingness before using it. Stored projections
+  exclude bodies, patches, tokens, and email addresses; AI origin is never
+  inferred from account type.
+- Build and calibrate empirical models through the Python API, with explicit
+  effort assumptions and parameter provenance.
+- Run saved models with `simulate`, check held-out evidence with `validate`,
+  and generate Markdown reports from saved artifacts with `report`, without
+  rerunning simulations. Reports show queueing, review latency, throughput,
+  uncertainty, and fit diagnostics; truncated runs disable policy ranking.
+- Automate workflows with JSON Lines console output (`--json`), stable exit
+  codes, and configuration JSON Schema export (`schema`).
 
-### Changed
-
-- OpenCode is optional personal tooling through the private global `/opencode`
-  User Skill, rather than a repository-managed dependency. Setup, resume, and
-  CI no longer install, configure, or synchronize it.
-- Count mutmut's Unicode-mangled class methods alongside top-level mutants in
-  full and differential per-module mutation efficacy reports.
-- Scope differential mutation verdicts to changed modules, rejecting missing
-  selected execution without counting unrelated cached results. Full-gate
-  per-module checks and raw mutation counts remain unchanged.
-- Lower the default per-module mutation efficacy floor from 90% to 80% for
-  v0.1.0 by explicit maintainer decision. Raw mutation results, survivors,
-  per-module accounting, and the ten-mutant minimum remain unchanged.
-
-### Evidence status
+### Limitations
 
 - **Live GitHub integration has not been run.** No authorized dataset was
-  collected for this release, so live collection, real-team calibration, and
-  real-data validation remain unverified.
-- The offline demo, fixture-backed collection behavior, strict checks, type
-  checks, lint, and release mutation gate were verified in the locked reference
-  environment. Mutation results are test-efficacy evidence for discovered
-  functions, not evidence of real-world model validity.
-- The performance record covers one synthetic workload on one machine and does
-  not make a universal runtime, memory, or scalability claim.
+  collected, so live collection, real-team calibration, and real-data
+  validation remain unverified. Demo results are synthetic, not measured team
+  behavior.
+- Scenario comparisons do not establish productivity gains, defect or security
+  risk, or the safety of review bypass. See [model limitations](docs/limitations.md)
+  for interpretation guidance and unsupported workflows.
+- [Performance measurements](docs/performance.md) cover one synthetic workload
+  on one machine, not a general runtime or scalability guarantee.
 
-[Unreleased]: https://github.com/fmueller/merge-carlo/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0
+[Unreleased]: https://github.com/fmueller/merge-carlo/tree/main

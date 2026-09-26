@@ -141,6 +141,19 @@ taskrail coverage               # spec coverage, orphans, drift
 - Prefer small, cohesive changes that preserve clear package ownership.
 - Update `CHANGELOG.md` under `## [Unreleased]` for user-visible behavior
   changes, in the same commit as the change.
+- Write changelog entries for users: lead with what they can do, what changed,
+  or what action they need to take. Keep each bullet to one outcome and a few
+  short sentences; consolidate related unreleased entries rather than listing
+  every task, commit, module, or implementation detail.
+- Omit internal refactors, agent tooling, CI/test histories, and verification
+  logs unless they change the user experience or required setup. Link to
+  technical docs for detail, and retain limitations that affect interpretation.
+- Keep pending work under `Unreleased`. A package version, completed task, or
+  prepared publishing workflow is not evidence of a release. Add a dated
+  version heading and release links only during an explicitly authorized
+  release, with the actual publication date and verified release/tag targets.
+  Before the first release, link `Unreleased` to the main tree, not a nonexistent
+  tag comparison; do not rewrite genuinely published release history.
 - Coding agents must run `mise run setup` (or `lefthook install`) before creating
   their first commit in a worktree; do not assume the hooks are already installed.
 - Use Conventional Commits with imperative subjects. Types: `feat fix refactor

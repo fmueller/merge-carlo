@@ -77,15 +77,15 @@ def _run_gate(script: str, repository: Path, **environment: str) -> subprocess.C
 
 
 @pytest.mark.unit
-def test_release_metadata_has_a_dated_versioned_section_and_evidence_status() -> None:
-    project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
-    version = project["project"]["version"]
+def test_initial_changelog_is_unreleased_and_retains_evidence_limits() -> None:
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-    assert re.search(rf"^## \[{re.escape(version)}\] - \d{{4}}-\d{{2}}-\d{{2}}$", changelog, re.MULTILINE)
-    release_section = changelog.split(f"## [{version}] - ", 1)[1].split("\n## ", 1)[0]
-    assert "Live GitHub integration has not been run." in release_section
-    assert "No authorized dataset was" in release_section
+    # Update this pre-release assertion only as part of an authorized release.
+    assert re.findall(r"^## .*", changelog, re.MULTILINE) == ["## [Unreleased]"]
+    assert "compare/v0.1.0" not in changelog
+    assert "releases/tag/v0.1.0" not in changelog
+    assert "Live GitHub integration has not been run." in changelog
+    assert "No authorized dataset was" in changelog
 
 
 @pytest.mark.unit
