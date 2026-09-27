@@ -209,6 +209,94 @@ def test_simulate_resolves_contracts_and_propagates_lineage(tmp_path: Path) -> N
     assert resolved["demand_kinds"] == {"additive": "additive"}
 
 
+def test_simulate_accepts_empty_descriptive_duration_observations(tmp_path: Path) -> None:
+    descriptive = (
+        Parameter(
+            "first_substantive_review_elapsed",
+            {"kind": "empirical", "seconds": []},
+            "seconds",
+            "derived",
+            0,
+            "missing when no qualifying decision exists",
+            "pooled descriptive latency",
+            "none",
+            ("feature_set.pull_requests",),
+            Unavailable(None, "not_estimated"),
+        ),
+        Parameter(
+            "ready_to_merge_elapsed",
+            {"kind": "empirical", "seconds": []},
+            "seconds",
+            "derived",
+            0,
+            "completion conditioned",
+            "observed merges only",
+            "none",
+            ("feature_set.ready_to_merge",),
+            Unavailable(None, "not_estimated"),
+        ),
+    )
+    model_path, scenarios_path, out = tmp_path / "model.json", tmp_path / "scenarios.yaml", tmp_path / "out"
+    write_model(model_path, replace(model(), parameters=(*model().parameters, *descriptive)))
+    write_scenarios(scenarios_path)
+
+    result = CliRunner().invoke(
+        app,
+        ["simulate", "--model", str(model_path), "--scenarios", str(scenarios_path), "--out", str(out)],
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (out / "report.md").is_file()
+
+    invalid_effort = replace(
+        model(),
+        parameters=(
+            replace(model().parameters[0], value_specification={"kind": "empirical", "seconds": []}),
+            *descriptive,
+        ),
+    )
+    invalid_path = tmp_path / "invalid-effort.json"
+    write_model(invalid_path, invalid_effort)
+    invalid = CliRunner().invoke(
+        app,
+        [
+            "simulate",
+            "--model",
+            str(invalid_path),
+            "--scenarios",
+            str(scenarios_path),
+            "--out",
+            str(tmp_path / "invalid"),
+        ],
+    )
+    assert invalid.exit_code == 2
+    assert "value_specification contract" in invalid.output
+
+    invalid_descriptive = replace(
+        descriptive[0],
+        value_specification={"kind": "empirical", "seconds": [], "unexpected": "rejected"},
+    )
+    invalid_descriptive_path = tmp_path / "invalid-descriptive.json"
+    write_model(
+        invalid_descriptive_path,
+        replace(model(), parameters=(*model().parameters, invalid_descriptive, descriptive[1])),
+    )
+    invalid_descriptive_result = CliRunner().invoke(
+        app,
+        [
+            "simulate",
+            "--model",
+            str(invalid_descriptive_path),
+            "--scenarios",
+            str(scenarios_path),
+            "--out",
+            str(tmp_path / "invalid-descriptive"),
+        ],
+    )
+    assert invalid_descriptive_result.exit_code == 2
+    assert "value_specification contract" in invalid_descriptive_result.output
+
+
 def test_simulate_is_semantically_reproducible_and_rejects_invalid_inputs(tmp_path: Path) -> None:
     model_path, scenarios_path = tmp_path / "model.json", tmp_path / "scenarios.yaml"
     write_model(model_path)

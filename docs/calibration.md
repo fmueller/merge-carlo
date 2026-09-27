@@ -75,6 +75,15 @@ its median and log-space sigma, and a nonempty empirical sample of positive
 seconds. Unknown keys and missing cohort assumptions are rejected. A mean and
 sigma are not accepted as an alternative lognormal parameterization.
 
+The two descriptive duration parameters `first_substantive_review_elapsed` and
+`ready_to_merge_elapsed` may be serialized as an empty empirical sample when a
+valid extraction has no qualifying observations. They are descriptive outputs
+and are not consumed as simulation service times; persisted model loading
+allows this exact empty shape while still rejecting empty or malformed active
+effort distributions. This compatibility rule fixes the alpha-blocking case
+where calibration succeeded on a small repository but persisted `simulate`
+could not reload the resulting model.
+
 Every model parameter records its value specification, unit, provenance basis,
 sample count, missingness treatment, grouping and fallback rule, evidence
 references, and confidence-interval availability. Hand-entered assumptions have

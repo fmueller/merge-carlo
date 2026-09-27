@@ -40,7 +40,7 @@ def test_release_status_distinguishes_completed_limited_unsupported_and_remainin
     assert "## Limited or unverified" in status
     assert "## Unsupported in v0.1.0" in status
     assert "## Remaining v0.1.0 work" in status
-    assert "Live GitHub integration has not been run" in status
+    assert "Authorized live GitHub integration has not been completed" in status
     assert "mise run check" in status
 
 
@@ -53,7 +53,7 @@ def test_release_docs_cover_console_contract_and_report_limitations() -> None:
     for code in ("`0`", "`2`", "`3`", "`4`"):
         assert code in readme
     assert "--json" in readme
-    assert "Live GitHub integration has not been run" in readme
+    assert "Authorized live GitHub integration has not been completed" in readme
     assert "active review effort" in limitations
     assert "defect_escape_rate: null" in report
     assert "Historical fit is not causal validation" in report
@@ -108,7 +108,7 @@ def test_calibration_docs_use_the_python_api_and_supported_cli_pipeline() -> Non
     ):
         assert command in readme
     assert "authorized" in readme
-    assert "Live GitHub integration has not been run" in readme
+    assert "Authorized live GitHub integration has not been completed" in readme
     assert "--dataset data/cohort/dataset.sqlite" in readme
     assert "--dataset data/repository.sqlite" not in readme
     assert _documented_python_source(ROOT / "README.md") == _documented_python_source(ROOT / "docs" / "calibration.md")

@@ -8,6 +8,12 @@ Notable user-facing changes are recorded here using
 
 Initial v0.1.0 development; no release has been published.
 
+- Added a local workflow for authorized GitHub repository testing, including
+  token-safe collection, calibration, persisted simulation, and explicit
+  blocked results for incomplete evidence.
+- Fixed persisted simulation for valid calibrations with no descriptive review
+  or merge observations while keeping active-effort inputs strictly validated.
+
 ### Added
 
 - Run an offline synthetic demo to explore pull-request review workflows

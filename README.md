@@ -38,9 +38,11 @@ configured publishers and maintainer approval; see
 in [`docs/implementation-status.md`](docs/implementation-status.md) and
 `planning/STATE.md`.
 
-**Live GitHub integration has not been run.** No authorized dataset was
-collected for the release evidence, so the fixture-backed collection tests are
-not evidence that a real repository was tested.
+**Authorized live GitHub integration has not been completed.** Bounded
+anonymous probes of five public repositories exercised the failure-safe paths,
+but no authorized dataset was collected for release evidence. The fixture-backed
+tests and anonymous probes are not evidence that a real repository is ready for
+release.
 
 ## What it does not do
 
@@ -103,7 +105,10 @@ duration-rounding, and multiplier rules are documented in
 
 Read-only [cohort collection](docs/cohort-collection.md) reads one explicitly
 selected, authorized repository. `GITHUB_TOKEN` comes from the environment;
-never put a token in a command, configuration file, or report.
+never put a token in a command, configuration file, or report. For the complete
+five-repository release test, use the [local authorized-repository workflow](docs/live-workflow.md),
+which writes per-repository inspection, calibration, simulation, and summary
+artifacts without fabricating success for incomplete collections.
 
 ```bash
 uv run merge-carlo collect --repo OWNER/REPOSITORY \
@@ -115,8 +120,9 @@ Repeat with `--resume` to reconcile from page one. The private workspace key
 must stay outside the dataset. Incomplete source collections exit 3 and retain
 explicit statuses. Readiness defaults to strict evidence handling and work
 origin stays unknown unless declared in a local attribution configuration; see
-[cohort collection](docs/cohort-collection.md). Live integration has not been
-tested.
+[cohort collection](docs/cohort-collection.md). Authorized live integration
+remains unverified; use the [local workflow](docs/live-workflow.md) for a
+token-backed run.
 
 Inspect the projected dataset without the private workspace key. The command
 writes `inspection.json` and `report.md` with endpoint status, counts, date

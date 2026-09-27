@@ -4,7 +4,7 @@ This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-09-14.
+Last updated: 2026-09-20.
 
 ## Milestones
 
@@ -80,9 +80,13 @@ counts (T-037).
 
 ## Limited or unverified
 
-- **Live GitHub integration has not been run.** No authorized dataset was
-  collected for this release work, so collection against GitHub, real-team
-  calibration, and real-data validation remain unverified.
+- **Authorized live GitHub integration has not been completed.** Bounded
+  anonymous probes exercised five public repositories and found the expected
+  incomplete-collection safeguards plus one calibration-to-simulation contract
+  defect, which is fixed by the current change. No authorized dataset was
+  collected for release evidence, so authorized collection, real-team
+  calibration, and real-data validation remain unverified. Use the local
+  [authorized-repository workflow](live-workflow.md) for the next run.
 - The [performance benchmark](performance.md) is recorded for the synthetic demo
   workload on one machine (T-027). It supports no universal runtime, throughput,
   memory, or scalability claim, and summary memory grows with replication count.

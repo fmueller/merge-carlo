@@ -32,6 +32,7 @@ _MAX_MODEL_ARRIVALS = 1_000_000
 _MAX_MODEL_PARAMETERS = 1_000
 _MAX_PARAMETER_VALUES = 100_000
 _SUPPORTED_MODEL_VERSION = "fifo-v0.1"
+_EMPTY_DESCRIPTIVE_DURATION_PARAMETERS = frozenset(("first_substantive_review_elapsed", "ready_to_merge_elapsed"))
 _DURATION_ADAPTER: TypeAdapter[DurationDistribution] = TypeAdapter(DurationDistribution)
 _MODEL_FIELDS = frozenset(field.name for field in fields(CalibratedModel))
 _UNAVAILABLE_FIELDS = frozenset(("value", "reason"))
@@ -119,6 +120,14 @@ def _validate_model_shape(data: object) -> dict[str, object]:
         ):
             raise ValueError("model parameter values exceed the resource limit")
         if isinstance(specification, dict) and specification.get("kind") in {"constant", "lognormal", "empirical"}:
+            if (
+                item.get("name") in _EMPTY_DESCRIPTIVE_DURATION_PARAMETERS
+                and specification.get("kind") == "empirical"
+                and specification.get("seconds") == []
+            ):
+                if set(specification) != {"kind", "seconds"}:
+                    raise ValueError(f"invalid model.parameters[{index}].value_specification contract")
+                continue
             try:
                 _DURATION_ADAPTER.validate_json(_canonical(specification), strict=True)
             except (TypeError, ValidationError, ValueError):
