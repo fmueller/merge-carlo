@@ -6,8 +6,8 @@ Guidance for coding agents working in the merge-carlo repository.
 
 - merge-carlo is a local, read-only, offline-first simulator of pull-request
   review workflows. It makes no LLM calls and takes no GitHub write action.
-- The active spec in `specs/` is the v0.1.0 scope boundary. Work outside it
-  needs a spec change first, not a larger diff.
+- The active spec (named in `planning/STATE.md`) is the scope boundary. Work
+  outside it needs a spec change first, not a larger diff.
 - Keep changes small and cohesive. Do not scaffold roadmap architecture without
   an active requirement; a module lands with the milestone that needs it.
 - A specification, interface sketch, or TODO is not an implemented feature. If a
