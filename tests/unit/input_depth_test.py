@@ -15,8 +15,19 @@ from tests.unit.experiment_test import write_model, write_scenarios
 pytestmark = pytest.mark.unit
 
 
+@pytest.fixture(scope="module")
+def deep_json() -> str:
+    # Python 3.14 can parse 20,000 levels; use a depth exceeding all supported runtimes.
+    payload = "[" * 100000 + "0" + "]" * 100000
+    assert len(payload.encode()) < 16 * 1024 * 1024
+    # Schema rejection must not stand in for a genuine parser-depth failure.
+    with pytest.raises(RecursionError):
+        json.loads(payload)
+    return payload
+
+
 @pytest.mark.parametrize("kind", ["assumptions", "scenarios", "model", "validation"])
-def test_loaders_reject_parser_depth_failures(tmp_path: Path, kind: str) -> None:
+def test_loaders_reject_parser_depth_failures(tmp_path: Path, kind: str, deep_json: str) -> None:
     source = tmp_path / "deep"
     if kind in {"assumptions", "scenarios"}:
         source.write_text("schema_version: 1\nscenarios: " + "[" * 2000 + "0" + "]" * 2000)
@@ -25,7 +36,7 @@ def test_loaders_reject_parser_depth_failures(tmp_path: Path, kind: str) -> None
         with pytest.raises(ValueError, match="^invalid configuration$"):
             loader(source)
     else:
-        source.write_text("[" * 20000 + "0" + "]" * 20000)
+        source.write_text(deep_json)
         assert source.stat().st_size < 16 * 1024 * 1024
         with pytest.raises(
             ValueError, match=f"^invalid {'model artifact' if kind == 'model' else 'validation evidence'}$"
@@ -38,7 +49,7 @@ def test_loaders_reject_parser_depth_failures(tmp_path: Path, kind: str) -> None
 
 @pytest.mark.parametrize("kind", ["scenarios", "model", "validation"])
 @pytest.mark.parametrize("machine", [False, True])
-def test_cli_rejects_parser_depth_without_bundle(tmp_path: Path, kind: str, machine: bool) -> None:
+def test_cli_rejects_parser_depth_without_bundle(tmp_path: Path, kind: str, machine: bool, deep_json: str) -> None:
     model = tmp_path / "model.json"
     scenarios = tmp_path / "scenarios.yaml"
     write_model(model)
@@ -48,7 +59,7 @@ def test_cli_rejects_parser_depth_without_bundle(tmp_path: Path, kind: str, mach
     if kind == "scenarios":
         source.write_text("schema_version: 1\nscenarios: " + "[" * 2000 + "0" + "]" * 2000)
     else:
-        source.write_text("[" * 20000 + "0" + "]" * 20000)
+        source.write_text(deep_json)
     if kind == "validation":
         args = ["validate", "--input", str(source), "--out", str(out)]
         message = "Cannot validate: invalid or inaccessible evidence/output."

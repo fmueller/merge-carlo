@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T22:11:28Z"
+updated_at: "2026-10-04T22:56:06Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: No active-spec task is ready
-last_verification_result: pass for T-060-apply-half-open-horizon-censoring-to-the-elapsed at 2026-10-04T22:11:28Z
+next_action: Resolve blocker on T-033-dataclass-mutation-coverage
+last_verification_result: pass for T-061-portable-parser-depth-regressions at 2026-10-04T22:56:06Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-060-apply-half-open-horizon-censoring-to-the-elapsed at 2026-10-04T22:11:28Z
+- pass for T-061-portable-parser-depth-regressions at 2026-10-04T22:56:06Z
 
 ## Next Action
 
-- No active-spec task is ready
+- Resolve blocker on T-033-dataclass-mutation-coverage
 
 ## Relevant Artifacts
 
@@ -53,6 +53,6 @@ continuation_notes:
 
 - todo: 4
 - in_progress: 0
-- completed: 55
+- completed: 56
 - blocked: 1
 - cancelled: 0
