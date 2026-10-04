@@ -93,7 +93,7 @@ def test_mutation_runner_copies_repository_files_used_by_the_suite() -> None:
     project = tomllib.loads((ROOT / "pyproject.toml").read_text(encoding="utf-8"))
     also_copy = set(project["tool"]["mutmut"]["also_copy"])
 
-    assert {"README.md", "CHANGELOG.md", ".github/", "docs/", "examples/"} <= also_copy
+    assert {"README.md", "CHANGELOG.md", ".github/", "docs/", "examples/", "scripts/"} <= also_copy
 
 
 @pytest.mark.unit
