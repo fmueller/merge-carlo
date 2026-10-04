@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-09-27T09:57:21Z"
+updated_at: "2026-10-04T19:27:29Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: Resolve blocker on T-033-dataclass-mutation-coverage
+next_action: 'Start task T-055-reject-excessively-nested-configuration-inputs: Reject excessively nested configuration inputs with structured errors'
 last_verification_result: pass for T-054-local-workflow-runner at 2026-09-27T09:57:17Z
 relevant_artifacts: []
 continuation_notes:
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- Resolve blocker on T-033-dataclass-mutation-coverage
+- Start task T-055-reject-excessively-nested-configuration-inputs: Reject excessively nested configuration inputs with structured errors
 
 ## Relevant Artifacts
 
@@ -51,7 +51,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 4
+- todo: 6
 - in_progress: 0
 - completed: 49
 - blocked: 1
