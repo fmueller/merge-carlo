@@ -218,6 +218,7 @@ def test_counts_timestamps_and_service_accounting_span_revisions() -> None:
     current = current.transition(LifecycleEvent.START_VERIFICATION, at=1.0)
     current = current.transition(LifecycleEvent.VERIFICATION_PASSED, at=2.0)
     current = current.transition(LifecycleEvent.REVIEW_STARTED, at=5.0)
+    assert current.first_review_completed_at is None
     current = current.consume_review_service(45.0)
     current = current.transition(LifecycleEvent.CHANGES_REQUESTED, at=50.0)
     current = current.transition(LifecycleEvent.REVISION_SUBMITTED, at=55.0)
@@ -229,8 +230,12 @@ def test_counts_timestamps_and_service_accounting_span_revisions() -> None:
     assert current.review_visit_count == 2
     assert current.requested_change_count == 1
     assert current.first_review_at == 5.0
+    assert current.first_review_completed_at == 50.0
     assert current.queue_wait_seconds == 7.0
     assert current.active_review_seconds == 45.0
+    approved = current.transition(LifecycleEvent.REVIEW_APPROVED, at=75.0)
+    assert approved.first_review_completed_at == 50.0
+    assert approved.approved_revision == 2
 
 
 @pytest.mark.unit
@@ -326,8 +331,30 @@ def test_contract_rejects_contradictory_timestamp_chronology() -> None:
         replace(merged, terminal_at=merged.last_transition_at - 1.0)
     with pytest.raises(ValueError, match="first_review_at cannot be after the latest transition"):
         replace(merged, first_review_at=merged.last_transition_at + 1.0)
+    with pytest.raises(ValueError, match="first_review_completed_at cannot be after the latest transition"):
+        replace(merged, first_review_completed_at=merged.last_transition_at + 1.0)
     with pytest.raises(ValueError, match="queue_entered_at cannot be after the latest transition"):
         replace(queued, queue_entered_at=queued.last_transition_at + 1.0)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("at", [-1.0, float("nan"), float("inf")])
+def test_completed_review_timestamp_obeys_time_contract(at: float) -> None:
+    with pytest.raises(ValueError, match="first_review_completed_at"):
+        replace(STATE_FIXTURES[PullRequestState.MERGED], first_review_completed_at=at)
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("start", [None, 3.0])
+def test_completed_review_requires_an_earlier_or_equal_start(start: float | None) -> None:
+    with pytest.raises(ValueError, match="first_review_completed_at requires a review start at or before completion"):
+        replace(STATE_FIXTURES[PullRequestState.IN_REVIEW], first_review_at=start, first_review_completed_at=2.0)
+    assert (
+        replace(
+            STATE_FIXTURES[PullRequestState.IN_REVIEW], first_review_at=2.0, first_review_completed_at=2.0
+        ).first_review_completed_at
+        == 2.0
+    )
 
 
 @pytest.mark.unit

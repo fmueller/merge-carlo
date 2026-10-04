@@ -607,12 +607,15 @@ def replay_held_out(request: ValidationInput) -> HeldOutEvidence:
         reviewed = tuple(pull for pull in result.pull_requests if pull.ready_at + 48 * 3600 <= span.seconds)
         merged = tuple(pull for pull in result.pull_requests if pull.ready_at + 7 * 86400 <= span.seconds)
         delays = tuple(
-            pull.first_review_at - pull.ready_at for pull in result.pull_requests if pull.first_review_at is not None
+            pull.first_review_completed_at - pull.ready_at
+            for pull in result.pull_requests
+            if pull.first_review_completed_at is not None
         )
         replayed.append(
             ReplayOutcomes(
                 sum(
-                    pull.first_review_at is not None and pull.first_review_at <= pull.ready_at + 48 * 3600
+                    pull.first_review_completed_at is not None
+                    and pull.first_review_completed_at <= pull.ready_at + 48 * 3600
                     for pull in reviewed
                 ),
                 len(reviewed),

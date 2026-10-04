@@ -193,6 +193,84 @@ def replay_input() -> ValidationInput:
     )
 
 
+@pytest.mark.parametrize(
+    ("service", "successes", "latency", "completions", "merges"),
+    [
+        (48 * 3600 - 1, 1, 172799.0, 1, 1),
+        (48 * 3600, 1, 172800.0, 1, 1),
+        (49 * 3600, 0, 176400.0, 1, 1),
+        (30 * 86400 - 1, 0, 2591999.0, 1, 0),
+        (30 * 86400, 0, None, 0, 0),
+        (40 * 86400, 0, None, 0, 0),
+    ],
+)
+def test_replay_counts_completed_decisions_not_started_visits(
+    service: int, successes: int, latency: float | None, completions: int, merges: int
+) -> None:
+    # Ready Jan 2: the half-open February 1 horizon is exactly 30 days later.
+    request = replace(replay_input(), model=FrozenReplayModel("fifo-v0.1", "UTC", service))
+
+    evidence = replay_held_out(request)
+
+    for row in evidence.replay_replications:
+        assert row.reviewed_within_48_hours_successes == successes
+        assert row.first_review_median_seconds == latency
+        assert row.first_review_completions == completions
+        assert row.merged_within_7_days_successes == merges
+    if completions == 0:
+        result = run_validation(evidence)
+        assert result.status == "insufficient_evidence"
+        assert "no_simulated_first_review_completions" in result.evidence_flags
+
+
+def test_matching_49_hour_completed_review_passes_strict_validation(tmp_path: Path) -> None:
+    from typer.testing import CliRunner
+
+    from merge_carlo.cli import app
+
+    request = replace(
+        replay_input(),
+        model=FrozenReplayModel("fifo-v0.1", "UTC", 49 * 3600),
+        observed=ObservedOutcomes(0, 1, 1, 1, (176400.0,), (1, 0, 0, 0, 0), 0),
+    )
+    payload = TypeAdapter(ValidationInput).dump_python(request, mode="json")
+    payload["schema_version"] = 1
+    source = tmp_path / "evidence.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+
+    result = CliRunner().invoke(
+        app, ["--json", "validate", "--input", str(source), "--out", str(tmp_path / "out"), "--strict"]
+    )
+
+    assert result.exit_code == 0, result.output
+    assert json.loads((tmp_path / "out" / "validation.json").read_text())["status"] == "pass"
+
+
+def test_replay_first_changes_requested_completion_includes_off_duty_but_not_later_merge() -> None:
+    request = replace(
+        replay_input(),
+        model=FrozenReplayModel(
+            "fifo-v0.1",
+            "UTC",
+            3 * 3600,
+            first_change_probability=1,
+            author_response_seconds=3600,
+            coordination_seconds=2 * 3600,
+        ),
+        reviewer_duty=(
+            ReplayDuty("reviewer", datetime(2026, 1, 2, tzinfo=UTC), datetime(2026, 1, 2, 2, tzinfo=UTC)),
+            ReplayDuty("reviewer", datetime(2026, 1, 4, tzinfo=UTC), datetime(2026, 2, 1, tzinfo=UTC)),
+        ),
+    )
+    # Two active hours Jan 2, one Jan 4: first changes-requested at Jan 4 01:00.
+    # A one-hour response, three-hour second visit and two-hour coordination merge later.
+    for row in replay_held_out(request).replay_replications:
+        assert row.first_review_median_seconds == 176400.0
+        assert row.first_review_completions == 1
+        assert row.reviewed_within_48_hours_successes == 0
+        assert row.merged_within_7_days_successes == 1
+
+
 def test_elapsed_delay_benchmark_has_no_capacity_queue_and_preserves_non_completion_categories() -> None:
     request = replace(
         replay_input(),
@@ -647,7 +725,8 @@ def test_replay_passes_the_frozen_contract_and_derives_fixed_horizon_outcomes(
             WorkOrigin.HUMAN,
             0,
             state=PullRequestState.MERGED,
-            first_review_at=48 * 3600,
+            first_review_at=1,
+            first_review_completed_at=48 * 3600,
             terminal_at=7 * 86400,
             terminal_reason=TerminalReason.MERGED,
             review_visit_count=1,
@@ -660,8 +739,9 @@ def test_replay_passes_the_frozen_contract_and_derives_fixed_horizon_outcomes(
             "author",
             WorkOrigin.AI,
             span_seconds - 48 * 3600,
-            first_review_at=span_seconds,
-            _last_transition_at=span_seconds,
+            first_review_at=span_seconds - 48 * 3600,
+            first_review_completed_at=span_seconds - 1,
+            _last_transition_at=span_seconds - 1,
         ),
         PullRequest(
             "review-immature",
@@ -676,6 +756,7 @@ def test_replay_passes_the_frozen_contract_and_derives_fixed_horizon_outcomes(
             span_seconds - 7 * 86400 - 1,
             state=PullRequestState.MERGED,
             first_review_at=span_seconds - 7 * 86400 + 10,
+            first_review_completed_at=span_seconds - 7 * 86400 + 20,
             terminal_at=span_seconds - 1,
             terminal_reason=TerminalReason.MERGED,
             review_visit_count=1,
@@ -731,8 +812,8 @@ def test_replay_passes_the_frozen_contract_and_derives_fixed_horizon_outcomes(
     assert options["root_seed"] == 0
     assert [call[2]["replication"] for call in calls] == [0, 1, 2]
     assert replayed.replay_replications == (
-        ReplayOutcomes(3, 4, 2, 2, 172800.0, 3, (0, 1, 0, 0, 1), 0),
-        ReplayOutcomes(3, 4, 2, 2, 172800.0, 3, (0, 1, 0, 0, 1), 0),
+        ReplayOutcomes(3, 4, 2, 2, 172799.0, 3, (0, 1, 0, 0, 1), 0),
+        ReplayOutcomes(3, 4, 2, 2, 172799.0, 3, (0, 1, 0, 0, 1), 0),
     )
 
 

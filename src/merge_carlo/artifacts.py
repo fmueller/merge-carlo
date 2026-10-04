@@ -199,7 +199,15 @@ def _bundle(experiment: Experiment, evidence: Evidence, stage: Path, lineage: Ar
             if row.trace is not None:
                 _line(
                     traces,
-                    {**identity, "diagnostics": TypeAdapter(type(row.trace)).dump_python(row.trace, mode="json")},
+                    {
+                        **identity,
+                        "diagnostics": TypeAdapter(type(row.trace)).dump_python(
+                            row.trace,
+                            mode="json",
+                            # Completion evidence is internal to held-out replay, not the v1 trace contract.
+                            exclude={"__all__": {"pull_requests": {"__all__": {"first_review_completed_at"}}}},
+                        ),
+                    },
                 )
     rows = []
     for (assumption, scenario, metric), samples in sorted(values.items()):

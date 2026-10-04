@@ -1,11 +1,11 @@
 ---
 id: T-059-use-completed-review-evidence-in-held-out
 title: Use completed review evidence in held-out validation metrics
-status: todo
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies: []
-updated_at: "2026-10-04T20:40:56Z"
+updated_at: "2026-10-04T21:34:33Z"
 ---
 
 # T-059-use-completed-review-evidence-in-held-out Use completed review evidence in held-out validation metrics
@@ -103,3 +103,54 @@ decision completion evidence rather than inferring it from merge time (later
 coordination and repeated reviews can differ). The current full suite passes
 (775 tests); some validation tests use synthetic FIFO results whose assertions
 encode start-time accounting, so review those expectations against the spec.
+
+### Implementation cycle evidence
+
+- Source guard: `taskrail validate` reported `state valid`; `taskrail next
+  --json` selected exactly T-059 on clean main at the supplied base. Active spec
+  remained `specs/v0.1.0.md`. Only this task was started.
+- Lifecycle accounting now retains the first approval or changes-requested
+  completion separately from `first_review_at`. Replay consumes completion;
+  operational start/queue metrics and engine ordering remain unchanged. The
+  internal timestamp is excluded from v1 experiment traces; the unchanged
+  golden bundle verifies contract compatibility.
+- Strict TDD: the eight new replay cases initially failed (zero start latency,
+  false 48-hour successes, and strict exit 4); all eight passed after the minimal
+  completion-accounting change. The lifecycle assertion first failed with
+  `AttributeError`, then passed. Four timestamp-contract cases failed with
+  `DID NOT RAISE`, then passed after matching existing time validation.
+- Independent expected values cover 48-hour inclusive deadlines, one second
+  before and exactly at the half-open horizon, 49-hour service, 40-day unfinished
+  service, and a requested-change first decision spanning off-duty time followed
+  by a later approval and merge. Replay reproductions now report 49h:
+  successes=0, completions=1, latency=176400, seven-day merges=1, validation=pass;
+  40d: successes=0, completions=0, latency=None, validation=insufficient_evidence.
+- Two dedicated `code-simplifier` Task passes made no changes. Review lanes were
+  General and Python, each in separate parallel read-only `code-reviewer` Tasks.
+  Security, database and framework lanes were omitted because no trust boundary,
+  SQL, schema migration or framework behavior changed. The trace compatibility
+  fix received a second review cycle; both final lanes reported exactly
+  "No concrete task-relevant findings."
+- A fresh candidate-validation Task validated C1, verbatim: "Reject a
+  completed-review timestamp that predates the first review start, or is present
+  without a first review start." Disposition: fixed. Two regression cases failed
+  with `DID NOT RAISE`, then passed with the chronology guard; equality remains
+  accepted. No candidates were rejected or deferred. A second fresh candidate
+  validator confirmed no new candidates; a fresh disposition-verification Task
+  confirmed C1 resolved and reported "No concrete task-relevant findings."
+- Initial checks: Ruff/mypy passed; validation plus simulation passed 434 tests.
+  After disposition, validation/domain passed 220 and validation/domain/artifacts
+  passed 242. The full gate first found formatting (corrected with Ruff) and then
+  the trace golden regression (fixed without modifying the fixture). Final
+  `mise run check` passed: 788 tests, Ruff, 61 formatted files, strict mypy over
+  60 source files, and all commit/push/author/mutation-floor/orb-setup shell suites.
+  The first mutation attempt stopped on that same golden regression; the final
+  differential run includes artifacts, domain, and validation, without changing
+  the floor or suppressing mutants.
+- Final differential mutation command: `BASE=855a593f14a48170e2ade188dca2e87687e57f23
+  mise run test:mutate`, exit 0. Per-module floor results: artifacts 650/798
+  (81.5%), domain 268/367 (73.0%), validation 1212/1517 (79.9%), all above 70%.
+  These are module-level efficacy results, not a claim that every mutant was
+  killed. No new task-relevant follow-up was identified.
+- 2026-10-04T21:34:33Z: verification pass
+- 2026-10-04T21:34:33Z: Completed substantive first-review accounting with operational start metrics and v1 artifacts preserved; reviewed and fully verified.

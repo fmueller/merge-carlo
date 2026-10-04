@@ -101,6 +101,7 @@ class PullRequest:
     review_bypassed: bool = False
     abandonment_deadline: float | None = None
     _last_transition_at: float | None = None
+    first_review_completed_at: float | None = None
 
     _TRANSITIONS: ClassVar[dict[PullRequestState, dict[LifecycleEvent, PullRequestState]]] = {
         PullRequestState.READY: {
@@ -142,6 +143,7 @@ class PullRequest:
         self._validate_time("ready_at", self.ready_at)
         for name, value in (
             ("first_review_at", self.first_review_at),
+            ("first_review_completed_at", self.first_review_completed_at),
             ("terminal_at", self.terminal_at),
             ("queue_entered_at", self.queue_entered_at),
             ("abandonment_deadline", self.abandonment_deadline),
@@ -292,13 +294,24 @@ class PullRequest:
                 _last_transition_at=at,
             )
         if event is LifecycleEvent.REVIEW_APPROVED:
-            return replace(self, state=target, approved_revision=self.revision, _last_transition_at=at)
+            return replace(
+                self,
+                state=target,
+                approved_revision=self.revision,
+                first_review_completed_at=(
+                    self.first_review_completed_at if self.first_review_completed_at is not None else at
+                ),
+                _last_transition_at=at,
+            )
         if event is LifecycleEvent.CHANGES_REQUESTED:
             return replace(
                 self,
                 state=target,
                 requested_change_count=self.requested_change_count + 1,
                 approved_revision=None,
+                first_review_completed_at=(
+                    self.first_review_completed_at if self.first_review_completed_at is not None else at
+                ),
                 _last_transition_at=at,
             )
         if event is LifecycleEvent.REVIEW_BYPASSED:
@@ -368,6 +381,12 @@ class PullRequest:
             raise ValueError("terminal_at must equal the latest transition")
         if self.first_review_at is not None and self.first_review_at > self.last_transition_at:
             raise ValueError("first_review_at cannot be after the latest transition")
+        if self.first_review_completed_at is not None and self.first_review_completed_at > self.last_transition_at:
+            raise ValueError("first_review_completed_at cannot be after the latest transition")
+        if self.first_review_completed_at is not None and (
+            self.first_review_at is None or self.first_review_at > self.first_review_completed_at
+        ):
+            raise ValueError("first_review_completed_at requires a review start at or before completion")
         if self.queue_entered_at is not None and self.queue_entered_at > self.last_transition_at:
             raise ValueError("queue_entered_at cannot be after the latest transition")
 

@@ -223,6 +223,12 @@ transition trace is needed. Definitions are:
   review supplies no latency sample. Ready-to-merge latency is readiness to merge
   for window merges. Both expose median and p95 with linear interpolation;
   absence gives `None` with `no_completed_reviews` or `no_merges`.
+  Held-out validation instead compares readiness to the first completed human
+  approval or changes-requested decision, matching observed submitted reviews.
+  Unfinished visits supply no validation latency or completion; a completed
+  requested-change decision counts even when the PR has not merged. Validation
+  includes decisions at the 48-hour deadline, but excludes events at its
+  half-open replay horizon.
 - Fixed-horizon reviewed/merged shares use each selected PR's readiness plus
   the declared horizon. A deadline at or beyond end is excluded regardless of
   early success; success is completion at or before the deadline. Reviewed

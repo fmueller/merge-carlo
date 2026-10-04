@@ -8,6 +8,10 @@ Notable user-facing changes are recorded here using
 
 Initial v0.1.0 development; no release has been published.
 
+- Held-out validation now uses the first completed approval or changes-requested
+  decision for review latency and 48-hour successes, rather than review start.
+  Unfinished reviews no longer fabricate completion evidence. Operational
+  review-start latency remains unchanged.
 - Added a local workflow for authorized GitHub repository testing, including
   token-safe collection, calibration, persisted simulation, and explicit
   blocked results for incomplete evidence.
