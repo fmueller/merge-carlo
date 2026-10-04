@@ -15,6 +15,9 @@ Initial v0.1.0 development; no release has been published.
   or merge observations while keeping active-effort inputs strictly validated.
 - Excessively nested configuration and JSON artifact inputs now return invalid-input
   errors (exit 2), including structured diagnostics under `--json`, rather than tracebacks.
+- Simulation dates outside the supported datetime range now return invalid-input
+  errors (exit 2), including under `--json`, without replacing an existing bundle.
+  Nearby representable runs no longer fail on unused calendar iteration dates.
 
 ### Added
 

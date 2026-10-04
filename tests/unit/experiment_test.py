@@ -139,6 +139,94 @@ def model_payload() -> dict[str, object]:
     return payload
 
 
+@pytest.mark.parametrize(
+    ("stamp", "warmup", "timezone", "calendar_zone", "absence"),
+    [
+        ("9999-12-31T00:00:00", 1, "UTC", "UTC", ""),
+        ("0001-01-01T00:00:00", 1, "UTC", "UTC", ""),
+        ("0001-01-01T00:00:00", 0, "Asia/Tokyo", "UTC", ""),
+        ("9999-12-30T23:00:00", 0, "America/New_York", "UTC", ""),
+        ("0001-01-01T00:00:00", 0, "UTC", "America/New_York", ""),
+        ("9999-12-30T23:00:00", 0, "UTC", "Asia/Tokyo", ""),
+        ("2026-09-08T00:00:00", 1, "UTC", "UTC", "0001-01-01T00:00:00+01:00"),
+        ("2026-09-08T00:00:00", 1, "UTC", "UTC", "9999-12-31T23:00:00-02:00"),
+    ],
+)
+@pytest.mark.parametrize("overwrite", [False, True])
+def test_simulate_rejects_unrepresentable_calendar_dates(
+    tmp_path: Path, stamp: str, warmup: int, timezone: str, calendar_zone: str, absence: str, overwrite: bool
+) -> None:
+    model_path, scenarios_path, out = tmp_path / "model.json", tmp_path / "scenarios.yaml", tmp_path / "out"
+    write_model(model_path, replace(model(), timezone=timezone))
+    write_scenarios(scenarios_path)
+    text = scenarios_path.read_text().replace("2026-09-08T00:00:00", stamp)
+    text = text.replace("warmup_days: 1", f"warmup_days: {warmup}").replace(
+        "timezone: UTC", f"timezone: {calendar_zone}"
+    )
+    if absence:
+        start, end = (
+            (absence, "2026-09-09T00:00:00+00:00")
+            if absence.startswith("0001")
+            else ("2026-09-09T00:00:00+00:00", absence)
+        )
+        text = text.replace(
+            "      windows:", f'      absences:\n        - start: "{start}"\n          end: "{end}"\n      windows:'
+        )
+    scenarios_path.write_text(text)
+    before = {"nested/retained.bin": b"existing bundle\x00", "report.md": b"old report"}
+    if overwrite:
+        for name, data in before.items():
+            path = out / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+    result = CliRunner().invoke(
+        app,
+        ["--json", "simulate", "--model", str(model_path), "--scenarios", str(scenarios_path), "--out", str(out)]
+        + (["--overwrite"] if overwrite else []),
+    )
+    assert result.exit_code == 2, result.output
+    record = json.loads(result.stdout)
+    assert record["status"] == "error"
+    assert record["exit_code"] == 2
+    assert "Cannot simulate:" in record["message"]
+    assert "out of range" in record["message"]
+    assert "Traceback" not in result.output
+    assert not result.stderr
+    if overwrite:
+        assert {str(path.relative_to(out)): path.read_bytes() for path in out.rglob("*") if path.is_file()} == before
+    else:
+        assert not out.exists()
+    assert not list(tmp_path.glob(".out-*"))
+
+
+@pytest.mark.parametrize("stamp", ["0001-01-01T00:00:00", "0001-01-02T00:00:00", "9999-12-30T00:00:00"])
+@pytest.mark.parametrize("overnight", [False, True])
+def test_simulate_accepts_representable_nearby_calendar_dates(tmp_path: Path, stamp: str, overnight: bool) -> None:
+    model_path, scenarios_path, out = tmp_path / "model.json", tmp_path / "scenarios.yaml", tmp_path / "out"
+    write_model(model_path)
+    write_scenarios(scenarios_path)
+    text = scenarios_path.read_text().replace("2026-09-08T00:00:00", stamp).replace("warmup_days: 1", "warmup_days: 0")
+    if overnight:
+        text = text.replace(
+            "      windows:",
+            "      windows:\n        - name: friday-night\n          weekday: 4\n"
+            '          start: "22:00:00"\n          end: "03:00:00"',
+        )
+    scenarios_path.write_text(text)
+    result = CliRunner().invoke(
+        app, ["--json", "simulate", "--model", str(model_path), "--scenarios", str(scenarios_path), "--out", str(out)]
+    )
+    assert result.exit_code == 0, result.output
+    assert (out / "report.md").is_file()
+    resolved = json.loads((out / "resolved-scenarios.json").read_text())
+    assert resolved["elapsed_seconds"] == {"measurement": 86400.0, "warmup": 0.0}
+    bounds = resolved["experiment"]["bounds"]
+    assert datetime.fromisoformat(bounds["observation"]["start"]) == datetime.fromisoformat(stamp).replace(tzinfo=UTC)
+    assert datetime.fromisoformat(bounds["observation"]["end"]) == (
+        datetime.fromisoformat(stamp).replace(tzinfo=UTC) + timedelta(days=1)
+    )
+
+
 def calendar_config(
     name: str = "duty",
     *,

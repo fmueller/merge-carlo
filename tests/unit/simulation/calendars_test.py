@@ -20,6 +20,13 @@ def utc(value: str) -> datetime:
 
 
 @pytest.mark.unit
+@pytest.mark.parametrize("end", ["9999-12-31T00:00", "9999-12-31T22:00"])
+def test_max_date_overnight_window_after_exclusive_end_is_excluded(end: str) -> None:
+    calendar = DutyCalendar("UTC", (WeeklyWindow("Friday night", 4, time(22), time(3)),))
+    assert calendar.materialize(UTCInterval(utc("9999-12-30T00:00"), utc(end))) == ()
+
+
+@pytest.mark.unit
 @pytest.mark.parametrize(
     ("start", "expected"),
     [

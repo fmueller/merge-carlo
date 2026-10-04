@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T19:41:56Z"
+updated_at: "2026-10-04T20:15:18Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,8 +8,8 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: 'Start task T-056-reject-unrepresentable-simulation-calendar-bounds: Reject unrepresentable simulation calendar bounds with structured errors'
-last_verification_result: pass for T-055-reject-excessively-nested-configuration-inputs at 2026-10-04T19:41:56Z
+next_action: 'Start task T-057-include-script-fixtures-in-mutation-scratch-projects: Include script fixtures in mutation scratch projects'
+last_verification_result: pass for T-056-reject-unrepresentable-simulation-calendar-bounds at 2026-10-04T20:15:18Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -35,11 +35,11 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-055-reject-excessively-nested-configuration-inputs at 2026-10-04T19:41:56Z
+- pass for T-056-reject-unrepresentable-simulation-calendar-bounds at 2026-10-04T20:15:18Z
 
 ## Next Action
 
-- Start task T-056-reject-unrepresentable-simulation-calendar-bounds: Reject unrepresentable simulation calendar bounds with structured errors
+- Start task T-057-include-script-fixtures-in-mutation-scratch-projects: Include script fixtures in mutation scratch projects
 
 ## Relevant Artifacts
 
@@ -53,6 +53,6 @@ continuation_notes:
 
 - todo: 5
 - in_progress: 0
-- completed: 50
+- completed: 51
 - blocked: 1
 - cancelled: 0

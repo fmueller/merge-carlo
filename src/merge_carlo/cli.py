@@ -131,7 +131,7 @@ def simulate(
     """Run a persisted, offline experiment from model and scenario artifacts."""
     try:
         run_simulation(model, scenarios, out, overwrite=overwrite)
-    except (OSError, ValueError) as exc:
+    except (OSError, ValueError, OverflowError) as exc:
         _emit(ctx, f"Cannot simulate: {exc}", 2)
         raise typer.Exit(code=2) from exc
     _emit(ctx, f"Experiment: {out / 'report.md'}")

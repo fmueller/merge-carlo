@@ -215,6 +215,12 @@ reviewers. Its resulting UTC bounds and additive/replacement demand semantics
 are persisted in `resolved-scenarios.json`; the report command only reads the
 saved result and validation artifacts.
 
+Simulation dates and calendar boundaries must fit Python's datetime range
+(years 1–9999), including local horizon/warm-up arithmetic and timezone
+conversion. Unrepresentable dates return exit 2 (a structured error under
+`--json`) without publishing a bundle or replacing an existing one. Dates are
+never clamped into range.
+
 Exit codes: `0` success, `2` invalid input, `3` source or access failure,
 `4` a requested validation gate failed.
 

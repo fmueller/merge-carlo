@@ -145,6 +145,9 @@ def generate_proposals(
                         (ready - span.start).total_seconds(),
                     )
                 )
+        # Do not construct an unused next week beyond the datetime range.
+        if local_end - datetime.combine(monday, time()) <= timedelta(days=7):
+            break
         monday += timedelta(days=7)
     return ProposalSchedule(
         tuple(sorted(proposals, key=lambda proposal: (proposal.ready_at, proposal.pr_id))),

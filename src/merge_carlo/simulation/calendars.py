@@ -5,7 +5,7 @@ materialize before starting a simulation so boundary errors fail before a run.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from datetime import timezone as FixedOffset
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
@@ -150,7 +150,10 @@ class DutyCalendar:
         zone = _zone(self.timezone)
         local_span_start = span.start.astimezone(zone).replace(tzinfo=None)
         local_span_end = span.end.astimezone(zone).replace(tzinfo=None)
-        day = local_span_start.date() - timedelta(days=1)
+        day = local_span_start.date()
+        # There is no preceding representable date at the lower range limit.
+        if day > date.min:
+            day -= timedelta(days=1)
         last_day = local_span_end.date()
         intervals: list[UTCInterval] = []
         while day <= last_day:
@@ -158,19 +161,23 @@ class DutyCalendar:
                 if day.weekday() != window.weekday:
                     continue
                 local_start = datetime.combine(day, window.start)
-                end_day = day + timedelta(days=1) if window.end < window.start else day
-                local_end = datetime.combine(end_day, window.end)
                 # Check possible overlap in UTC: wall time can move backwards
                 # within span. Both folds bound all possible interpretations;
                 # overlapping boundaries still undergo strict validation below.
                 earliest_start = min(local_start.replace(tzinfo=zone, fold=fold).astimezone(UTC) for fold in (0, 1))
+                if earliest_start >= span.end:
+                    continue
+                end_day = day + timedelta(days=1) if window.end < window.start else day
+                local_end = datetime.combine(end_day, window.end)
                 latest_end = max(local_end.replace(tzinfo=zone, fold=fold).astimezone(UTC) for fold in (0, 1))
-                if latest_end <= span.start or earliest_start >= span.end:
+                if latest_end <= span.start:
                     continue
                 start = max(span.start, _local_to_utc(local_start, zone))
                 end = min(span.end, _local_to_utc(local_end, zone))
                 if start < end:
                     intervals.append(UTCInterval(start, end))
+            if day == last_day:
+                break
             day += timedelta(days=1)
 
         merged: list[UTCInterval] = []
