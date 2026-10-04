@@ -419,7 +419,7 @@ def load_validation_evidence(path: Path) -> HeldOutEvidence:
         raise ValueError("validation evidence exceeds 16 MiB")
     try:
         data = json.loads(payload)
-    except (json.JSONDecodeError, UnicodeDecodeError):
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
         raise ValueError("invalid validation evidence") from None
     if not isinstance(data, dict):
         raise ValueError("unsupported validation evidence schema")

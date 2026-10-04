@@ -76,7 +76,7 @@ def _read_json(path: Path, *, label: str) -> tuple[object, bytes]:
         raise ValueError(f"{label} artifact exceeds 16 MiB")
     try:
         return json.loads(payload), payload
-    except (json.JSONDecodeError, UnicodeDecodeError):
+    except (json.JSONDecodeError, UnicodeDecodeError, RecursionError):
         raise ValueError(f"invalid {label} artifact") from None
 
 

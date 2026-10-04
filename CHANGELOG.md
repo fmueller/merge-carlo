@@ -13,6 +13,8 @@ Initial v0.1.0 development; no release has been published.
   blocked results for incomplete evidence.
 - Fixed persisted simulation for valid calibrations with no descriptive review
   or merge observations while keeping active-effort inputs strictly validated.
+- Excessively nested configuration and JSON artifact inputs now return invalid-input
+  errors (exit 2), including structured diagnostics under `--json`, rather than tracebacks.
 
 ### Added
 

@@ -227,7 +227,7 @@ def _load_config[ConfigT: BaseModel](path: Path, model: type[ConfigT]) -> Config
         if not isinstance(value, dict) or type(value.get("schema_version")) is not int or value["schema_version"] != 1:
             raise ValueError
         return model.model_validate(value)
-    except (OSError, UnicodeError, yaml.YAMLError, ValidationError, ValueError):
+    except (OSError, UnicodeError, yaml.YAMLError, ValidationError, ValueError, RecursionError):
         raise ValueError("invalid configuration") from None
 
 
