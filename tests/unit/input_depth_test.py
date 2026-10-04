@@ -1,6 +1,8 @@
 """Parser depth failures are invalid input, not internal CLI errors."""
 
 import json
+from functools import partial
+from json import scanner
 from pathlib import Path
 
 import pytest
@@ -15,10 +17,14 @@ from tests.unit.experiment_test import write_model, write_scenarios
 pytestmark = pytest.mark.unit
 
 
-@pytest.fixture(scope="module")
-def deep_json() -> str:
-    # Python 3.14 can parse 20,000 levels; use a depth exceeding all supported runtimes.
-    payload = "[" * 100000 + "0" + "]" * 100000
+@pytest.fixture
+def deep_json(monkeypatch: pytest.MonkeyPatch) -> str:
+    # Use the real stdlib Python scanner: C scanner depth limits vary by interpreter build.
+    # Typeshed omits the stdlib's pure-Python scanner implementation.
+    monkeypatch.setattr(scanner, "make_scanner", scanner.py_make_scanner)  # type: ignore[attr-defined]
+    # An explicit decoder bypasses json.loads' cached default C scanner.
+    monkeypatch.setattr(json, "loads", partial(json.loads, cls=json.JSONDecoder))
+    payload = "[" * 2000 + "0" + "]" * 2000
     assert len(payload.encode()) < 16 * 1024 * 1024
     # Schema rejection must not stand in for a genuine parser-depth failure.
     with pytest.raises(RecursionError):

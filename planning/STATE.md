@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T22:56:06Z"
+updated_at: "2026-10-04T23:11:43Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -9,7 +9,7 @@ status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
 next_action: Resolve blocker on T-033-dataclass-mutation-coverage
-last_verification_result: pass for T-061-portable-parser-depth-regressions at 2026-10-04T22:56:06Z
+last_verification_result: pass for T-062-deterministic-parser-depth-regressions at 2026-10-04T23:11:43Z
 relevant_artifacts: []
 continuation_notes:
     - This repository is using manual Taskrail-style workflow scaffolding until the product replaces more of the bootstrap steps.
@@ -35,7 +35,7 @@ continuation_notes:
 
 ## Last Verification
 
-- pass for T-061-portable-parser-depth-regressions at 2026-10-04T22:56:06Z
+- pass for T-062-deterministic-parser-depth-regressions at 2026-10-04T23:11:43Z
 
 ## Next Action
 
@@ -53,6 +53,6 @@ continuation_notes:
 
 - todo: 4
 - in_progress: 0
-- completed: 56
+- completed: 57
 - blocked: 1
 - cancelled: 0

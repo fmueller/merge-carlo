@@ -6,7 +6,7 @@ priority: medium
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-055-reject-excessively-nested-configuration-inputs
-updated_at: "2026-10-04T22:56:06Z"
+updated_at: "2026-10-04T23:11:01Z"
 ---
 
 # T-061-portable-parser-depth-regressions Make parser depth regressions portable across supported Python versions
@@ -92,3 +92,4 @@ skipping on Python 3.14. If a future supported runtime increases its parser
 limit, the explicit precondition will fail instead of silently testing schemas.
 - 2026-10-04T22:56:06Z: verification pass
 - 2026-10-04T22:56:06Z: Test-only correction reviewed and locally verified across supported Python versions; push and automatic Build monitoring follow.
+- 2026-10-04T23:11:01Z: verification fail
