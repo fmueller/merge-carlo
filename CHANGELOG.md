@@ -8,6 +8,9 @@ Notable user-facing changes are recorded here using
 
 Initial v0.1.0 development; no release has been published.
 
+- Array or object duration kinds in model inputs now return invalid-input errors
+  (exit 2), including structured diagnostics under `--json`, without replacing
+  an existing simulation bundle even with `--overwrite`.
 - Held-out validation now uses the first completed approval or changes-requested
   decision for review latency and 48-hour successes, rather than review start.
   Unfinished reviews no longer fabricate completion evidence. Operational

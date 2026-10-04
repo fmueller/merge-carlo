@@ -119,6 +119,8 @@ def _validate_model_shape(data: object) -> dict[str, object]:
             and len(specification["seconds"]) > _MAX_PARAMETER_VALUES
         ):
             raise ValueError("model parameter values exceed the resource limit")
+        if isinstance(specification, dict) and "kind" in specification and not isinstance(specification["kind"], str):
+            raise ValueError(f"invalid model.parameters[{index}].value_specification contract")
         if isinstance(specification, dict) and specification.get("kind") in {"constant", "lognormal", "empirical"}:
             if (
                 item.get("name") in _EMPTY_DESCRIPTIVE_DURATION_PARAMETERS

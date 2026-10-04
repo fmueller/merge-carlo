@@ -642,6 +642,59 @@ def test_model_shape_validation_enforces_resource_boundaries(monkeypatch: pytest
         _validate_model_shape(payload)
 
 
+@pytest.mark.parametrize("kind", [[], {}])
+def test_load_model_rejects_nonscalar_duration_kind(tmp_path: Path, kind: object) -> None:
+    path = tmp_path / "model.json"
+    write_model(path, replace(model(), parameters=(effort_parameter({"kind": kind, "seconds": 10}),)))
+    with pytest.raises(ValueError, match="invalid model.*value_specification contract"):
+        load_model(path)
+
+
+@pytest.mark.parametrize("kind", [[], {}, None, True, 12, "unsupported"])
+@pytest.mark.parametrize("overwrite", [False, True])
+def test_simulate_rejects_invalid_duration_kind(tmp_path: Path, kind: object, overwrite: bool) -> None:
+    model_path, scenarios_path, out = tmp_path / "model.json", tmp_path / "scenarios.yaml", tmp_path / "out"
+    write_model(model_path, replace(model(), parameters=(effort_parameter({"kind": kind, "seconds": 10}),)))
+    write_scenarios(scenarios_path)
+    before = {"nested/retained.bin": b"existing bundle\x00", "report.md": b"old report"}
+    if overwrite:
+        for name, data in before.items():
+            path = out / name
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(data)
+    result = CliRunner().invoke(
+        app,
+        ["--json", "simulate", "--model", str(model_path), "--scenarios", str(scenarios_path), "--out", str(out)]
+        + (["--overwrite"] if overwrite else []),
+    )
+    assert result.exit_code == 2, result.output
+    record = json.loads(result.stdout)
+    assert record["status"] == "error"
+    assert record["exit_code"] == 2
+    assert "Cannot simulate:" in record["message"]
+    assert "Traceback" not in result.output
+    assert not result.stderr
+    if overwrite:
+        assert {str(path.relative_to(out)): path.read_bytes() for path in out.rglob("*") if path.is_file()} == before
+    else:
+        assert not out.exists()
+    assert not list(tmp_path.glob(".out-*"))
+
+
+@pytest.mark.parametrize(
+    "specification",
+    [
+        {"kind": "constant", "seconds": 4.5},
+        {"kind": "lognormal", "median_seconds": 4.5, "sigma": 0.25},
+        {"kind": "empirical", "seconds": [1, 2.5]},
+    ],
+)
+def test_load_model_accepts_duration_kinds(tmp_path: Path, specification: dict[str, object]) -> None:
+    path = tmp_path / "model.json"
+    write_model(path, replace(model(), parameters=(effort_parameter(specification),)))
+    assert load_model(path).model.parameters[0].value_specification == specification
+
+
 def test_load_model_enforces_utc_identity_and_hash_contract(tmp_path: Path) -> None:
     path = tmp_path / "model.json"
     write_model(path)
