@@ -1,6 +1,6 @@
 ---
 schema_version: 1
-updated_at: "2026-10-04T20:33:18Z"
+updated_at: "2026-10-04T20:42:55Z"
 active_spec_version: v0.1.0
 active_spec_path: specs/v0.1.0.md
 current_task: ""
@@ -8,7 +8,7 @@ current_task_title: ""
 status_summary: blocked
 blockers:
     - 'T-033-dataclass-mutation-coverage: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.'
-next_action: No active-spec task is ready
+next_action: 'Start task T-059-use-completed-review-evidence-in-held-out: Use completed review evidence in held-out validation metrics'
 last_verification_result: pass for T-057-include-script-fixtures-in-mutation-scratch-projects at 2026-10-04T20:33:18Z
 relevant_artifacts: []
 continuation_notes:
@@ -39,7 +39,7 @@ continuation_notes:
 
 ## Next Action
 
-- No active-spec task is ready
+- Start task T-059-use-completed-review-evidence-in-held-out: Use completed review evidence in held-out validation metrics
 
 ## Relevant Artifacts
 
@@ -51,7 +51,7 @@ continuation_notes:
 
 ## Task Counts
 
-- todo: 4
+- todo: 6
 - in_progress: 0
 - completed: 52
 - blocked: 1
