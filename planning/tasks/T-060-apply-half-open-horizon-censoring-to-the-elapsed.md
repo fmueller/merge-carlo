@@ -1,11 +1,11 @@
 ---
 id: T-060-apply-half-open-horizon-censoring-to-the-elapsed
 title: Apply half-open horizon censoring to the elapsed-delay benchmark
-status: todo
+status: completed
 priority: medium
 spec_ref: specs/v0.1.0.md#empirical-model-and-validation
 dependencies: []
-updated_at: "2026-10-04T21:54:18Z"
+updated_at: "2026-10-04T22:11:28Z"
 ---
 
 # T-060-apply-half-open-horizon-censoring-to-the-elapsed Apply half-open horizon censoring to the elapsed-delay benchmark
@@ -102,7 +102,53 @@ Observed in all three replications and persisted `validation.json`:
 
 ## Implementation Notes
 
-No implementation changes in this audit. Relevant owner:
-`validation.replay_elapsed_delay_benchmark`; review-delay selection uses `<=`
-where weekly merge selection already uses `<`, and fixed-horizon successes lack
-an explicit in-window completion check. Existing full suite passes (805 tests).
+Implemented in `validation.replay_elapsed_delay_benchmark`: review-delay samples
+and both fixed-horizon successes require completion strictly before replay end.
+Mature-cohort boundaries and inclusive service-level deadlines are unchanged.
+Weekly merge accounting, source-category counts, contracts, and the descriptive
+reference limitation are preserved. Public validation docs and the existing
+unreleased validation changelog entry explain the corrected accounting.
+
+### Workflow-v3 evidence
+
+- Source guard: clean local main at `ac21ef2e4303a15b4c0bdffbc876d7567586c5fe`;
+  `mise exec -- taskrail validate` returned `state valid`, and
+  `mise exec -- taskrail next --json` selected exactly this task, on pinned
+  `specs/v0.1.0.md`, before `taskrail start`.
+- Strict TDD: `uv run pytest tests/unit/validation_test.py -k
+  'half_open_completions or mechanistic_horizon_boundaries' -q --tb=short`
+  returned **3 failed, 10 passed** before production changes. The failures were
+  the two exact-end review/merge cases and the original combined-boundary case.
+  FIFO already matched independently derived expected event accounting.
+- Twelve deterministic cases separately place review and merge one second
+  before, exactly at, and one second after the end, with interior-deadline
+  controls. All three replications match full expected FIFO/benchmark outcomes.
+  Each case executes `--json validate --strict` and checks persisted metrics,
+  undefined values/reasons, source categories, and descriptive-only metadata.
+  The fixture deliberately requires four replications but supplies three, so
+  all CLI cases retain exit 0 / `insufficient_evidence` independently of gates.
+- Initial and post-simplification checks:
+  `uv run pytest tests/unit/validation_test.py tests/unit/cli_test.py -q`
+  returned **118 passed**; Ruff, format checks, and mypy passed.
+- Dedicated Task loaded `code-simplifier`; accepted only explicit readiness
+  dates in the regression fixture. Production checks needed no abstraction.
+- Separate parallel read-only General and Python Tasks loaded `code-reviewer`,
+  dedicated lane references, and the Python patterns companion. Both reported
+  verbatim: **"No concrete task-relevant findings."** Security and Database
+  lanes were omitted because no trust boundary, SQL, schema, or persistence
+  mechanism changed. No framework/domain-specialist trigger applied.
+- Fresh candidate-validation Task loaded `code-reviewer` and validated the empty
+  candidate set: **"No concrete task-relevant findings."** No candidate IDs,
+  rejected findings, fixes, deferrals, or follow-ups exist.
+- Final `mise run check` passed: **817 tests**, Ruff, format, mypy (60 source
+  files), and all commit/push/author/mutation-floor/orb-setup guard suites.
+- `BASE=ac21ef2e4303a15b4c0bdffbc876d7567586c5fe mise run test:mutate`
+  passed the scoped validation-module gate: **1236/1523, 81.2%, ok**.
+  Mutmut reported 1235 killed, one timeout, and 287 surviving mutants; this
+  satisfies the module floor, not a claim of complete mutation coverage.
+- Fresh disposition-verification Task loaded `code-reviewer`, inspected the
+  final diff, independently ran the 13 focused tests and `git diff --check`,
+  and concluded: **"No concrete task-relevant findings."** One review cycle;
+  no unresolved dispositions or newly introduced task-local issues.
+- 2026-10-04T22:11:28Z: verification pass
+- 2026-10-04T22:11:28Z: Implemented and independently reviewed half-open horizon censoring; verification passed.

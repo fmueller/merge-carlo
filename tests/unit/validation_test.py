@@ -337,9 +337,96 @@ def test_elapsed_delay_benchmark_uses_the_mechanistic_horizon_boundaries_and_loc
     benchmark = replay_elapsed_delay_benchmark(request)
 
     assert benchmark.replications[0] == DelayBenchmarkReplication(
-        ReplayOutcomes(2, 2, 1, 1, 48 * 3600.0, 2, (0, 0, 0, 0, 0), 0),
+        ReplayOutcomes(1, 2, 0, 1, 48 * 3600.0, 1, (0, 0, 0, 0, 0), 0),
         CompletionCategoryCounts(2, 0, 0),
     )
+
+
+@pytest.mark.parametrize("event", ["review", "merge"])
+@pytest.mark.parametrize("offset", [-1, 0, 1])
+@pytest.mark.parametrize("interior_deadline", [False, True])
+def test_benchmark_censors_half_open_completions_like_fifo_and_cli(
+    event: str, offset: int, interior_deadline: bool, tmp_path: Path
+) -> None:
+    from typer.testing import CliRunner
+
+    from merge_carlo.cli import app
+
+    deadline = (2 if event == "review" else 7) * 86400
+    delay = deadline + offset
+    review_delay = delay if event == "review" else 1
+    ready_at = datetime(2026, 1, 30 if event == "review" else 25, tzinfo=UTC)
+    # Jan 30 / Jan 25 readiness: the SLA deadline is Feb 1. Extending
+    # observation by a day puts that deadline strictly inside the window.
+    request = replace(
+        replay_input(),
+        validation_interval_end=datetime(2026, 2, 2 if interior_deadline else 1, tzinfo=UTC),
+        thresholds=ValidationThresholds(min_mature_pull_requests=1, min_replications=4),
+        model=FrozenReplayModel("fifo-v0.1", "UTC", review_delay, coordination_seconds=delay - review_delay),
+        arrivals=(ReplayArrival("p", "author", WorkOrigin.HUMAN, ready_at),),
+        reviewer_duty=(ReplayDuty("reviewer", datetime(2026, 1, 1, tzinfo=UTC), datetime(2026, 2, 2, tzinfo=UTC)),),
+        benchmark_observations=(
+            ElapsedDelayObservation(
+                datetime(2025, 10, 1, tzinfo=UTC),
+                datetime(2025, 10, 15, tzinfo=UTC),
+                review_delay,
+                "merged",
+                delay,
+            ),
+        ),
+    )
+    in_window = interior_deadline or offset < 0
+    review_visible = event == "merge" or in_window
+    review_success = int(event == "merge" or (in_window and offset <= 0))
+    merge_mature = int(event == "merge")
+    merge_success = int(event == "merge" and in_window and offset <= 0)
+    expected = ReplayOutcomes(
+        review_success,
+        1,
+        merge_success,
+        merge_mature,
+        float(review_delay) if review_visible else None,
+        int(review_visible),
+        (0, 0, 0, 0, int(in_window)),
+        0,
+    )
+
+    evidence = replay_held_out(request)
+
+    assert evidence.replay_replications == (expected,) * 3
+    assert tuple(row.outcomes for row in evidence.delay_benchmark.replications) == (expected,) * 3
+    assert all(
+        row.completion_categories == CompletionCategoryCounts(1, 0, 0) for row in evidence.delay_benchmark.replications
+    )
+    payload = TypeAdapter(ValidationInput).dump_python(request, mode="json")
+    payload["schema_version"] = 1
+    source = tmp_path / "input.json"
+    source.write_text(json.dumps(payload), encoding="utf-8")
+    out = tmp_path / "out"
+    result = CliRunner().invoke(app, ["--json", "validate", "--input", str(source), "--out", str(out), "--strict"])
+    assert result.exit_code == 0, result.output
+    persisted = json.loads((out / "validation.json").read_text())
+    assert persisted["status"] == "insufficient_evidence"
+    assert persisted["benchmark_label"] == "descriptive_reference_not_intervention_model"
+    assert persisted["benchmark_capacity_queue"] is False
+    assert (
+        persisted["benchmark_completion_categories"]
+        == [{"merged": 1, "closed_without_merge": 0, "not_completed": 0}] * 3
+    )
+    values = {
+        "reviewed_within_48_hours_share": float(review_success),
+        "merged_within_7_days_share": float(merge_success) if merge_mature else None,
+        "first_review_median_seconds": float(review_delay) if review_visible else None,
+        "weekly_merge_count": 0.0,
+    }
+    for comparison in persisted["benchmark_comparison"]:
+        metric = comparison["metric"]
+        assert comparison["elapsed_delay_benchmark"]["value"] == values[metric]
+        gate = next(row for row in persisted["gates"] if row["metric"] == metric)
+        assert gate["simulated"]["value"] == values[metric]
+        if values[metric] is None:
+            assert comparison["elapsed_delay_benchmark"]["reason"] is not None
+            assert comparison["benchmark_absolute_error"] is None
 
 
 def test_report_compares_mechanistic_and_elapsed_delay_descriptions_even_when_mechanistic_is_worse() -> None:

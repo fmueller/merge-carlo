@@ -485,7 +485,7 @@ def replay_elapsed_delay_benchmark(request: ValidationInput) -> DelayBenchmark:
             observation.first_review_elapsed_seconds
             for ready, observation in zip(ready_seconds, sampled, strict=True)
             if observation.first_review_elapsed_seconds is not None
-            and ready + observation.first_review_elapsed_seconds <= span_seconds
+            and ready + observation.first_review_elapsed_seconds < span_seconds
         )
         reviewed_mature = tuple(
             (ready, observation)
@@ -515,14 +515,16 @@ def replay_elapsed_delay_benchmark(request: ValidationInput) -> DelayBenchmark:
                     sum(
                         observation.first_review_elapsed_seconds is not None
                         and observation.first_review_elapsed_seconds <= 48 * 3600
-                        for _, observation in reviewed_mature
+                        and ready + observation.first_review_elapsed_seconds < span_seconds
+                        for ready, observation in reviewed_mature
                     ),
                     len(reviewed_mature),
                     sum(
                         observation.completion_category == "merged"
                         and observation.completion_elapsed_seconds is not None
                         and observation.completion_elapsed_seconds <= 7 * 86400
-                        for _, observation in merged_mature
+                        and ready + observation.completion_elapsed_seconds < span_seconds
+                        for ready, observation in merged_mature
                     ),
                     len(merged_mature),
                     float(median(review_delays)) if review_delays else None,

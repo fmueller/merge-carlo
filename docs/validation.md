@@ -58,6 +58,11 @@ then applies the same 48-hour and seven-day mature cohorts, completion-condition
 first-review metric, validation horizon, and local-week accounting. The sampled
 records retain `merged`, `closed_without_merge`, and `not_completed` outcomes;
 the per-replication category counts and source content hash are persisted.
+Those categories describe the sampled source records, not simulated in-window
+completions. Review completions and merges at or beyond the half-open validation
+end are censored: they supply neither review-latency samples nor service-level
+successes. Service-level deadlines remain inclusive when strictly inside the
+observation interval.
 
 This benchmark adds no capacity queue and must not be used to model an
 intervention: it reuses observed elapsed delays, which include queueing and other
