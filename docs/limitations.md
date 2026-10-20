@@ -33,12 +33,15 @@ local [authorized-repository workflow](live-workflow.md) is the reproducible
 next step. The release mutation gate result is recorded in the mutation policy;
 a passing floor is test-efficacy evidence for discovered functions only, not a
 release readiness or model validity claim. Mutation scores cover only the
-functions mutmut instruments: decorated validators, CLI command bodies,
-`@property` methods, and dataclass methods are not mutation-covered (see the
-[mutation policy](mutation-policy.md)). The [performance benchmark](performance.md)
-records one synthetic workload on one machine and supports no universal runtime,
-memory, or scalability claim; summary statistics retain per-replication metric
-scalars, so memory grows with the replication count even though rows stream.
+functions mutmut instruments. Decorated validators, CLI command bodies, and
+`@property` methods remain omitted. Historical mutmut 3.7.0 scores also omit
+dataclass methods. Locked 3.8.0 discovers decorated class bodies, but discovery
+alone does not establish execution or efficacy (T-033 remains open under v0.2.0;
+see the [mutation policy](mutation-policy.md)). The
+[performance benchmark](performance.md) records one synthetic workload on one
+machine and supports no universal runtime, memory, or scalability claim. Summary
+statistics retain per-replication metric scalars, so memory grows with the
+replication count even though rows stream.
 
 ## What the model is
 

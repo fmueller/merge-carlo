@@ -4,7 +4,7 @@ This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-09-20.
+Last updated: 2026-10-20 (T-063 release preparation; unpublished candidate).
 
 ## Milestones
 
@@ -36,19 +36,36 @@ Stable process exit codes are:
 
 ## Verification evidence
 
-The release-documentation change was checked from `origin/main` at
-`16da175d7c9a6d2dc6b14956ad5b74274ebfd445`. The final evidence is recorded by
-command rather than summarized as an unsupported readiness claim:
+T-063 checks the local documentation/state candidate based on
+[`a03a276`](https://github.com/fmueller/merge-carlo/commit/a03a2761972f0e4b6532b367945d802fea3455c7).
+No executable source, dependency, or publishing-workflow change is included.
+These local checks do not establish publication or real-world model validity:
 
 | Command | Result | Evidence covered |
 | --- | --- | --- |
-| `uv run pytest tests/unit/cli_test.py tests/unit/documentation_test.py -q` | Pass: 21 | Help, JSON console records, exit codes and documentation contract |
-| `uv run pytest tests/unit/cli_test.py tests/unit/cohort_test.py tests/unit/inspection_test.py tests/integration/demo_test.py -q` | Pass: 54 | Fixture-backed command pipeline, resume and partial-data behavior |
 | `uv run ruff check` and `uv run ruff format --check` | Pass | Lint and formatting |
-| `uv run mypy` | Pass: 53 source files | Strict type checking |
-| `uv run pytest` | Pass: 620 | Full automated suite |
-| `mise run test:mutate` | Pass: `merge_carlo.cli` 74/90 (82.2%) | Differential v0.1.0 mutation policy for changed executable source |
-| `mise run check` | Pass | CI-equivalent local gate |
+| `uv run mypy` | Pass: 60 files | Strict type checking |
+| `uv run pytest` (within `mise run check`) | Pass: 817 | Full automated suite, including documented pipeline and offline demo contracts |
+| `mise run check` | Pass | CI-equivalent lint, format, types, tests and five guard suites |
+| `uv build --out-dir "$dist_dir"` | Pass: wheel and sdist for `0.1.0` | Local distribution build in disposable output |
+| `uv run twine check "$dist_dir"/*` | Pass: both distributions | Distribution metadata and README rendering contract |
+| `uv run --offline --no-sync merge-carlo demo --out "$demo_dir" --seed 42 --replications 200` | Pass | Six scenario/baseline groups, 200 usable each, no engine truncations; synthetic, validation not performed, base assumptions only |
+| `mise exec -- taskrail validate` | Pass | Task structure, references and generated state |
+
+`dist_dir` and `demo_dir` are fresh disposable paths, not saved release assets.
+The demo produced all nine documented artifacts, including empty opt-in traces;
+unsupported safety fields remain null. All eight manifest content hashes were
+verified, and a second run with the same inputs produced byte-identical files
+(`diff -qr` exit 0). Wheel metadata matched the name, version, Python bounds,
+license and CLI entry point; the sdist included README and LICENSE. This is
+local synthetic evidence only, not an index installation check.
+
+The starting commit's [Build run](https://github.com/fmueller/merge-carlo/actions/runs/39481536857)
+passed. The latest inspected [Mutation tests run](https://github.com/fmueller/merge-carlo/actions/runs/39194092474)
+passed at
+[`a376de1`](https://github.com/fmueller/merge-carlo/commit/a376de153d002627c8b6a33205d412e9f9a6eadb),
+not at this documentation candidate. No new full mutation run is claimed by
+T-063; historical scores below must not be substituted for current discovery.
 
 The release mutation gate (T-030) was run separately on 2026-09-11:
 `mise run test:mutate:gate` passed with every one of 22 modules at or above the
@@ -83,7 +100,7 @@ counts (T-037).
 - **Authorized live GitHub integration has not been completed.** Bounded
   anonymous probes exercised five public repositories and found the expected
   incomplete-collection safeguards plus one calibration-to-simulation contract
-  defect, which is fixed by the current change. No authorized dataset was
+  defect, fixed before T-063. No authorized dataset was
   collected for release evidence, so authorized collection, real-team
   calibration, and real-data validation remain unverified. Use the local
   [authorized-repository workflow](live-workflow.md) for the next run.
@@ -102,9 +119,9 @@ counts (T-037).
   validators and CLI command bodies remain verified by behavioral tests, not
   mutation testing (T-040, T-041). The current v0.1.0 floor is 70%; see the
   [mutation policy](mutation-policy.md). The historical full gate passed locally
-  and in the GitHub workflow (run 34601538915, T-030). Seven timezone and five
-  SQLite URI mutants are killed locally but survive on CI because those tests
-  depend on the host (T-043).
+  and in the GitHub workflow (run 34601538915, T-030). The historical host-dependent
+  timezone and SQLite URI gaps were addressed by completed T-043; that old
+  survivor table is not a current defect inventory.
 
 ## Unsupported in v0.1.0
 
@@ -124,19 +141,30 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-No open in-spec implementation task remains after T-029 is finalized. The
-v0.1.0 tag and package publication are external release operations: they remain
-unclaimed until the TestPyPI rehearsal succeeds, the PyPI/TestPyPI trusted
-publishers and protected environments are configured, and the published
-artifacts are verified.
+T-063 prepares the release documentation and local evidence. T-064 remains the
+dependent publication task: review and land preparation, confirm trusted
+publishers and protected environments, obtain explicit release authorization,
+tag the reviewed main commit, rehearse on TestPyPI, publish the GitHub release
+and PyPI package, then verify clean installation and the offline demo. T-029
+completed publishing infrastructure, not any of those external operations.
+Published-package installation remains pending verification. No authorized live
+dataset or verified real-team calibration/real-data validation is included.
 
-Three tasks are deferred to the inactive v0.2.0 draft spec:
+Deferred work outside the active spec includes:
 
-- T-033 dataclass mutation discovery. mutmut 3.7.0 does not mutate methods of
-  decorated classes, so v0.1.0 per-module mutation scores do not cover
-  `@dataclass` methods such as `DutyCalendar.materialize` or
-  `PullRequest.transition`.
+- T-033 dataclass mutation coverage. The locked mutmut 3.8.0 discovers decorated
+  class bodies. A T-063 in-memory discovery probe found 293 calendar mutants
+  (135 in `DutyCalendar.materialize`) and 367 domain mutants (151 in
+  `PullRequest.transition`); `@property` methods remain omitted. Discovery is
+  not execution or efficacy evidence. Taskrail 0.4.0's supported `unblock`
+  command returned T-033 to todo with a reason; its obsolete 3.7.0
+  release-availability blocker is removed, not its remaining acceptance work.
 - T-020 optional CI enrichment. v0.1.0 collection does not gather check-run or
   commit-status observations, so CI-derived estimates are unavailable.
-- T-036 Taskrail reopening support, a repository tooling follow-up rather than
-  simulator behavior.
+- T-036 Taskrail reopening support. Taskrail 0.4.0 can unblock blocked tasks
+  but cannot reopen completed work; completed T-028/T-029 history is preserved,
+  with preparation and publication tracked separately in T-063/T-064.
+- T-048 end-to-end held-out validation preparation under v0.2.0. A prepared
+  real-data replay evidence workflow is not part of this release evidence.
+- T-051 professional-workflow compatibility profiles under v0.3.0. The current
+  simulator remains limited to its documented workflow assumptions.

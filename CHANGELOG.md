@@ -8,26 +8,6 @@ Notable user-facing changes are recorded here using
 
 Initial v0.1.0 development; no release has been published.
 
-- Array or object duration kinds in model inputs now return invalid-input errors
-  (exit 2), including structured diagnostics under `--json`, without replacing
-  an existing simulation bundle even with `--overwrite`.
-- Held-out validation now uses the first completed approval or changes-requested
-  decision for review latency and 48-hour successes, rather than review start.
-  Unfinished reviews no longer fabricate completion evidence. Operational
-  review-start latency remains unchanged. The elapsed-delay benchmark now also
-  excludes reviews and merges at or beyond the replay end from latency samples
-  and service-level successes, matching FIFO's half-open horizon accounting.
-- Added a local workflow for authorized GitHub repository testing, including
-  token-safe collection, calibration, persisted simulation, and explicit
-  blocked results for incomplete evidence.
-- Fixed persisted simulation for valid calibrations with no descriptive review
-  or merge observations while keeping active-effort inputs strictly validated.
-- Excessively nested configuration and JSON artifact inputs now return invalid-input
-  errors (exit 2), including structured diagnostics under `--json`, rather than tracebacks.
-- Simulation dates outside the supported datetime range now return invalid-input
-  errors (exit 2), including under `--json`, without replacing an existing bundle.
-  Nearby representable runs no longer fail on unused calendar iteration dates.
-
 ### Added
 
 - Run an offline synthetic demo to explore pull-request review workflows
@@ -40,13 +20,28 @@ Initial v0.1.0 development; no release has been published.
   exclude bodies, patches, tokens, and email addresses; AI origin is never
   inferred from account type.
 - Build and calibrate empirical models through the Python API, with explicit
-  effort assumptions and parameter provenance.
+  effort assumptions and parameter provenance. A [local authorized workflow](docs/live-workflow.md)
+  documents collection through persisted simulation and reports blocked results
+  when evidence is incomplete.
 - Run saved models with `simulate`, check held-out evidence with `validate`,
   and generate Markdown reports from saved artifacts with `report`, without
   rerunning simulations. Reports show queueing, review latency, throughput,
   uncertainty, and fit diagnostics; truncated runs disable policy ranking.
 - Automate workflows with JSON Lines console output (`--json`), stable exit
   codes, and configuration JSON Schema export (`schema`).
+
+### Fixed
+
+- Held-out validation measures first completed review decisions, not review
+  starts; unfinished reviews provide no completion evidence. The elapsed-delay
+  benchmark excludes completions at or after the replay end, matching FIFO's
+  half-open horizon. Operational review-start latency is unchanged.
+- Persisted simulation accepts valid calibrations with no descriptive review
+  or merge observations while keeping active-effort inputs strictly validated.
+- Invalid duration kinds, excessively nested inputs, and unrepresentable
+  simulation dates return exit 2, including structured diagnostics under
+  `--json`, without replacing an existing simulation bundle. Representable
+  boundary dates no longer fail on unused calendar iteration dates.
 
 ### Limitations
 

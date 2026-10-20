@@ -45,22 +45,28 @@ Completed small samples still report insufficient evidence. Counts and survivor
 denominators are unchanged; `uv run mutmut results --all true` retains all raw
 outcomes, including unrelated modules.
 
-## T-005 and remaining release work
+## Historical T-005 verification and current follow-up
 
 T-005 reported 34/39 = 87.2%. Those same raw counts fail at 90% and pass at 80%,
 with all five survivors still counted. T-035 verifies that decision using a
 synthetic shell fixture, not by importing or rerunning T-005's isolated code.
-The T-005 owner must reconcile this policy and rerun its actual verification;
-the old failed run must not be rewritten as a historical pass.
+T-005 subsequently reran its actual differential verification at 34/39 (87.2%)
+under the then-default 80% floor and is completed. The old failed run remains
+historical evidence, not a retroactive pass.
 
-T-035 removes T-005's numerical-floor blocker. T-034 resolves the separate
-differential accounting problem described above. T-005 must reconcile both
-changes and rerun its actual verification before claiming a clean gate.
+T-035 removes T-005's numerical-floor blocker, and T-034 resolves the separate
+differential accounting problem described above; T-005's completed verification
+records both changes and the actual rerun.
 T-030 (release mutation validation) records its historical evidence under
 "Release mutation gate (T-030)" below. T-033 (dataclass mutation discovery)
 remains deferred to v0.2.0. The v0.1.0 lock now uses mutmut 3.8.0, which
 discovers decorated class bodies; dedicated coverage and efficacy work remains
-owned by T-033. None is implemented by T-035.
+owned by T-033. T-063 removed T-033's obsolete release-availability blocker via
+`taskrail unblock`, returning it to todo without claiming its acceptance work.
+An in-memory probe of the current calendar and domain source with locked 3.8.0
+found 293 and 367 mutants, including 135 in `DutyCalendar.materialize` and 151
+in `PullRequest.transition`. It executed no mutants and establishes no efficacy
+or runtime result. None of this discovery work was implemented by T-035.
 
 ## Discovery limitations in v0.1.0
 
@@ -82,7 +88,8 @@ functions and methods remain subject to the limitations below.
     validators in `configuration`, `calibration`, `inspection`, `store`, and
     `validation`;
   - the Typer `@app.callback` and every `@app.command` body in
-    `merge_carlo.cli`: `schema`, `demo`, `collect`, `inspect`, and `validate`
+    `merge_carlo.cli`: `schema`, `demo`, `collect`, `inspect`, `validate`,
+    `simulate`, and `report`
     (T-041);
   - `@property` methods such as `UTCInterval.seconds` and
     `PullRequest.terminal`.
@@ -256,8 +263,11 @@ floor, but these modules score lower there: `attribution` 165/188 (87.8%),
   probably links a SQLite built the same way, but that was not checked on the
   runner.
 
-These kills depend on the host, and the mutants are not equivalent. On a UTC
-host with URI-enabled SQLite, a regression to host-local time or to
-path-interpreted database names would pass the tests. The CI count is the
-lower, authoritative figure for those modules. T-043 tracks making these tests
-independent of the host.
+At the time of this historical run, these kills depended on the host, and the
+mutants were not equivalent. On a UTC host with URI-enabled SQLite, a regression
+to host-local time or path-interpreted database names would pass those tests.
+The CI count is the lower, authoritative figure for that run. T-043 is now
+completed and added host-independent regressions; this historical survivor list
+is not a current defect inventory. T-063 does not rerun the full mutation gate
+or recalculate these historical scores. See the current CI reference in
+[implementation status](implementation-status.md).

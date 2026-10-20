@@ -1,12 +1,12 @@
 ---
 id: T-033-dataclass-mutation-coverage
 title: Cover dataclass simulation methods in mutation testing
-status: blocked
+status: todo
 priority: medium
 spec_ref: specs/v0.2.0.md#mutation-discovery
 dependencies:
     - T-003-duty-calendars
-updated_at: "2026-09-11T10:29:17Z"
+updated_at: "2026-10-20T19:14:48Z"
 ---
 
 # T-033-dataclass-mutation-coverage Cover dataclass simulation methods in mutation testing
@@ -70,3 +70,4 @@ Maintainer decision (2026-09-11): no git or local-patch remedy; wait for a PyPI
 mutmut release containing #539. Runtime trampolining of `slots=True`
 dataclasses, mutation efficacy, and runtime remain unverified.
 - 2026-09-11T09:52:38Z: Awaiting a PyPI mutmut release containing boxed/mutmut#539 (dc58270): 3.7.0 skips all decorated class bodies (file_mutation.py:292-293). Maintainer chose no git pin or local patch. Discovery evidence in task Implementation Notes.
+- 2026-10-20T19:14:48Z: The locked mutmut is now 3.8.0 and discovers decorated class bodies; the 3.7.0 release-availability blocker is obsolete. Dedicated coverage, execution/efficacy and runtime acceptance remain open under v0.2.0; T-063 does not claim their completion.

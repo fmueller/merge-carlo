@@ -57,15 +57,23 @@ Missing evidence, incomplete extraction, unknown attribution, and censored
 outcomes stay visible in the output. Unsupported quantities are reported as
 `null` with a reason, never as a favorable default.
 
-## Install
+## Install from a checkout
+
+Requires Python 3.12–3.14 and [uv](https://docs.astral.sh/uv/)
+(3.13 is the reference Python version). Until publication is verified, use a
+source checkout:
 
 ```bash
+git clone https://github.com/fmueller/merge-carlo.git
+cd merge-carlo
 uv sync --locked
 ```
 
-Requires Python 3.12 or later (3.13 is the reference version).
+Installing the published package with `uv tool install merge-carlo==0.1.0`
+is **pending publication verification**; it is not the current quick start.
+Contributors should use `mise run setup` instead; see [Development](#development).
 
-## Use
+## First offline run
 
 The offline demo needs no credentials and makes no network calls:
 
@@ -91,6 +99,15 @@ summary JSON/CSV, replication rows and paired deltas accompany the report;
 These are illustrative inputs, not measured behavior or a policy recommendation.
 The two synthetic weeks are exploratory; active review service is an assumed
 constant. Replacement changes origin only and does not imply different effort.
+
+## Work with repository data
+
+The supported path is `collect` → `inspect` → Python API calibration →
+`simulate` → `report`, with `validate` for prepared held-out replay evidence.
+Collection needs authorized GitHub access; subsequent analysis uses local
+artifacts. Calibration inputs and held-out evidence must be prepared explicitly,
+not inferred by a one-command pipeline. Real-team calibration and real-data
+validation remain unverified.
 
 Export the versioned assumption and scenario contracts before authoring a
 configuration. The output directory must be empty or absent:
