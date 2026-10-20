@@ -2,9 +2,11 @@
 
 import hashlib
 import json
+import platform
 import re
 from dataclasses import replace
 from datetime import UTC, date, datetime, timedelta
+from importlib.metadata import version
 from pathlib import Path
 from typing import Literal
 
@@ -256,9 +258,10 @@ def test_model_card_renders_all_unavailable_quantities_as_null_with_reason() -> 
     card = render_model_card(result)
 
     assert "Readiness policy: `strict`" in card
-    assert "Application version:" in card
-    assert "Python version:" in card
-    assert "Dependency versions:" in card
+    assert f"- Application version: `{version('merge-carlo')}`" in card
+    assert f"- Python version: `{platform.python_version()}`" in card
+    dependencies = {name: version(name) for name in ("numpy", "simpy", "pydantic", "httpx", "pyyaml", "typer")}
+    assert f"- Dependency versions: `{json.dumps(dependencies, sort_keys=True)}`" in card
     assert "Seed: `null` (reason: `not_applicable_to_calibration`)" in card
     assert "RNG scheme: `null` (reason: `not_applicable_to_calibration`)" in card
     assert "Reviewer roster: `null` (reason: `downstream_simulation_input`)" in card
@@ -266,9 +269,11 @@ def test_model_card_renders_all_unavailable_quantities_as_null_with_reason() -> 
     for name in ("defect_escape_rate", "security_risk_change", "policy_safety"):
         assert f"- `{name}`: `null` (reason: `unsupported_in_v0_1`)" in card
     assert "confidence interval: `null` (reason: `not_declared`)" in card
-    normalized = re.sub(r"^- Python version: `[^`]+`$", "- Python version: `<runtime>`", card, flags=re.MULTILINE)
+    normalized = card
+    for label in ("Application version", "Python version", "Dependency versions"):
+        normalized = re.sub(rf"^- {label}: `[^`]+`", f"- {label}: `<runtime>`", normalized, flags=re.MULTILINE)
     assert hashlib.sha256(normalized.encode()).hexdigest() == (
-        "9b5f81965175626cf54de22590a47b65760c76315375ff55e9fe554bfd70bbc6"
+        "29de3771f619c2dfebda6c681448b93ad134252765693c3f9572c8493b38e8f2"
     )
 
 
