@@ -6,7 +6,9 @@ Notable user-facing changes are recorded here using
 
 ## [Unreleased]
 
-Initial v0.1.0 development; no release has been published.
+## [0.1.0] - 2026-10-31
+
+Initial release of the offline-first scenario explorer.
 
 ### Added
 
@@ -55,4 +57,5 @@ Initial v0.1.0 development; no release has been published.
 - [Performance measurements](docs/performance.md) cover one synthetic workload
   on one machine, not a general runtime or scalability guarantee.
 
-[Unreleased]: https://github.com/fmueller/merge-carlo/tree/main
+[Unreleased]: https://github.com/fmueller/merge-carlo/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0

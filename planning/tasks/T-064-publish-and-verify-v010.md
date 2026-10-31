@@ -1,12 +1,12 @@
 ---
 id: T-064-publish-and-verify-v010
 title: Publish and verify v0.1.0
-status: todo
+status: in_progress
 priority: high
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-063-release-preparation
-updated_at: "2026-10-20T19:11:11Z"
+updated_at: "2026-10-31T09:29:10Z"
 ---
 
 # T-064-publish-and-verify-v010 Publish and verify v0.1.0

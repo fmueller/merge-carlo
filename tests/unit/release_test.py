@@ -77,13 +77,12 @@ def _run_gate(script: str, repository: Path, **environment: str) -> subprocess.C
 
 
 @pytest.mark.unit
-def test_initial_changelog_is_unreleased_and_retains_evidence_limits() -> None:
+def test_initial_release_changelog_retains_evidence_limits() -> None:
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-    # Update this pre-release assertion only as part of an authorized release.
-    assert re.findall(r"^## .*", changelog, re.MULTILINE) == ["## [Unreleased]"]
-    assert "compare/v0.1.0" not in changelog
-    assert "releases/tag/v0.1.0" not in changelog
+    assert re.findall(r"^## .*", changelog, re.MULTILINE) == ["## [Unreleased]", "## [0.1.0] - 2026-10-31"]
+    assert "[Unreleased]: https://github.com/fmueller/merge-carlo/compare/v0.1.0...HEAD" in changelog
+    assert "[0.1.0]: https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0" in changelog
     assert "Live GitHub integration has not been run." in changelog
     assert "No authorized dataset was" in changelog
 
