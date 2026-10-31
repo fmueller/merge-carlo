@@ -5,6 +5,7 @@ import hashlib
 import json
 from dataclasses import replace
 from datetime import datetime
+from importlib.metadata import version
 from pathlib import Path
 
 import pytest
@@ -47,7 +48,7 @@ def test_publish_complete_reproducible_bundle(tmp_path: Path, monkeypatch: pytes
     assert manifest["timezone"] == "UTC"
     assert manifest["training_cutoff"] == "2026-09-07T00:00:00Z"
     assert manifest["validation_status"] == "not_performed"
-    assert manifest["application_version"] == "0.1.0"
+    assert manifest["application_version"] == version("merge-carlo")
     assert manifest["model_version"] == "fifo-v0.1"
     assert "PCG64" in manifest["rng_scheme"]
     assert "numpy" in manifest["dependency_versions"]

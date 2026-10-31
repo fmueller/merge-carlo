@@ -95,7 +95,6 @@ def test_calibration_docs_use_the_python_api_and_supported_cli_pipeline() -> Non
 
     assert "merge-carlo calibrate" not in readme
     for symbol in ("calibrate_model", "load_assumptions", "write_calibration"):
-        assert symbol in readme
         assert symbol in calibration
     for artifact in ("model.json", "calibration.json", "model-card.md"):
         assert artifact in readme
@@ -111,7 +110,8 @@ def test_calibration_docs_use_the_python_api_and_supported_cli_pipeline() -> Non
     assert "Authorized live GitHub integration has not been completed" in readme
     assert "--dataset data/cohort/dataset.sqlite" in readme
     assert "--dataset data/repository.sqlite" not in readme
-    assert _documented_python_source(ROOT / "README.md") == _documented_python_source(ROOT / "docs" / "calibration.md")
+    assert "https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/calibration.md" in readme
+    assert "```python" not in readme
 
     documentation = [ROOT / "README.md", *sorted((ROOT / "docs").rglob("*.md"))]
     invocation = re.compile(r"^\s*(?:uv run )?merge-carlo calibrate\b")
@@ -122,6 +122,18 @@ def test_calibration_docs_use_the_python_api_and_supported_cli_pipeline() -> Non
                 in_fence = not in_fence
             elif in_fence:
                 assert not invocation.search(line), path
+
+
+@pytest.mark.unit
+def test_readme_resources_resolve_outside_the_repository() -> None:
+    readme = (ROOT / "README.md").read_text(encoding="utf-8")
+    targets = re.findall(r"\]\(([^)]+)\)", readme) + re.findall(r'<img[^>]+src="([^"]+)"', readme)
+    assert targets
+    assert all(target.startswith(("https://", "#")) for target in targets)
+    assert "uv tool install merge-carlo==0.1.1" in readme
+    assert "merge-carlo demo --out out/demo --seed 42 --replications 200" in readme
+    assert "pending publication verification" not in readme
+    assert "--until" not in readme
 
 
 def _documented_python_source(path: Path) -> str:
@@ -308,17 +320,18 @@ def _documented_cli_args(command: str, documentation_path: Path = ROOT / "README
     for block in re.findall(r"```bash\n(.*?)\n```", documentation, re.DOTALL):
         lines = block.splitlines()
         for index, line in enumerate(lines):
-            if line != f"uv run merge-carlo {command}" and not line.startswith(f"uv run merge-carlo {command} "):
+            invocation = line.removeprefix("uv run ")
+            if invocation != f"merge-carlo {command}" and not invocation.startswith(f"merge-carlo {command} "):
                 continue
             command_lines: list[str] = []
             for candidate in lines[index:]:
-                if command_lines and candidate.startswith("uv run merge-carlo "):
+                if command_lines and candidate.removeprefix("uv run ").startswith("merge-carlo "):
                     break
                 command_lines.append(candidate)
             command_text = re.sub(r"\\\s*\n\s*", " ", "\n".join(command_lines))
-            tokens = shlex.split(command_text)
-            assert tokens[:3] == ["uv", "run", "merge-carlo"]
-            return tokens[3:]
+            tokens = shlex.split(command_text.removeprefix("uv run "))
+            assert tokens[0] == "merge-carlo"
+            return tokens[1:]
     raise AssertionError(f"documented {command} command not found")
 
 
@@ -334,7 +347,9 @@ def _replace_cli_paths(args: list[str], replacements: dict[str, str]) -> list[st
 def test_documented_persisted_pipeline_smoke_uses_synthetic_artifacts(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    readme_model_dir, dataset_hash = _write_synthetic_calibration(tmp_path / "readme-calibration", ROOT / "README.md")
+    readme_model_dir, dataset_hash = _write_synthetic_calibration(
+        tmp_path / "readme-calibration", ROOT / "docs" / "calibration.md"
+    )
     docs_model_dir, docs_dataset_hash = _write_synthetic_calibration(
         tmp_path / "docs-calibration", ROOT / "docs" / "calibration.md"
     )

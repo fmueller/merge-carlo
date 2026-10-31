@@ -1,104 +1,82 @@
 <h1>
-  <img src="assets/logo.svg" alt="" width="44">
+  <img src="https://raw.githubusercontent.com/fmueller/merge-carlo/60eaf6e5482991f30cfc3b7ffcce922389d258b9/assets/logo.svg" alt="" width="44">
   merge-carlo
 </h1>
 
 [![Build](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml/badge.svg)](https://github.com/fmueller/merge-carlo/actions/workflows/build.yml)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/fmueller/merge-carlo/blob/main/pyproject.toml)
-[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](LICENSE)
+[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue)](https://github.com/fmueller/merge-carlo/blob/v0.1.1/pyproject.toml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/fmueller/merge-carlo/blob/v0.1.1/LICENSE)
 
-An offline-first scenario explorer for human and AI software-development
-workflows. merge-carlo asks one question:
+An offline-first scenario explorer for pull-request review workflows.
 
 > How does additional AI-generated pull-request demand interact with constrained
 > human review capacity, and which workflow interventions remain useful across
 > plausible assumptions?
 
-It imports read-only GitHub metadata, estimates what that data actually
-supports, combines those estimates with explicitly declared assumptions, and
-runs a discrete-event, agent-based simulation repeatedly under alternative
-scenarios. The output is a comparison of **conditional simulated outcomes**, not
-a causal estimate of AI productivity.
+merge-carlo combines read-only GitHub metadata with explicit assumptions and
+runs repeated discrete-event simulations under alternative scenarios. It
+compares **conditional simulated outcomes**, not causal AI productivity gains.
+Its agents are ordinary software objects with stochastic rules, not language
+models. No part of merge-carlo calls an LLM or writes to GitHub.
 
-The agents are ordinary software objects with stochastic rules. They are not
-language models, and no part of merge-carlo calls one.
+## Install
 
-## Status
-
-Pre-alpha. The v0.1.0 scope is frozen in
-[`specs/v0.1.0.md`](specs/v0.1.0.md). The offline synthetic demo, read-only
-cohort collection, inspection, Python model calibration, held-out descriptive
-validation, schema export, persisted experiment simulation/reporting, and a
-recorded [performance benchmark](docs/performance.md) are implemented. The
-calibration remains a Python API; a real-data `calibrate` CLI remains out of
-scope. The final mutation gate and release workflows are implemented. Trusted
-PyPI/TestPyPI setup and actual publication still require the separately
-configured publishers and maintainer approval; see
-[`docs/releasing.md`](docs/releasing.md). Track exact progress
-in [`docs/implementation-status.md`](docs/implementation-status.md) and
-`planning/STATE.md`.
-
-**Authorized live GitHub integration has not been completed.** Bounded
-anonymous probes of five public repositories exercised the failure-safe paths,
-but no authorized dataset was collected for release evidence. The fixture-backed
-tests and anonymous probes are not evidence that a real repository is ready for
-release.
-
-## What it does not do
-
-- No LLM personas, agent frameworks, or automatic parameter tuning.
-- No individual developer productivity scores, rankings, or inferred work hours.
-- No AI-authorship classifier and no estimate of the fraction of AI-written code.
-- No GitHub writes: no approvals, merges, labels, or reviewer assignment.
-- No source-code ingestion, AST analysis, or learned risk score.
-- No web dashboard, service, or database server.
-
-Missing evidence, incomplete extraction, unknown attribution, and censored
-outcomes stay visible in the output. Unsupported quantities are reported as
-`null` with a reason, never as a favorable default.
-
-## Install from a checkout
-
-Requires Python 3.12–3.14 and [uv](https://docs.astral.sh/uv/)
-(3.13 is the reference Python version). Until publication is verified, use a
-source checkout:
+Requires Python 3.12–3.14. Install the CLI in an isolated environment with
+[uv](https://docs.astral.sh/uv/):
 
 ```bash
-git clone https://github.com/fmueller/merge-carlo.git
-cd merge-carlo
-uv sync --locked
+uv tool install merge-carlo==0.1.1
 ```
 
-Installing the published package with `uv tool install merge-carlo==0.1.0`
-is **pending publication verification**; it is not the current quick start.
-Contributors should use `mise run setup` instead; see [Development](#development).
+Alternatively, run `python -m pip install merge-carlo==0.1.1` in a virtual
+environment. Installation downloads dependencies; the demo itself is offline.
 
 ## First offline run
 
-The offline demo needs no credentials and makes no network calls:
+No credentials, repository checkout, or network access are needed after installation:
 
 ```bash
-uv run merge-carlo demo --out out/demo --seed 42 --replications 200
+merge-carlo demo --out out/demo --seed 42 --replications 200
 ```
 
-After dependencies are installed, use `uv run --offline --no-sync` (or
-`.venv/bin/merge-carlo`) to prevent the package manager from accessing the
-network too. The output directory must be empty or absent; use another directory
-to rerun. The same seed and locked environment reproduce identical artifacts.
+Open `out/demo/report.md`. It compares a baseline with additive AI demand, AI
+replacement, extended review duty, a reviewer absence, and hypothetical review
+bypass. The output includes review latency, throughput, queueing, uncertainty,
+and paired scenario deltas, alongside a model card and JSON/CSV artifacts.
 
-Open `out/demo/report.md`. Every major section is labeled **SYNTHETIC** and
-states that only the base assumption set was run, not full sensitivity. The
-versioned `resolved-scenarios.json` includes the synthetic dataset under
-`experiment.templates`, example assumptions under `experiment.assumptions`,
-and scenario overrides under `experiment.scenarios` (baseline is implicit).
-The suite demonstrates additive AI demand, AI replacement, extended review duty,
-a dated reviewer absence, and hypothetical review bypass. Model card, manifest,
-summary JSON/CSV, replication rows and paired deltas accompany the report;
-`traces.jsonl` is empty because full diagnostics are opt-in.
+Every major report section is labeled **SYNTHETIC**. The demo runs only the base
+assumption set, not full sensitivity analysis. Its two synthetic weeks are
+illustrative inputs, not measured team behavior or a policy recommendation.
+Active review effort is assumed; replacement changes origin only, not effort.
 
-These are illustrative inputs, not measured behavior or a policy recommendation.
-The two synthetic weeks are exploratory; active review service is an assumed
-constant. Replacement changes origin only and does not imply different effort.
+The output directory must be empty or absent; choose another directory to
+rerun. A fixed seed reproduces artifacts within the same dependency environment.
+For a locked development environment, see the
+[contributor guide](https://github.com/fmueller/merge-carlo/blob/v0.1.1/CONTRIBUTING.md).
+
+## Status and limits
+
+**Pre-alpha.** The offline demo, read-only collection, dataset inspection,
+Python API calibration, held-out descriptive validation, and persisted
+simulation/reporting are implemented. Calibration is a Python API, not a CLI
+subcommand. See [implementation status](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/implementation-status.md)
+for evidence and remaining gaps.
+
+**Authorized live GitHub integration has not been completed.** No authorized
+dataset was collected for release evidence. Live collection, real-team
+calibration, and real-data validation remain unverified; synthetic fixtures and
+anonymous failure-path probes do not establish them.
+
+- No developer productivity scores, rankings, or inferred work hours.
+- No AI-authorship classifier; unknown work origin stays unknown.
+- No GitHub approvals, merges, labels, or reviewer assignment.
+- No source-code ingestion, LLM personas, automatic parameter tuning, or web dashboard.
+- No claim about defect escape, security risk, or the safety of review bypass.
+
+Missing evidence, incomplete extraction, censoring, and unsupported quantities
+stay visible. Unsupported metrics are `null` with a reason, never favorable
+defaults. Read the [model limitations](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/limitations.md)
+before interpreting a scenario comparison.
 
 ## Work with repository data
 
@@ -106,137 +84,77 @@ The supported path is `collect` → `inspect` → Python API calibration →
 `simulate` → `report`, with `validate` for prepared held-out replay evidence.
 Collection needs authorized GitHub access; subsequent analysis uses local
 artifacts. Calibration inputs and held-out evidence must be prepared explicitly,
-not inferred by a one-command pipeline. Real-team calibration and real-data
-validation remain unverified.
+not inferred by a one-command pipeline.
 
-Export the versioned assumption and scenario contracts before authoring a
-configuration. The output directory must be empty or absent:
+### Collect and inspect
 
-```bash
-uv run merge-carlo schema --out out/schemas
-```
-
-Data-only examples are in [`examples/`](examples/), and the validation,
-duration-rounding, and multiplier rules are documented in
-[`docs/configuration.md`](docs/configuration.md).
-
-Read-only [cohort collection](docs/cohort-collection.md) reads one explicitly
-selected, authorized repository. `GITHUB_TOKEN` comes from the environment;
-never put a token in a command, configuration file, or report. For the complete
-five-repository release test, use the [local authorized-repository workflow](docs/live-workflow.md),
-which writes per-repository inspection, calibration, simulation, and summary
-artifacts without fabricating success for incomplete collections.
+Read-only [cohort collection](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/cohort-collection.md)
+reads one explicitly selected, authorized repository. Supply `GITHUB_TOKEN`
+through the environment, never a command argument or configuration file. Keep
+the private workspace key outside the dataset:
 
 ```bash
-uv run merge-carlo collect --repo OWNER/REPOSITORY \
+merge-carlo collect --repo OWNER/REPOSITORY \
   --start 2026-04-01T00:00:00Z --end 2026-09-01T00:00:00Z \
   --out data/cohort --workspace /private/path/merge-carlo-key
 ```
 
-Repeat with `--resume` to reconcile from page one. The private workspace key
-must stay outside the dataset. Incomplete source collections exit 3 and retain
-explicit statuses. Readiness defaults to strict evidence handling and work
-origin stays unknown unless declared in a local attribution configuration; see
-[cohort collection](docs/cohort-collection.md). Authorized live integration
-remains unverified; use the [local workflow](docs/live-workflow.md) for a
-token-backed run.
+The cohort includes PRs created in `[start, end)` and older PRs whose open or
+closing evidence overlaps that interval. `--end 2026-09-01T00:00:00Z` excludes
+PR creations at or after September 1; it does not truncate retained PRs' review
+or lifecycle history. Repeat with `--resume` to reconcile from page one.
+Incomplete collections exit 3 and retain explicit statuses. Readiness defaults
+to strict evidence handling; work origin stays unknown unless locally declared.
 
-Inspect the projected dataset without the private workspace key. The command
-writes `inspection.json` and `report.md` with endpoint status, counts, date
-coverage, missingness, censoring, attribution, fit exclusions, and extraction
-limitations:
+Inspect the dataset without the private key. This writes `inspection.json`
+and `report.md` with coverage, missingness, censoring, and extraction limitations:
 
 ```bash
-uv run merge-carlo inspect   --dataset data/cohort/dataset.sqlite --out out/inspection
+merge-carlo inspect --dataset data/cohort/dataset.sqlite --out out/inspection
 ```
 
-Apply descriptive gates to a prepared, versioned held-out replay evidence file.
-The default remains exploratory: it writes failed gates as warnings. Add
-`--strict` to exit with code 4 when a declared criterion fails:
+### Calibrate, validate, and compare
+
+Follow the [Python calibration guide](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/calibration.md)
+to prepare coverage, reviewer, and effort-assumption inputs and write
+`models/repository/model.json`, `calibration.json`, and `model-card.md`.
+Active review effort is an explicit assumption, **never inferred from elapsed
+review delay**.
+
+With a prepared, versioned held-out replay evidence file, run descriptive
+validation. By default failed gates are warnings; `--strict` exits 4 when a
+declared criterion fails:
 
 ```bash
-uv run merge-carlo validate --input out/replay-evidence.json --out out/validation --strict
+merge-carlo validate --input out/replay-evidence.json --out out/validation --strict
 ```
 
-The replay evidence contains the frozen fitting and validation intervals,
-observed mature-cohort outcomes, and replication outcomes from replaying exact
-held-out arrival timestamps with only known-at-arrival attributes. See
-[`docs/validation.md`](docs/validation.md).
-
-Calibration is a Python API, not a CLI subcommand. `collect` writes the
-projected SQLite dataset and `inspect` writes its coverage report; the feature
-and calibration boundary consumes a canonical `ProjectedStore.export()` plus
-data-only coverage, reviewer, and effort-assumption inputs. The following
-example reads those named inputs and writes the three model artifacts; the same
-API boundary is documented in [`docs/calibration.md`](docs/calibration.md):
-
-```python
-import json
-from datetime import UTC, datetime, timedelta
-from pathlib import Path
-
-from merge_carlo.calibration import (
-    CalibrationCoverage,
-    calibrate_model,
-    load_assumptions,
-    write_calibration,
-)
-from merge_carlo.features import build_features
-from merge_carlo.store import ProjectedStore, WorkspaceKey
-
-dataset_path = Path("data/cohort/dataset.sqlite")
-workspace_path = Path("/private/path/merge-carlo-key")
-coverage_path = Path("data/cohort/calibration-coverage.json")
-assumptions_path = Path("configs/calibration-assumptions.json")
-reviewers_path = Path("configs/human-reviewers.json")
-
-with ProjectedStore(dataset_path, WorkspaceKey(workspace_path), existing_only=True) as store:
-    extraction = store.manifests()[0]
-    dataset = store.export(extraction.id)
-    dataset_hash = store.content_hash(extraction.id)
-
-coverage = CalibrationCoverage.model_validate_json(coverage_path.read_bytes())
-if coverage.dataset_content_hash != dataset_hash:
-    raise ValueError("coverage does not match the exported dataset")
-assumptions = load_assumptions(json.loads(assumptions_path.read_text(encoding="utf-8")))
-features = build_features(
-    dataset,
-    dataset_content_hash=dataset_hash,
-    readiness_policy=coverage.readiness_policy,
-    cutoff=datetime(2026, 7, 1, tzinfo=UTC),
-    timezone="Europe/Berlin",
-    outcome_horizon=timedelta(days=7),
-    declared_human_reviewers=frozenset(json.loads(reviewers_path.read_text(encoding="utf-8"))),
-)
-result = calibrate_model(features, assumptions, coverage)
-write_calibration(result, Path("models/repository"))
-```
-
-This writes `models/repository/model.json`, `calibration.json`, and
-`model-card.md`. The coverage, reviewer, and assumption inputs are operator
-supplied data-only artifacts; active review effort remains an explicit
-assumption and is never inferred from elapsed review delay. With a prepared
-held-out evidence file, continue with the persisted commands:
+See [validation](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/validation.md)
+for the evidence contract. Then simulate the saved model and generate a report
+from the result artifacts, without rerunning the simulation:
 
 ```bash
-uv run merge-carlo simulate --model models/repository/model.json \
+merge-carlo simulate --model models/repository/model.json \
   --scenarios configs/scenarios.yaml --out out/experiment
-uv run merge-carlo report --results out/experiment \
+merge-carlo report --results out/experiment \
   --validation out/validation/validation.json \
   --out out/experiment/report.md --overwrite
 ```
 
-The scenario YAML's optional `execution` section declares the local observation
-start, horizon and warm-up, seed, replications, reviewer calendars, and named
-reviewers. Its resulting UTC bounds and additive/replacement demand semantics
-are persisted in `resolved-scenarios.json`; the report command only reads the
-saved result and validation artifacts.
+Export the assumption and scenario schemas before authoring configuration:
 
-Simulation dates and calendar boundaries must fit Python's datetime range
-(years 1–9999), including local horizon/warm-up arithmetic and timezone
-conversion. Unrepresentable dates return exit 2 (a structured error under
-`--json`) without publishing a bundle or replacing an existing one. Dates are
-never clamped into range.
+```bash
+merge-carlo schema --out out/schemas
+```
+
+Use the [configuration guide](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/configuration.md)
+and [data-only examples](https://github.com/fmueller/merge-carlo/tree/v0.1.1/examples).
+For collection through reporting across selected repositories, see the
+[authorized local workflow](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/live-workflow.md).
+It reports blocked results when evidence is incomplete; it does not establish
+that live integration has already succeeded.
+
+### Automation
 
 Exit codes: `0` success, `2` invalid input, `3` source or access failure,
 `4` a requested validation gate failed.
@@ -244,42 +162,40 @@ Exit codes: `0` success, `2` invalid input, `3` source or access failure,
 Add global `--json` before a command for machine-readable console output:
 
 ```bash
-uv run merge-carlo --json schema --out out/schemas
+merge-carlo --json schema --out out/schemas
 ```
 
 Each operational result or error is one JSON object containing `status`,
-`exit_code`, and `message`. Errors move from stderr to stdout in this mode so a
-consumer has one JSON Lines stream. Help remains human-readable text. This
-changes console encoding only; process exit codes and artifact contents are
-unchanged.
-
-Dates define half-open UTC windows: `--until 2026-09-01` excludes September 1,
-2026 and later events.
+`exit_code`, and `message`. Errors move from stderr to stdout in this mode;
+help remains human-readable. Exit codes and artifact contents are unchanged.
 
 ## Development
 
-```bash
-mise run setup          # pinned toolchain, locked dependencies, git hooks
-mise run check          # the full local gate
+Clone the repository for the pinned toolchain, locked dependencies, and tests:
 
-uv run ruff check       # lint (--fix to autofix)
-uv run ruff format      # format
-uv run mypy             # type check
-uv run pytest           # tests
+```bash
+git clone https://github.com/fmueller/merge-carlo.git
+cd merge-carlo
+mise run setup
+mise run check
 ```
 
-Contributor rules are in [`CONTRIBUTING.md`](CONTRIBUTING.md); coding agents
-read [`AGENTS.md`](AGENTS.md) first.
+Inside the checkout, use `uv run merge-carlo` instead of the installed CLI.
+After setup, `uv run --offline --no-sync merge-carlo` also prevents package
+manager network access. See [contributing](https://github.com/fmueller/merge-carlo/blob/v0.1.1/CONTRIBUTING.md);
+coding agents read [AGENTS.md](https://github.com/fmueller/merge-carlo/blob/v0.1.1/AGENTS.md) first.
 
 ## Documentation
 
-- [`specs/v0.1.0.md`](specs/v0.1.0.md) — the normative v0.1.0 scope boundary.
-- [`docs/limitations.md`](docs/limitations.md) — what the model cannot establish.
-- [`docs/implementation-status.md`](docs/implementation-status.md) — what is built and what is unverified.
-- [`docs/research/`](docs/research/) — research notes, case studies, references, and future workflow framing.
-- [`docs/brand.md`](docs/brand.md) — the two marks, where each one is used, and the palette.
-- `specs/` — versioned specs; `planning/` — tracked work.
+- [Configuration and scenarios](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/configuration.md)
+- [Calibration](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/calibration.md)
+- [Collection and data handling](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/cohort-collection.md)
+- [Validation](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/validation.md)
+- [Model limitations](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/limitations.md)
+- [Performance measurements](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/performance.md)
+- [Normative v0.1 scope](https://github.com/fmueller/merge-carlo/blob/v0.1.1/specs/v0.1.0.md)
+- [Research and references](https://github.com/fmueller/merge-carlo/tree/v0.1.1/docs/research)
 
 ## License
 
-Apache-2.0. See [`LICENSE`](LICENSE).
+Apache-2.0. See [LICENSE](https://github.com/fmueller/merge-carlo/blob/v0.1.1/LICENSE).

@@ -55,13 +55,14 @@ def test_cohort_union_pagination_children_and_cutoff(tmp_path: Path) -> None:
             )
         if request.url.path.endswith("/reviews"):
             return httpx.Response(
-                200, json=[{"id": 5, "state": "APPROVED", "submitted_at": "2026-01-10T00:00:00Z"}] * 2
+                200, json=[{"id": 5, "state": "APPROVED", "submitted_at": "2026-02-02T00:00:00Z"}] * 2
             )
         return httpx.Response(
             200,
             json=[
                 {"id": 6, "event": "ready_for_review", "created_at": "2026-01-09T00:00:00Z"},
                 {"id": 7, "event": "labeled", "label": {"name": "PRIVATE"}},
+                {"id": 8, "event": "closed", "created_at": "2026-02-02T00:00:00Z"},
             ],
         )
 
@@ -73,7 +74,9 @@ def test_cohort_union_pagination_children_and_cutoff(tmp_path: Path) -> None:
         data = store.export(manifest.id)
         assert {row["id"] for row in rows(data, "pull_requests")} == {1, 2, 3}
         assert len(rows(data, "reviews")) == 3
-        assert len(rows(data, "lifecycle_events")) == 3
+        assert all(row["submitted_at"] == "2026-02-02T00:00:00Z" for row in rows(data, "reviews"))
+        assert len(rows(data, "lifecycle_events")) == 6
+        assert sum(row["created_at"] == "2026-02-02T00:00:00Z" for row in rows(data, "lifecycle_events")) == 3
         assert len(rows(data, "derived_features")) == 3
         assert {row["origin"] for row in rows(data, "derived_features")} == {"unknown"}
         assert "PRIVATE" not in str(data)

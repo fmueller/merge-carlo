@@ -1,10 +1,10 @@
 # Implementation status
 
-This is the v0.1.0 evidence ledger: what is implemented, what was verified, what
+This is the v0.1 scope evidence ledger: what is implemented, what was verified, what
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-10-20 (T-063 release preparation; unpublished candidate).
+Last updated: 2026-10-31 (T-067 preparation for the first PyPI release, v0.1.1).
 
 ## Milestones
 
@@ -16,7 +16,7 @@ Last updated: 2026-10-20 (T-063 release preparation; unpublished candidate).
 | M3 | Replication runner, metrics, artifacts, report and synthetic demo | Complete; persisted simulate/report CLI added |
 | M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment deferred to v0.2.0 |
 | M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
-| M6 | Schemas, release evidence, performance benchmark, mutation gate and publishing | Implemented; external publication pending trusted-publisher setup |
+| M6 | Schemas, release evidence, performance benchmark, weekly mutation checks and publishing | Implemented; v0.1.0 GitHub/TestPyPI release exists, v0.1.1 PyPI publication pending |
 
 ## Implemented command surface
 
@@ -36,6 +36,15 @@ Stable process exit codes are:
 
 ## Verification evidence
 
+The v0.1.0 [TestPyPI rehearsal](https://github.com/fmueller/merge-carlo/actions/runs/41189333111)
+published wheel and sdist, followed by clean-install and offline-demo verification
+recorded in T-064. Its [GitHub release](https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0)
+exists, but the [PyPI workflow](https://github.com/fmueller/merge-carlo/actions/runs/41189661905)
+was cancelled before upload. T-067 prepares v0.1.1 with a package-facing README;
+its index installation and publication remain pending. T-066 merged both
+Dependabot updates after passing Build and CodeQL checks.
+
+The checks below are historical T-063 evidence, not a v0.1.1 verification claim.
 T-063 checks the local documentation/state candidate based on
 [`a03a276`](https://github.com/fmueller/merge-carlo/commit/a03a2761972f0e4b6532b367945d802fea3455c7).
 No executable source, dependency, or publishing-workflow change is included.
@@ -67,7 +76,7 @@ passed at
 not at this documentation candidate. No new full mutation run is claimed by
 T-063; historical scores below must not be substituted for current discovery.
 
-The release mutation gate (T-030) was run separately on 2026-09-11:
+The historical full mutation check (T-030) was run separately on 2026-09-11:
 `mise run test:mutate:gate` passed with every one of 22 modules at or above the
 80% floor, including `merge_carlo.simulation.engine` 601/613 (98.0%),
 `merge_carlo.simulation.runner` 172/176 (97.7%), and
@@ -80,9 +89,9 @@ The release workflows use separate build and publish jobs. They build with
 artifact transfer, and publish without a stored token through PyPI trusted
 publishing. The PyPI and TestPyPI jobs receive `id-token: write` only at the
 publish boundary. The local contract test, dry-run build, metadata check, and
-workflow inspection pass; no TestPyPI or PyPI upload is claimed until the
-publishers and protected environments are configured as documented in
-[`releasing.md`](releasing.md).
+workflow inspection passed for T-063. Later publisher configuration and the
+v0.1.0 rehearsal are recorded above. Mutation testing is weekly asynchronous
+assurance, not a release prerequisite; see [`releasing.md`](releasing.md).
 
 The tests use synthetic inputs and saved or mocked HTTP responses. They verify
 the offline demo is deterministic and does not construct network clients;
@@ -141,14 +150,12 @@ experiment report for the complete qualifications.
 
 ## Remaining v0.1.0 work
 
-T-063 prepares the release documentation and local evidence. T-064 remains the
-dependent publication task: review and land preparation, confirm trusted
-publishers and protected environments, obtain explicit release authorization,
-tag the reviewed main commit, rehearse on TestPyPI, publish the GitHub release
-and PyPI package, then verify clean installation and the offline demo. T-029
-completed publishing infrastructure, not any of those external operations.
-Published-package installation remains pending verification. No authorized live
-dataset or verified real-team calibration/real-data validation is included.
+T-064 is blocked and superseded after the v0.1.0 PyPI upload was cancelled.
+T-067 owns v0.1.1 preparation, independent README/docs review, TestPyPI rehearsal,
+and PyPI publication with clean-install and offline-demo verification. Trusted
+publishers and protected environments are configured, but each publication
+still requires maintainer approval. No authorized live dataset or verified
+real-team calibration/real-data validation is included.
 
 Deferred work outside the active spec includes:
 

@@ -1,6 +1,6 @@
 [project]
 name = "merge-carlo"
-version = "0.1.0"
+version = "0.1.1"
 description = "Offline scenario explorer for human and AI pull-request review workflows"
 readme = "README.md"
 requires-python = ">=3.12,<3.15"

@@ -52,7 +52,7 @@ jobs:
           if tag != f"v{version}":
               raise SystemExit(f"release tag {tag} does not match package version {version}")
           if os.environ["RELEASE_PRERELEASE"] != "false":
-              raise SystemExit("v0.1.0 must be published as a stable release")
+              raise SystemExit(f"{tag} must be published as a stable release")
           notes = os.environ["RELEASE_NOTES"]
           if "Live GitHub integration has not been run." not in notes:
               raise SystemExit("release notes must state that live integration was not run")

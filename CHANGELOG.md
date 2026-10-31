@@ -6,6 +6,18 @@ Notable user-facing changes are recorded here using
 
 ## [Unreleased]
 
+### Changed
+
+- Start from package installation and an offline demo without cloning the
+  repository. The PyPI README now links directly to versioned guides and
+  examples, separates developer setup, and keeps unverified live-data behavior
+  explicit.
+
+### Fixed
+
+- The collection date-window example now uses the supported `--end` option
+  with a timezone-aware timestamp.
+
 ## [0.1.0] - 2026-10-31
 
 Initial release of the offline-first scenario explorer.

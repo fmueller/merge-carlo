@@ -10,9 +10,10 @@ collection path, and the documented release evidence.
   collected for this release, so live collection, real-team calibration, and
   real-data validation remain unverified.
 - The offline demo, fixture-backed collection behavior, strict checks, type
-  checks, lint, and release mutation gate were verified in the locked reference
-  environment. The mutation gate is test-efficacy evidence for discovered
-  functions, not evidence of real-world model validity.
+  checks, and lint were verified in the locked reference environment. Mutation
+  testing runs asynchronously each week, not as a release gate. Historical
+  mutation results cover discovered functions, not real-world model validity;
+  no fresh mutation pass is claimed for this release.
 - The performance record covers one synthetic workload on one machine and does
   not make a universal runtime, memory, or scalability claim.
 

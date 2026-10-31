@@ -170,6 +170,19 @@ taskrail coverage               # spec coverage, orphans, drift
 - Do not mix unrelated refactors or formatting churn into feature changes.
 - Do not rewrite shared history or bypass CI-equivalent checks.
 - Update public documentation when user-visible behavior or setup changes.
+- Review README and affected public documentation before approving a release
+  candidate, and whenever a change alters documented behavior. Treat the README
+  as the PyPI landing page, not just a source-checkout guide: check the packaged
+  description, installation and first-run commands from a clean environment,
+  supported CLI options, absolute links and images outside GitHub, and status
+  claims against current evidence. Inspect the rendered package description
+  (including the TestPyPI page during release rehearsal), preserve synthetic and
+  live-integration limitations, and resolve misleading or broken instructions
+  before publication. Include this assessment in independent review and record
+  its evidence with the task. Do not claim PyPI installation is verified until
+  post-upload checks succeed.
+- Mutation testing is asynchronous weekly assurance, not a release gate. Do not
+  dispatch or wait for a fresh mutation run as a publication prerequisite.
 - Do not push, publish a package, create a release, or modify repository
   governance unless separately requested.
 
