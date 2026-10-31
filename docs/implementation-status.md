@@ -4,7 +4,7 @@ This is the v0.1 scope evidence ledger: what is implemented, what was verified, 
 is limited or unsupported, and what remains. “Implemented” does not imply that a
 model is validated for a real workflow or that the release is ready to publish.
 
-Last updated: 2026-10-31 (T-067 preparation for the first PyPI release, v0.1.1).
+Last updated: 2026-10-31 (T-067 first PyPI release, v0.1.1, published and verified).
 
 ## Milestones
 
@@ -16,7 +16,7 @@ Last updated: 2026-10-31 (T-067 preparation for the first PyPI release, v0.1.1).
 | M3 | Replication runner, metrics, artifacts, report and synthetic demo | Complete; persisted simulate/report CLI added |
 | M4 | Read-only transport/store, cohort collection, attribution and inspection | Implemented; optional CI enrichment deferred to v0.2.0 |
 | M5 | Frozen features, provenance-tagged calibration and descriptive validation/benchmark | Complete through Python APIs and offline validation CLI |
-| M6 | Schemas, release evidence, performance benchmark, weekly mutation checks and publishing | Implemented; v0.1.0 GitHub/TestPyPI release exists, v0.1.1 PyPI publication pending |
+| M6 | Schemas, release evidence, performance benchmark, weekly mutation checks and publishing | Complete; v0.1.1 published and verified on PyPI |
 
 ## Implemented command surface
 
@@ -40,9 +40,20 @@ The v0.1.0 [TestPyPI rehearsal](https://github.com/fmueller/merge-carlo/actions/
 published wheel and sdist, followed by clean-install and offline-demo verification
 recorded in T-064. Its [GitHub release](https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0)
 exists, but the [PyPI workflow](https://github.com/fmueller/merge-carlo/actions/runs/41189661905)
-was cancelled before upload. T-067 prepares v0.1.1 with a package-facing README;
-its index installation and publication remain pending. T-066 merged both
-Dependabot updates after passing Build and CodeQL checks.
+was cancelled before upload. T-066 merged both Dependabot updates after passing
+Build and CodeQL checks.
+
+T-067 published [v0.1.1 on PyPI](https://pypi.org/project/merge-carlo/0.1.1/)
+from the reviewed tag after a successful
+[TestPyPI rehearsal](https://github.com/fmueller/merge-carlo/actions/runs/41192649167)
+and [PyPI publication](https://github.com/fmueller/merge-carlo/actions/runs/41193085574).
+Both index distributions matched their respective workflow artifacts and
+digests. Clean Python 3.13 installation, the documented uv tool installation,
+version/help, and the seed-42, 200-replication offline demo passed. All six
+groups had 200 usable replications and no engine truncation; all eight manifest
+hashes matched. Actual TestPyPI and PyPI pages were inspected at wide/narrow
+widths, including the restored logo. This is packaging and synthetic evidence,
+not authorized live integration or real-team model validation.
 
 The checks below are historical T-063 evidence, not a v0.1.1 verification claim.
 T-063 checks the local documentation/state candidate based on
@@ -151,10 +162,9 @@ experiment report for the complete qualifications.
 ## Remaining v0.1.0 work
 
 T-064 is blocked and superseded after the v0.1.0 PyPI upload was cancelled.
-T-067 owns v0.1.1 preparation, independent README/docs review, TestPyPI rehearsal,
-and PyPI publication with clean-install and offline-demo verification. Trusted
-publishers and protected environments are configured, but each publication
-still requires maintainer approval. No authorized live dataset or verified
+T-067 delivered v0.1.1 with independent README/docs review, TestPyPI rehearsal,
+and PyPI publication plus clean-install and offline-demo verification. Future
+publications still require maintainer approval. No authorized live dataset or verified
 real-team calibration/real-data validation is included.
 
 Deferred work outside the active spec includes:

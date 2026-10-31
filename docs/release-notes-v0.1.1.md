@@ -1,6 +1,6 @@
 # merge-carlo v0.1.1
 
-This patch is intended as the first PyPI release. v0.1.0 was published on
+This patch is the first PyPI release, published on 2026-10-31. v0.1.0 was published on
 GitHub and TestPyPI; its PyPI publication was cancelled before upload.
 
 ## What changed
@@ -26,8 +26,11 @@ GitHub and TestPyPI; its PyPI publication was cancelled before upload.
   a general runtime or scalability guarantee.
 
 T-067 records candidate checks, TestPyPI rehearsal and post-upload PyPI
-installation verification separately. Preparing these notes does not mean an
-upload or clean index installation has succeeded.
+installation verification separately. Both publication workflows succeeded,
+index files matched their workflow artifacts, and clean PyPI installation,
+version/help and the offline demo passed. The actual package-page README and
+logo were inspected at wide and narrow widths. These checks establish package
+delivery, not real-data model validity.
 
 See the [changelog](https://github.com/fmueller/merge-carlo/blob/v0.1.1/CHANGELOG.md),
 [implementation evidence](https://github.com/fmueller/merge-carlo/blob/v0.1.1/docs/implementation-status.md),

@@ -1,12 +1,12 @@
 ---
 id: T-067-first-pypi-v011
 title: Prepare v0.1.1 as the first PyPI release with package-facing documentation review
-status: in_progress
+status: completed
 priority: high
 spec_ref: specs/v0.1.0.md#release-hardening
 dependencies:
     - T-066-pre-release-dependency-updates
-updated_at: "2026-10-31T09:55:34Z"
+updated_at: "2026-10-31T10:38:38Z"
 ---
 
 # T-067-first-pypi-v011 Prepare v0.1.1 as the first PyPI release with package-facing documentation review
@@ -83,3 +83,76 @@ of real-data model validity.
   TestPyPI rehearsal and rendered-page/install checks, maintainer approvals,
   PyPI upload and post-upload verification. No 0.1.1 index upload or index
   installation is claimed. Keep this task in progress until those succeed.
+
+### TestPyPI rehearsal verified — 2026-10-31
+
+This checkpoint supersedes the pending TestPyPI statements above; production
+PyPI publication and verification remain pending.
+
+- Candidate commit: b1932d21520b7547956a5255220dd75684d4d5f3, tagged v0.1.1.
+  Build 41192526412 and CodeQL 41192526371 passed. TestPyPI workflow
+  https://github.com/fmueller/merge-carlo/actions/runs/41192649167 succeeded
+  after maintainer approval. Main and the release tag were not advanced during
+  rehearsal verification.
+- https://test.pypi.org/project/merge-carlo/0.1.1/ exposes both distributions.
+  Downloaded index files match the workflow artifacts and index digests:
+  wheel SHA-256 a713b16976747570978c9d435254e087eacc274efadc65d61a9202b3010b0946;
+  sdist SHA-256 e65641df58c396a18bc85265257828cc4d06a47fcb0d2cb3aa503a1d81d3d5f3.
+  Published metadata has Python >=3.12,<3.15, Apache-2.0 and Markdown description;
+  the description exactly matches the tagged README.
+- A clean Python 3.13 environment installed the exact TestPyPI wheel URL, with
+  dependencies resolved from PyPI. A mixed-index first-index attempt could not
+  resolve NumPy because TestPyPI carries an older version; using an explicit
+  TestPyPI wheel URL avoids that ambiguity without relaxing resolver security.
+  Installed --version reports 0.1.1, --help succeeds, and the seed-42 offline
+  demo completes six groups with 200 usable replications each, zero truncation,
+  and all eight manifest hashes verified. Results remain synthetic/unvalidated.
+- Actual TestPyPI page inspected in Chromium at wide and narrow widths. Logo
+  loads through TestPyPI's image proxy at 44 px beside the title; badges,
+  installation and direct demo commands render correctly with no page overflow.
+  All 15 versioned documentation/example destinations exist in the remote
+  tagged tree. Wheel provenance metadata names the expected GitHub repository,
+  test-index.yml workflow and testpypi environment, with the matching wheel
+  digest; this metadata inspection is not an independent signature verification.
+- Screenshots and read-only recordings are under
+  .amp/in/artifacts/testpypi-v011/. Keep this checkpoint uncommitted until the
+  publication stage permits advancing main; no GitHub release or PyPI upload
+  was started by this rehearsal.
+
+### PyPI publication verified — 2026-10-31
+
+This checkpoint supersedes the pending-publication statements above.
+
+- Maintainer authorized the GitHub release and separately approved the pypi
+  environment. https://github.com/fmueller/merge-carlo/releases/tag/v0.1.1 was
+  published at 2026-10-31T10:31:18Z. Workflow
+  https://github.com/fmueller/merge-carlo/actions/runs/41193085574 succeeded.
+  Published tag still identifies b1932d21520b7547956a5255220dd75684d4d5f3;
+  no tag, distribution or prior release was rewritten.
+- https://pypi.org/project/merge-carlo/0.1.1/ exposes the wheel and sdist.
+  Downloaded files match PyPI digests and the production workflow artifacts:
+  wheel SHA-256 5111426b64731158f75babf5775c969f2c5772efe177f3ca89b70b90d7faf207;
+  sdist SHA-256 9249f14e75de76bcd72293dae65d18dd13e61632c00e7eec520bbb02989a152c.
+  Published version and README exactly match the tagged source. Production
+  hashes need not equal the separately built TestPyPI archives; each index was
+  checked against its own workflow artifacts.
+- A fresh Python 3.13 environment installed merge-carlo==0.1.1 from PyPI.
+  --version reports 0.1.1 and --help succeeds. The documented uv tool install
+  command also succeeded using isolated tool/bin directories and the PyPI index.
+  The installed seed-42, 200-replication demo passed: six groups, 200 usable
+  each, no engine truncation, all eight manifest hashes verified. Synthetic and
+  not_performed validation labels remain intact.
+- Actual production PyPI description inspected at wide and narrow widths.
+  Logo loads at 44 px through the image proxy; badges, installation and direct
+  demo instructions are readable without page overflow or broken images.
+  Inspected screenshots: .amp/in/artifacts/pypi-v011/. The browser recording
+  failed with an encoder-lag error; screenshots and DOM checks were preserved.
+- PyPI provenance metadata identifies release.yml, fmueller/merge-carlo and
+  the pypi environment and binds the matching wheel digest. This is metadata
+  inspection, not independent cryptographic signature verification.
+- Finalization records the actual publication date and evidence after upload;
+  it changes documentation/task state only, not the immutable published package.
+  Authorized live integration, real-team calibration and real-data validation
+  remain unverified. Weekly mutation testing was not dispatched or awaited.
+- 2026-10-31T10:38:38Z: Published v0.1.1 to PyPI after TestPyPI rehearsal and maintainer approvals; verified distribution identity, clean installations, offline demo, actual package-page logo and docs; final evidence reviewed.
+- 2026-10-31T10:38:38Z: verification pass

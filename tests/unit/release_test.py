@@ -80,8 +80,13 @@ def _run_gate(script: str, repository: Path, **environment: str) -> subprocess.C
 def test_initial_release_changelog_retains_evidence_limits() -> None:
     changelog = (ROOT / "CHANGELOG.md").read_text(encoding="utf-8")
 
-    assert re.findall(r"^## .*", changelog, re.MULTILINE) == ["## [Unreleased]", "## [0.1.0] - 2026-10-31"]
-    assert "[Unreleased]: https://github.com/fmueller/merge-carlo/compare/v0.1.0...HEAD" in changelog
+    assert re.findall(r"^## .*", changelog, re.MULTILINE) == [
+        "## [Unreleased]",
+        "## [0.1.1] - 2026-10-31",
+        "## [0.1.0] - 2026-10-31",
+    ]
+    assert "[Unreleased]: https://github.com/fmueller/merge-carlo/compare/v0.1.1...HEAD" in changelog
+    assert "[0.1.1]: https://github.com/fmueller/merge-carlo/releases/tag/v0.1.1" in changelog
     assert "[0.1.0]: https://github.com/fmueller/merge-carlo/releases/tag/v0.1.0" in changelog
     assert "Live GitHub integration has not been run." in changelog
     assert "No authorized dataset was" in changelog

@@ -2,19 +2,22 @@
 
 ## Current candidate and authorization boundary
 
-Version `0.1.1` is the candidate for the first PyPI release, tracked by T-067.
-The v0.1.0 GitHub release and TestPyPI files already exist; its PyPI workflow
+Version `0.1.1` is the first PyPI release, published and verified on 2026-10-31
+under T-067. Its TestPyPI rehearsal, PyPI distribution checks, clean installation,
+offline demo and actual package-page rendering passed. The v0.1.0 GitHub release
+and TestPyPI files remain available; its PyPI workflow
 was cancelled before upload and T-064 is superseded. Do not rewrite that tag
 or reuse its immutable distribution filenames. No authorized live GitHub
 dataset, real-team calibration, or real-data validation is verified.
 See [implementation status](implementation-status.md) for the evidence.
 
-Trusted publishers and protected environments were configured for the v0.1.0
-rehearsal. The v0.1.1 candidate still needs its own TestPyPI and PyPI checks.
+Trusted publishers and protected environments are configured for both indexes.
+Each future candidate still needs its own TestPyPI and PyPI checks.
 Preparation alone never authorizes creating tags or releases, dispatching
 publishers, or changing shared environments. Each environment approval remains
-a maintainer action. Keep changes under Unreleased until the authorized
-pre-tag finalization, and record index-install evidence only after it succeeds.
+a maintainer action. Keep changes under Unreleased during preparation and
+record index-install evidence only after it succeeds. The procedure below uses
+v0.1.1 as the completed example; do not dispatch it again or reuse its files.
 
 The release uses two top-level GitHub Actions workflows:
 
