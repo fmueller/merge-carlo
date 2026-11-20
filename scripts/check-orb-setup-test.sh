@@ -78,6 +78,29 @@ EOF
   ' bash "$copied_repo/.agents/setup" "$copied_repo" || fail "profile paths allow shell evaluation"
 )
 
+assert_pinned_tools_reach_non_login_shells() (
+  local sandbox test_home output
+  sandbox="$(mktemp -d)"
+  trap 'rm -rf "$sandbox"' EXIT
+  test_home="$sandbox/home"
+  mkdir -p "$test_home/.local/bin"
+
+  cat > "$test_home/.local/bin/mise" <<'EOF'
+#!/bin/sh
+printf 'shim:%s\n' "$(basename "$0")"
+EOF
+  printf 'keep\n' > "$test_home/.local/bin/uv"
+  chmod +x "$test_home/.local/bin/mise"
+
+  HOME="$test_home" bash -c 'source "$1"; link_pinned_tools 2>/dev/null' bash "$setup" \
+    || fail "linking pinned tools failed"
+  output="$(env -i HOME="$test_home" PATH="$test_home/.local/bin:/usr/bin:/bin" /bin/bash -c 'taskrail; lefthook')"
+  [[ "$output" == $'shim:taskrail\nshim:lefthook' ]] \
+    || fail "pinned tools do not resolve through mise in a non-login shell"
+  [[ ! -L "$test_home/.local/bin/uv" && "$(cat "$test_home/.local/bin/uv")" == keep ]] \
+    || fail "linking pinned tools replaced an existing file"
+)
+
 for script in "$setup" "$resume"; do
   [[ -x "$script" ]] || fail "$script is missing or is not executable"
   bash -n "$script" || fail "$script is not valid Bash"
@@ -107,5 +130,6 @@ resume_output="$(env -i PATH=/nonexistent /bin/bash "$resume")" \
 assert_unverified_mise_is_not_executed
 assert_mise_verification_requires_execute_permission
 assert_profile_paths_are_escaped
+assert_pinned_tools_reach_non_login_shells
 
 printf 'orb setup checks passed\n'

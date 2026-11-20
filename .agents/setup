@@ -89,6 +89,22 @@ fi
 EOF
 }
 
+# Agent shells run `bash -c` without reading the login profile, so the mise
+# activation above never runs for them. A link named after a pinned tool makes
+# mise act as that tool's shim from ~/.local/bin, which those shells search
+# first; outside this checkout a shim falls back to the system tool or fails.
+link_pinned_tools() {
+  local tool link
+  for tool in taskrail lefthook uv; do
+    link="$HOME/.local/bin/$tool"
+    if [[ -e "$link" && ! -L "$link" ]]; then
+      printf 'Leaving existing %s in place\n' "$link" >&2
+      continue
+    fi
+    ln -sfn mise "$link"
+  done
+}
+
 install_git_hooks() {
   local hooks_dir
   hooks_dir="$(git rev-parse --path-format=absolute --git-common-dir)/hooks"
@@ -102,6 +118,7 @@ main() {
   run_step "Configuring the login shell" configure_login_shell
   run_step "Installing the locked toolchain" \
     env MISE_HTTP_DOWNLOAD_TIMEOUT=60s timeout --foreground 300 "$MISE_BIN" install --locked --yes
+  run_step "Linking pinned tools onto the agent PATH" link_pinned_tools
   run_step "Syncing locked development dependencies" \
     env UV_HTTP_TIMEOUT=60 timeout --foreground 300 "$MISE_BIN" exec -- uv sync --locked --dev
   run_step "Installing commit hooks" install_git_hooks
