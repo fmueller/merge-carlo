@@ -1,8 +1,8 @@
 ---
 schema_version: 1
-updated_at: "2026-10-31T10:38:38Z"
-active_spec_version: v0.1.0
-active_spec_path: specs/v0.1.0.md
+updated_at: "2026-11-21T04:31:50Z"
+active_spec_version: v0.2.0
+active_spec_path: specs/v0.2.0.md
 current_task: ""
 current_task_title: ""
 status_summary: blocked
@@ -19,7 +19,7 @@ continuation_notes:
 
 ## Active Spec
 
-- `specs/v0.1.0.md`
+- `specs/v0.2.0.md`
 
 ## Current Focus
 

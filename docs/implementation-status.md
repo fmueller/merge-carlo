@@ -167,7 +167,7 @@ and PyPI publication plus clean-install and offline-demo verification. Future
 publications still require maintainer approval. No authorized live dataset or verified
 real-team calibration/real-data validation is included.
 
-Deferred work outside the active spec includes:
+Open work, tracked against the active v0.2.0 spec unless noted, includes:
 
 - T-033 dataclass mutation coverage. The locked mutmut 3.8.0 discovers decorated
   class bodies. A T-063 in-memory discovery probe found 293 calendar mutants
